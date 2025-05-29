@@ -338,3 +338,4 @@ std::string CharacterManager::getTileKey(const Vector2& pos) const {
     oss << static_cast<int>(pos.x) << "," << static_cast<int>(pos.y);
     return oss.str();
 }
+// Updated: 2025-05-31 00:53:28
