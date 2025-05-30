@@ -67,3 +67,4 @@ void FontManager::unloadFonts()
     _fonts.clear();
     _initialized = false;
 }
+// Updated: 2025-05-31 00:53:55
