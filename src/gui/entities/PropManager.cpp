@@ -6,7 +6,7 @@
 */
 
 #include "PropManager.hpp"
-#include "DebugSystem.hpp"
+#include "../core/DebugSystem.hpp"
 #include <iostream>
 #include <algorithm>
 

@@ -9,7 +9,7 @@
     #define INVENTORYUI_HPP_
 
 #include "AComponent.hpp"
-#include "../core/Character.hpp"
+#include "../entities/Character.hpp"
 #include <string>
 #include <vector>
 

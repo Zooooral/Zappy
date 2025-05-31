@@ -11,9 +11,9 @@
 #include "../core/CameraController.hpp"
 #include "../core/DebugSystem.hpp"
 #include "../core/GameStateManager.hpp"
-#include "../core/CharacterManager.hpp"
+#include "../entities/CharacterManager.hpp"
 #include "../core/SoundManager.hpp"
-#include "../core/NetworkManager.hpp"
+#include "../network/NetworkManager.hpp"
 #include "../core/ConfigManager.hpp"
 #include <iostream>
 #include <sstream>
