@@ -21,7 +21,7 @@ void queue_action(client_t *client, action_t *action)
     // TODO: Ajouter l'action à la file du client
 }
 
-void process_actions(void)
+void process_actions(server_t *server)
 {
     // TODO: Parcourir tous les clients et exécuter les actions prêtes
 }
