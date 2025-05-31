@@ -9,7 +9,7 @@
 #include "../core/FontManager.hpp"
 #include "../core/SoundManager.hpp"
 #include "../core/GameStateManager.hpp"
-#include "../core/NetworkManager.hpp"
+#include "../network/NetworkManager.hpp"
 #include "../core/ConfigManager.hpp"
 
 #include <iostream>

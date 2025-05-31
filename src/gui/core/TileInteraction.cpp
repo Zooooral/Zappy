@@ -9,7 +9,7 @@
 #include "GameWorld.hpp"
 #include "CameraController.hpp"
 #include "DebugSystem.hpp"
-#include "CharacterManager.hpp"
+#include "../entities/CharacterManager.hpp"
 #include <raymath.h>
 #include <cfloat>
 

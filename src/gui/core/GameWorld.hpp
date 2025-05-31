@@ -9,7 +9,7 @@
     #define GAMEWORLD_HPP_
 
 #include "raylib.h"
-#include "PropManager.hpp"
+#include "../entities/PropManager.hpp"
 #include <vector>
 #include <string>
 #include <unordered_map>
