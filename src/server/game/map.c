@@ -5,9 +5,10 @@
 ** Fixed map and tile management system
 */
 
-#include "server/server.h"
 #include <stdlib.h>
 #include <string.h>
+
+#include "server/server.h"
 
 static const double resource_density[RESOURCE_COUNT] = {
     0.5, 0.3, 0.15, 0.1, 0.1, 0.08, 0.05

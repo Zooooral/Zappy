@@ -5,10 +5,11 @@
 ** Client helper functions
 */
 
-#include "server/server.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <errno.h>
+
+#include "server/server.h"
 
 static int expand_client_buffer(client_t *client, ssize_t received)
 {

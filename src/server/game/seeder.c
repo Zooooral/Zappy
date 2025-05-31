@@ -5,9 +5,10 @@
 ** Seeder functionality for GUI testing
 */
 
-#include "server/server.h"
 #include <stdlib.h>
 #include <string.h>
+
+#include "server/server.h"
 
 static const int circle_moves[][2] = {
     {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}

@@ -6,11 +6,13 @@
 */
 
 #define _GNU_SOURCE
-#include "server/server.h"
+
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+
+#include "server/server.h"
 
 static int initialize_client_buffer(client_t *client)
 {

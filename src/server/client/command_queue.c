@@ -6,8 +6,10 @@
 */
 
 #define _GNU_SOURCE
-#include "server/server.h"
+
 #include <string.h>
+
+#include "server/server.h"
 
 void command_queue_init(command_queue_t *queue)
 {

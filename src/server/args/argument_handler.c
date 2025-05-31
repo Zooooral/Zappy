@@ -5,9 +5,10 @@
 ** Command line argument processing functions
 */
 
-#include "server/server.h"
 #include <string.h>
 #include <stdlib.h>
+
+#include "server/server.h"
 
 static int parse_numeric_arg(const char **argv, int *i, size_t *value)
 {

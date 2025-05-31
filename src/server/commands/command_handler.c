@@ -5,10 +5,11 @@
 ** Graphic client command handling functions
 */
 
-#include "server/command_handler.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "server/command_handler.h"
 
 static void send_map_size(server_t *server, client_t *client)
 {

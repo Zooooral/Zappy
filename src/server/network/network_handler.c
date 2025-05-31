@@ -5,12 +5,13 @@
 ** Enhanced network event handling with buffering
 */
 
-#include "server/server.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+
+#include "server/server.h"
 
 static void handle_new_connection(server_t *server)
 {

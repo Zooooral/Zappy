@@ -5,10 +5,11 @@
 ** Enhanced command line argument parsing with seed support
 */
 
-#include "server/server.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include "server/server.h"
 
 static int validate_config(const server_config_t *config)
 {

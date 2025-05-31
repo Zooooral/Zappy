@@ -5,11 +5,12 @@
 ** Server update sending functionality
 */
 
-#include "server/server.h"
-#include "server/server_updates.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "server/server.h"
+#include "server/server_updates.h"
 
 void send_position_update(client_t *client, const player_t *player)
 {

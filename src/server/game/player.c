@@ -6,9 +6,11 @@
 */
 
 #define _GNU_SOURCE
-#include "server/server.h"
+
 #include <stdlib.h>
 #include <string.h>
+
+#include "server/server.h"
 
 player_t *player_create(int id, int x, int y, const char *team_name)
 {

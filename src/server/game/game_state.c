@@ -5,10 +5,11 @@
 ** Game state management with seeding support
 */
 
-#include "server/server.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+
+#include "server/server.h"
 
 double get_current_time(void)
 {
