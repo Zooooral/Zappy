@@ -45,7 +45,7 @@ jobs:
 
       - name: Build project
         timeout-minutes: 2
-        run: make
+        run: make server ai
 
       - name: Check executable
         run: |
