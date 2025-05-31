@@ -10,7 +10,7 @@
 
 #include "server/time.h"
 
-double get_time_unit(void)
+double get_time_unit(server_t *server)
 {
     // TODO: Retourner la valeur de l'unité de temps (1/f)
     return 1.0;
