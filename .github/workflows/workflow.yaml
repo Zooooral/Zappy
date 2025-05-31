@@ -3,7 +3,7 @@ name: ZAPPY
 on: [push, pull_request]
 
 env:
-  EXECUTABLES: "zappy_server"
+  EXECUTABLES: "zappy_server zappy_ai"
 
 jobs:
   check_coding_style:
@@ -33,25 +33,25 @@ jobs:
             exit 1
           fi
 
-  # build_and_test:
-  #   name: Build project
-  #   # needs: [check_coding_style]
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: epitechcontent/epitest-docker
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  build_and_test:
+    name: Build project
+    # needs: [check_coding_style]
+    runs-on: ubuntu-latest
+    container:
+      image: epitechcontent/epitest-docker
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Build project
-  #       timeout-minutes: 2
-  #       run: make
+      - name: Build project
+        timeout-minutes: 2
+        run: make
 
-  #     - name: Check executable
-  #       run: |
-  #         for exe in $EXECUTABLES; do
-  #           if [[ ! -f $exe ]]; then
-  #               echo "::error file=$exe::Executable not found!"
-  #               exit 1
-  #           fi
-  #         done
+      - name: Check executable
+        run: |
+          for exe in $EXECUTABLES; do
+            if [[ ! -f $exe ]]; then
+                echo "::error file=$exe::Executable not found!"
+                exit 1
+            fi
+          done
