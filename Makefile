@@ -20,6 +20,7 @@ RED          = 	\033[91m
 
 CC           =  gcc
 CPP          =  g++
+YARN         =  yarn
 PYTHON       =  python3
 GUI_NAME     =  zappy_gui
 SERVER_NAME  =  zappy_server
@@ -96,22 +97,26 @@ gui: $(GUI_OBJS)
 	@$(CPP) -o $(GUI_NAME) $(GUI_OBJS) $(GUI_LIBS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)GUI built successfully$(RESET)\n"
 
-ai: $(AI_SRCS)
+ai:
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Creating AI executable...$(RESET)\n"
-	@echo '#!/bin/sh' > $(AI_NAME)
-	@echo 'exec $(PYTHON) $(AI_SRC_DIR)/main.py "$$@"' >> $(AI_NAME)
+	@cd $(AI_SRC_DIR) && $(YARN) install
+	@echo '#!/bin/bash' > $(AI_NAME)
+	@echo 'cd $(shell pwd)/$(AI_SRC_DIR) && node ai-zappy "$$@"' >> $(AI_NAME)
 	@chmod +x $(AI_NAME)
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)AI built successfully$(RESET)\n"
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)AI executable created successfully$(RESET)\n"
 
 clean:
 	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing obj files...$(RESET)\n"
 	@$(RM) -r $(BUILD_DIR)
+	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing AI build files...$(RESET)\n"
+	@$(RM) -r $(AI_SRC_DIR)/dist $(AI_SRC_DIR)/node_modules
 
 fclean: clean
 	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing executables...$(RESET)\n"
 	@$(RM) $(SERVER_NAME) $(GUI_NAME) $(AI_NAME)
 	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing copied assets...$(RESET)\n"
 	@$(RM) assets/environment/*.obj
+	@$(RM) -r $(AI_SRC_DIR)/dist $(AI_SRC_DIR)/log
 
 re: fclean
 	@$(MAKE) all
