@@ -20,8 +20,8 @@ typedef struct action_s {
     struct action_s *next;
 } action_t;
 
-double get_time_unit(void);
+double get_time_unit(server_t *server);
 void queue_action(client_t *client, action_t *action);
-void process_actions(void);
+void process_actions(server_t *server);
 
 #endif // TIME_H
