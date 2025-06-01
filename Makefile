@@ -20,7 +20,7 @@ RED          = 	\033[91m
 
 CC           =  gcc
 CPP          =  g++
-YARN         =  yarn
+NPM          =  npm
 PYTHON       =  python3
 GUI_NAME     =  zappy_gui
 SERVER_NAME  =  zappy_server
@@ -99,7 +99,7 @@ gui: $(GUI_OBJS)
 
 ai:
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Creating AI executable...$(RESET)\n"
-	@cd $(AI_SRC_DIR) && $(YARN) install
+	@cd $(AI_SRC_DIR) && $(NPM) install
 	@echo '#!/bin/bash' > $(AI_NAME)
 	@echo 'cd $(shell pwd)/$(AI_SRC_DIR) && node ai-zappy "$$@"' >> $(AI_NAME)
 	@chmod +x $(AI_NAME)
