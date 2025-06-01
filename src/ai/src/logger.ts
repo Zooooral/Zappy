@@ -1,16 +1,18 @@
-import pino, { Logger } from 'pino';
-import * as fs from 'fs';
-import * as path from 'path';
+import pino, { Logger } from "pino";
+import * as fs from "fs";
+import * as path from "path";
 
-const logDir = path.resolve(__dirname, '../log');
+const logDir = path.resolve(__dirname, "../log");
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
 
 function getLogFileName() {
   const now = new Date();
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(
+    now.getDate()
+  )}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   return `app_${timestamp}.log`;
 }
 
@@ -18,35 +20,43 @@ const logFilePath = path.join(logDir, getLogFileName());
 
 let logger: Logger;
 
-const logMode = process.argv.find(arg => arg.startsWith('--log-mode='))?.split('=')[1] || 'console';
+const logMode =
+  process.argv.find((arg) => arg.startsWith("--log-mode="))?.split("=")[1] ||
+  "console";
 
-if (logMode === 'none') {
-  logger = pino({ level: 'silent' });
-} else if (logMode === 'file') {
-  const stream = fs.createWriteStream(logFilePath, { flags: 'a' });
-  logger = pino({
-    level: 'info',
-    timestamp: pino.stdTimeFunctions.isoTime,
-  }, stream);
-} else if (logMode === 'both') {
-  const stream = fs.createWriteStream(logFilePath, { flags: 'a' });
-  
+if (logMode === "none") {
+  logger = pino({ level: "silent" });
+} else if (logMode === "file") {
+  const stream = fs.createWriteStream(logFilePath, { flags: "a" });
+  logger = pino(
+    {
+      level: "info",
+      timestamp: pino.stdTimeFunctions.isoTime,
+    },
+    stream
+  );
+} else if (logMode === "both") {
+  const stream = fs.createWriteStream(logFilePath, { flags: "a" });
+
   const consoleLogger = pino({
-    level: 'info',
+    level: "info",
     transport: {
-      target: 'pino-pretty',
-      options: { 
-        colorize: true, 
-        translateTime: 'HH:MM:ss',
-        ignore: 'pid,hostname'
-      }
-    }
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+        translateTime: "HH:MM:ss",
+        ignore: "pid,hostname",
+      },
+    },
   });
-  
-  const fileLogger = pino({
-    level: 'info',
-    timestamp: pino.stdTimeFunctions.isoTime,
-  }, stream);
+
+  const fileLogger = pino(
+    {
+      level: "info",
+      timestamp: pino.stdTimeFunctions.isoTime,
+    },
+    stream
+  );
 
   logger = {
     trace: (msg: any, ...args: any[]) => {
@@ -99,21 +109,21 @@ if (logMode === 'none') {
         fatal: (msg: any, ...args: any[]) => {
           consoleLogger.child(bindings).fatal(msg, ...args);
           fileLogger.child(bindings).fatal(msg, ...args);
-        }
+        },
       };
-    }
+    },
   } as unknown as Logger;
 } else {
   logger = pino({
-    level: 'info',
+    level: "info",
     transport: {
-      target: 'pino-pretty',
-      options: { 
-        colorize: true, 
-        translateTime: 'HH:MM:ss',
-        ignore: 'pid,hostname'
-      }
-    }
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+        translateTime: "HH:MM:ss",
+        ignore: "pid,hostname",
+      },
+    },
   });
 }
 
