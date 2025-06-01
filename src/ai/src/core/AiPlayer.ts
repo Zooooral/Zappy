@@ -24,19 +24,27 @@ export class AIPlayer {
     });
 
     this.client.on("authenticated", (gameState: GameState) => {
-      logger.info(
-        `Authenticated! World: ${gameState.worldWidth}x${gameState.worldHeight}`
-      );
+      logger.info(`Authenticated! World: ${gameState.worldWidth}x${gameState.worldHeight}, Available slots: ${gameState.clientsAvailable}`);
+      logger.info(`Starting AI with team: ${this.config.teamName}`);
       this.startGameLoop();
     });
 
     this.client.on("broadcast", (message: BroadcastMessage) => {
+      logger.info(`Broadcast received from direction ${message.direction}: ${message.message}`);
       this.gameLogic.handleBroadcast(message);
     });
 
     this.client.on("ejected", (direction: number) => {
       logger.warn(`Ejected from direction ${direction}`);
       this.gameLogic.handleEjection(direction);
+    });
+
+    this.client.on("moved", () => {
+      logger.debug("Player moved");
+    });
+
+    this.client.on("turned", (direction: string) => {
+      logger.debug(`Player turned ${direction}`);
     });
 
     this.client.on("dead", () => {
@@ -51,6 +59,7 @@ export class AIPlayer {
     this.client.on("disconnected", () => {
       logger.warn("Disconnected from server");
       if (this.running) {
+        logger.info(`Attempting reconnection in ${this.config.retryDelay}ms...`);
         setTimeout(() => this.reconnect(), this.config.retryDelay);
       }
     });
@@ -58,6 +67,7 @@ export class AIPlayer {
 
   public async start(): Promise<void> {
     this.running = true;
+    logger.info(`Starting AI for team "${this.config.teamName}" on ${this.config.host}:${this.config.port}`);
 
     try {
       await this.client.connectWithRetry(
@@ -67,15 +77,18 @@ export class AIPlayer {
       );
     } catch (error) {
       this.running = false;
+      logger.error("Failed to start AI:", error);
       throw error;
     }
   }
 
   public async stop(): Promise<void> {
     this.running = false;
+    logger.info("Stopping AI...");
 
     if (this.gameLoopInterval) {
       clearInterval(this.gameLoopInterval);
+      this.gameLoopInterval = undefined;
     }
 
     this.client.disconnect();
@@ -101,15 +114,24 @@ export class AIPlayer {
   private startGameLoop(): void {
     logger.info("Starting game loop...");
 
-    // TODO: main game loop execute AI logic every 100ms (à check)
+    const gameState = this.client.getGameState();
+    logger.info(`Initial state - Level: ${gameState.playerLevel}, Direction: ${gameState.playerDirection}`);
+
     this.gameLoopInterval = setInterval(async () => {
       if (!this.running || !this.client.isConnected()) {
+        logger.warn("Game loop stopped - not running or not connected");
         return;
       }
+
       try {
         await this.gameLogic.tick();
       } catch (error) {
         logger.error("Error in game logic:", error);
+
+        if (error instanceof Error && error.message.includes("Not connected")) {
+          logger.warn("Connection lost, attempting reconnect...");
+          this.reconnect();
+        }
       }
     }, 100);
   }
