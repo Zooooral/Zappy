@@ -21,7 +21,6 @@ RED          = 	\033[91m
 CC           =  gcc
 CPP          =  g++
 NPM          =  npm
-PYTHON       =  python3
 GUI_NAME     =  zappy_gui
 SERVER_NAME  =  zappy_server
 AI_NAME      =  zappy_ai
@@ -52,9 +51,6 @@ SERVER_SRCS = 	$(wildcard $(SERVER_SRC_DIR)/*.c) \
 
 GUI_SRCS = 		$(wildcard $(GUI_SRC_DIR)/*.cpp) \
 				$(wildcard $(GUI_SRC_DIR)/*/*.cpp)
-
-AI_SRCS = 		$(wildcard $(AI_SRC_DIR)/*.py) \
-				$(wildcard $(AI_SRC_DIR)/*/*.py)
 
 SERVER_OBJS = 	$(patsubst $(SERVER_SRC_DIR)/%.c, \
 				$(SERVER_BUILD_DIR)/%.o,$(SERVER_SRCS))
