@@ -1,4 +1,5 @@
 import { AIPlayer } from "./core/AiPlayer";
+import { AIConfig } from "./core/types";
 import { logger } from "./logger";
 
 async function main() {
