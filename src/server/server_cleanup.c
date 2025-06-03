@@ -6,7 +6,24 @@
 */
 
 #include "server/server.h"
+#include "server/time.h"
 #include <unistd.h>
+
+static void clean_action_queue(client_t *client)
+{
+    action_t *action = client->action_queue_head;
+
+    while (action) {
+        action_t *next = action->next;
+        if (action->command)
+            free(action->command);
+        free(action);
+        action = next;
+    }
+    client->action_queue_head = NULL;
+    client->action_queue_tail = NULL;
+    client->action_queue_count = 0;
+}
 
 static void close_client_connection(client_t *client)
 {
@@ -24,7 +41,7 @@ static void close_client_connection(client_t *client)
         free(client->team_name);
         client->team_name = NULL;
     }
-    command_queue_destroy(&client->cmd_queue);
+    clean_action_queue(client);
 }
 
 static void cleanup_all_clients(server_t *server)
