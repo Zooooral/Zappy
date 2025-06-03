@@ -12,11 +12,11 @@
 static void clean_action_queue(client_t *client)
 {
     action_t *action = client->action_queue_head;
+    action_t *next;
 
     while (action) {
-        action_t *next = action->next;
-        if (action->command)
-            free(action->command);
+        next = action->next;
+        free(action->command);
         free(action);
         action = next;
     }

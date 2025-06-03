@@ -19,9 +19,9 @@
 
 static void ai_action_forward(server_t *server, client_t *client)
 {
-    player_t *p = NULL;;
-    int dx[4] = {0, 1, 0, -1};
-    int dy[4] = {-1, 0, 1, 0};
+    player_t *p = NULL;
+    static const int dx[4] = {0, 1, 0, -1};
+    static const int dy[4] = {-1, 0, 1, 0};
 
     if (!server || !client)
         return;
@@ -52,10 +52,8 @@ static void ai_action_right(server_t *server, client_t *client)
             break;
         }
     }
-    if (!p) {
-        send_response(client, "ko\n");
-        return;
-    }
+    if (!p)
+        return send_response(client, "ko\n");
     p->orientation = (p->orientation + 1) % 4;
     send_response(client, "ok\n");
 }
@@ -77,21 +75,6 @@ static void ai_action_left(server_t *server, client_t *client)
         return send_response(client, "ko\n");
     p->orientation = (p->orientation + 3) % 4;
     send_response(client, "ok\n");
-}
-
-static void ai_action_look(server_t *server, client_t *client)
-{
-    char *result;
-
-    if (!server || !client)
-        return;
-    result = vision_look(client, server->game->map);
-    if (result) {
-        send_response(client, result);
-        free(result);
-    } else {
-        send_response(client, "[]\n");
-    }
 }
 
 static void ai_action_inventory(server_t *server, client_t *client)
@@ -222,8 +205,7 @@ void handle_look(server_t *server, client_t *client, const char *arg)
     data = calloc(1, sizeof *data);
     if (!action || !data) {
         free(action);
-        free(data);
-        return;
+        return free(data);
     }
     data->type = AI_ACTION_LOOK;
     data->server = server;
@@ -247,8 +229,7 @@ void handle_inventory(server_t *server, client_t *client, const char *arg)
     data = calloc(1, sizeof *data);
     if (!action || !data) {
         free(action);
-        free(data);
-        return;
+        return free(data);
     }
     data->type = AI_ACTION_INVENTORY;
     data->server = server;

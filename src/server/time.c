@@ -32,6 +32,14 @@ void queue_action(client_t *client, action_t *action)
     client->action_queue_count++;
 }
 
+static void execute_action_callback(client_t *client,
+    action_t *action, double now)
+{
+    if (action->callback && action->exec_time <= now) {
+        action->callback(client, action->data);
+    }
+}
+
 void process_actions(server_t *server)
 {
     double now = get_current_time();
@@ -39,18 +47,14 @@ void process_actions(server_t *server)
     action_t *action;
     action_t *to_free;
 
-    if (!server)
-        return;
-    for (size_t i = 0; i < server->client_count; ++i) {
+    for (size_t i = 0; server && i < server->client_count; ++i) {
         client = &server->clients[i];
         action = client->action_queue_head;
-        while (action && action->exec_time <= now) {
+        while (action) {
             client->action_queue_head = action->next;
-            if (!client->action_queue_head)
-                client->action_queue_tail = NULL;
+            client->action_queue_head || (client->action_queue_tail = NULL);
             client->action_queue_count--;
-            if (action->callback)
-                action->callback(client, action->data);
+            execute_action_callback(client, action, now);
             to_free = action;
             action = action->next;
             free(to_free->command);
