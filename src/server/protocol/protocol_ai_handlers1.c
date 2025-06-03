@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 /*
 ** EPITECH PROJECT, 2025
 ** src/server/protocol/protocol_ai_handlers1.c
