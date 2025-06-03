@@ -27,7 +27,7 @@ AI_NAME      =  zappy_ai
 
 CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include
 GUI_LIBS     =  -lraylib
-CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar
+CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar -D_GNU_SOURCE
 SERVER_LIBS  =  -lpthread
 
 BUILD_DIR    =  ./build

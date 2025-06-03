@@ -5,8 +5,6 @@
 ** Player management system
 */
 
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <string.h>
 
