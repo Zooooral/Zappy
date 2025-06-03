@@ -43,17 +43,7 @@ typedef enum resource_type_e {
     RESOURCE_COUNT
 } resource_type_t;
 
-typedef struct command_s {
-    char *data;
-    size_t length;
-    struct command_s *next;
-} command_t;
-
-typedef struct command_queue_s {
-    command_t *head;
-    command_t *tail;
-    size_t count;
-} command_queue_t;
+typedef struct action_s action_t;
 
 typedef struct client_s {
     int fd;
@@ -63,7 +53,9 @@ typedef struct client_s {
     size_t buffer_pos;
     bool is_authenticated;
     char *team_name;
-    command_queue_t cmd_queue;
+    action_t *action_queue_head;
+    action_t *action_queue_tail;
+    size_t action_queue_count;
 } client_t;
 
 typedef struct tile_s {
@@ -161,11 +153,6 @@ int client_add(server_t *server, int client_fd);
 void client_remove(server_t *server, size_t index);
 client_t *client_find_by_fd(server_t *server, int fd);
 void client_authenticate(client_t *client, const char *message);
-void command_queue_init(command_queue_t *queue);
-void command_queue_destroy(command_queue_t *queue);
-int command_queue_push(command_queue_t *queue, const char *data,
-    size_t length);
-command_t *command_queue_pop(command_queue_t *queue);
 void protocol_handle_graphic_command(server_t *server, client_t *client,
     const char *cmd);
 void protocol_handle_ai_command(server_t *server, client_t *client,
