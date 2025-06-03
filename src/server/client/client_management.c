@@ -5,14 +5,13 @@
 ** Enhanced client management with command queuing
 */
 
-#define _GNU_SOURCE
-
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
 
 #include "server/server.h"
+#include "server/time.h"
 
 static int initialize_client_buffer(client_t *client)
 {
@@ -35,7 +34,9 @@ static int setup_client_connection(client_t *client,
         close(client_fd);
         return -1;
     }
-    command_queue_init(&client->cmd_queue);
+    client->action_queue_head = NULL;
+    client->action_queue_tail = NULL;
+    client->action_queue_count = 0;
     return 0;
 }
 
@@ -71,7 +72,17 @@ static void cleanup_client_resources(client_t *client)
         free(client->buffer);
     if (client->team_name)
         free(client->team_name);
-    command_queue_destroy(&client->cmd_queue);
+    // Free all actions in the action queue
+    action_t *action = client->action_queue_head;
+    while (action) {
+        action_t *next = action->next;
+        free(action->command);
+        free(action);
+        action = next;
+    }
+    client->action_queue_head = NULL;
+    client->action_queue_tail = NULL;
+    client->action_queue_count = 0;
 }
 
 static void shift_clients_array(server_t *server, size_t index)
