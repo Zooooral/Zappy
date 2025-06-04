@@ -55,6 +55,7 @@ export class GameLogic {
         this.currentState = AIState.SURVIVAL;
       }
 
+      await this.updateAIState(context);
       await this.executeStrategy(context);
     } catch (error) {
       logger.error("Error in game tick:", error);
@@ -74,6 +75,20 @@ export class GameLogic {
       }
     } catch (error) {
       logger.warn("Failed to update context:", error);
+    }
+  }
+
+  private async updateAIState(context: GameContext): Promise<void> {
+    const food = context.inventory.food;
+    const level = context.gameState.playerLevel;
+
+    if (food < 5) {
+      this.currentState = AIState.SURVIVAL;
+      logger.warn(`Critical survival mode - food: ${food}`);
+    // TODO: Intégrer logique de reproduction et élévation
+    } else {
+      // Exploration par défaut
+      this.currentState = AIState.EXPLORATION;
     }
   }
 
