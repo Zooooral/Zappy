@@ -48,4 +48,3 @@ void AComponent::updateBounds()
 {
     _bounds = { _position.x, _position.y, _size.x, _size.y };
 }
-// Updated: 2025-05-31 00:53:43

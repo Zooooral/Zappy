@@ -61,5 +61,3 @@ void Button::setText(const std::string &text)
 {
     _text = text;
 }
-// Updated: 2025-05-31 00:53:02
-// Updated: 2025-05-31 00:53:50

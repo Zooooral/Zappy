@@ -143,5 +143,3 @@ int main(int argc, char** argv)
     std::cout << "INFO: Application ended successfully" << std::endl;
     return 0;
 }
-// Updated: 2025-05-31 00:53:39
-// Updated: 2025-05-31 00:53:54

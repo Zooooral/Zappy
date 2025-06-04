@@ -43,6 +43,7 @@ public:
     Character* getSelectedCharacter() const { return _selectedCharacter; }
     
     void endAllElevations();
+    void setTimeUnit(int timeUnit) { _timeUnit = timeUnit; }
     
     bool isModelLoaded() const { return _modelLoaded; }
 
@@ -64,6 +65,7 @@ private:
     
     float _particleTimer = 0.0f;
     float _animationTimer = 0.0f;
+    int _timeUnit = 100;
     
     Character* _hoveredCharacter = nullptr;
     Character* _selectedCharacter = nullptr;

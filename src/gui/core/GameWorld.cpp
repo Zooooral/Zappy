@@ -595,5 +595,3 @@ GameWorld::Tile GameWorld::getTileAt(int x, int y) const {
 Vector3 GameWorld::getTilePosition3D(int x, int y) const {
     return Vector3{ (float)x, 0.0f, (float)y };
 }
-// Updated: 2025-05-31 00:53:23
-// Updated: 2025-05-31 00:53:32
