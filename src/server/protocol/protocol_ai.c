@@ -24,6 +24,7 @@
 
 void protocol_handle_ai_command(server_t *server, client_t *client, const char *cmd)
 {
+    printf("AI command: %s\n", cmd);
     if (!server || !client || !cmd) {
         return;
     }

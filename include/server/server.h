@@ -152,7 +152,7 @@ double get_current_time(void);
 int client_add(server_t *server, int client_fd);
 void client_remove(server_t *server, size_t index);
 client_t *client_find_by_fd(server_t *server, int fd);
-void client_authenticate(client_t *client, const char *message);
+void client_authenticate(server_t *server, client_t *client, const char *message);
 void protocol_handle_graphic_command(server_t *server, client_t *client,
     const char *cmd);
 void protocol_handle_ai_command(server_t *server, client_t *client,

@@ -127,11 +127,28 @@ client_t *client_find_by_fd(server_t *server, int fd)
     return NULL;
 }
 
-void client_authenticate(client_t *client, const char *message)
+static void client_validate(server_t *server, client_t *client, const char *message)
+{
+    char response[32];
+
+    client->type = CLIENT_TYPE_AI;
+    client->team_name = strdup(message);
+    client->is_authenticated = true;
+    snprintf(response, sizeof(response), "%d\n",
+        server->config.max_clients_per_team);
+    send_response(client, response);
+    printf("1: %s", response);
+    snprintf(response, sizeof(response), "%d %d\n", server->config.width,
+        server->config.height);
+    printf("2: %s", response);
+    send_response(client, response);
+}
+
+void client_authenticate(server_t *server, client_t *client, const char *message)
 {
     ssize_t sent;
 
-    if (!client || !message)
+    if (!server || !client || !message)
         return;
     if (strcmp(message, "GRAPHIC") == 0) {
         client->type = CLIENT_TYPE_GRAPHIC;
@@ -139,8 +156,7 @@ void client_authenticate(client_t *client, const char *message)
         sent = send(client->fd, "msz 10 10\n", 10, 0);
         (void)sent;
     } else {
-        client->type = CLIENT_TYPE_AI;
-        client->team_name = strdup(message);
-        client->is_authenticated = true;
+        printf("AI client authenticated with team: %s\n", message);
+        client_validate(server, client, message);
     }
 }
