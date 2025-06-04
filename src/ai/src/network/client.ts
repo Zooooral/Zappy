@@ -220,8 +220,10 @@ export class NetworkClient extends EventEmitter {
     if (this.commandQueue.length > 0 && !this.waitingForResponse) {
       this.waitingForResponse = true;
       const command = this.commandQueue[0].command;
-      this.socket.write(command + "\n");
-      logger.debug("Sent command:", command);
+      const dataToSend = command + "\n";
+      logger.info(`[SENDING RAW]: "${dataToSend.replace('\n', '\\n')}"`);
+      this.socket.write(dataToSend);
+      logger.info(`[SENT]: ${dataToSend.length} bytes`);
     }
   }
 
@@ -237,7 +239,28 @@ export class NetworkClient extends EventEmitter {
         return;
       }
 
-      this.commandQueue.push({ command, resolve, reject });
+      const startTime = Date.now();
+      logger.info(`[SENDING]: ${command}`);
+
+      const timeout = setTimeout(() => {
+        logger.error(`[TIMEOUT]: ${command} (no response after 5s)`);
+        reject(new Error(`Command timeout: ${command}`));
+      }, 5000);
+
+      this.commandQueue.push({
+        command,
+        resolve: (value) => {
+          clearTimeout(timeout);
+          const duration = Date.now() - startTime;
+          logger.info(`[RESPONSE]: ${command} -> got response in ${duration}ms`);
+          resolve(value);
+        },
+        reject: (error) => {
+          clearTimeout(timeout);
+          logger.error(`[ERROR]: ${command} -> ${error.message}`);
+          reject(error);
+        }
+      });
 
       if (!this.waitingForResponse) {
         this.processNextCommand();
