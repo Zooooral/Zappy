@@ -7,6 +7,7 @@
 
 #include "server/server.h"
 #include "server/protocol_graphic.h"
+#include "server/server_updates.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
@@ -109,6 +110,19 @@ static void handle_player_info_command(server_t *server, client_t *client,
     }
 }
 
+static void handle_position_update(server_t *server, client_t *client,
+    const char *cmd)
+{
+    int player_id;
+    player_t *player;
+
+    sscanf(cmd, "ppo #%d", &player_id);
+    player = player_find_by_id(server, player_id);
+    if (player) {
+        send_position_update(client, player);
+    }
+}
+
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
     size_t i;
@@ -118,6 +132,7 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {"bct ", handle_tile_content_command},
         {"tna", handle_team_names_command},
         {"pnw", handle_player_info_command},
+        {"ppo", handle_position_update},
         {NULL, NULL}
     };
 
