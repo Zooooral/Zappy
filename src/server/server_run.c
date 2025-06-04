@@ -7,6 +7,7 @@
 
 #include "server/server.h"
 #include "server/server_broadcast.h"
+#include "server/time.h"
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
@@ -76,6 +77,7 @@ static void update_game_and_broadcast(server_t *server, double delta_time,
 {
     if (server->game)
         game_state_update(server->game, delta_time);
+    process_actions(server);
     *broadcast_timer += delta_time;
     if (*broadcast_timer >= 0.1) {
         broadcast_seeder_updates(server);

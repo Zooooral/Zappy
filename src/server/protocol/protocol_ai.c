@@ -41,3 +41,28 @@ void protocol_handle_ai_command(server_t *server, client_t *client, const char *
     }
     send_response(client, "ko\n");
 }
+
+void create_and_queue_action(server_t *server, client_t *client,
+    const char *cmd, const ai_action_type_t type)
+{
+    action_t *action;
+    ai_action_data_t *data;
+    double now = get_current_time();
+
+    if (!server || !client)
+        return;
+    action = calloc(1, sizeof *action);
+    data = calloc(1, sizeof *data);
+    if (!action || !data) {
+        free(action);
+        return free(data);
+    }
+    data->type = type;
+    data->server = server;
+    action->command = strdup(cmd);
+    action->exec_time = now + 7.0 * get_time_unit(server);
+    action->callback = ai_callback_handler;
+    action->data = data;
+    queue_action(client, action);
+}
+

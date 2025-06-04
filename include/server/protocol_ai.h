@@ -26,20 +26,8 @@ typedef struct ai_action_data_s {
 
 void protocol_handle_ai_command(server_t *server, client_t *client,
     const char *cmd);
-
-static inline void ai_action_look(server_t *server, client_t *client)
-{
-    char *result;
-
-    if (!server || !client)
-        return;
-    result = vision_look(client, server->game->map);
-    if (result) {
-        send_response(client, result);
-        free(result);
-    } else {
-        send_response(client, "[]\n");
-    }
-}
+void create_and_queue_action(server_t *server, client_t *client,
+    const char *cmd, const ai_action_type_t type);
+void ai_callback_handler(client_t *client, void *data);
 
 #endif /* !PROTOCOL_AI_H_ */
