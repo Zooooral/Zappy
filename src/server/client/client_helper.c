@@ -56,13 +56,9 @@ static void process_command(server_t *server, client_t *client,
 {
     printf("Processing command: %s\n", command);
     if (!client->is_authenticated) {
-        printf("Client %d not authenticated, attempting authentication\n",
-            client->fd);
         client_authenticate(server, client, command);
         return;
     }
-    printf("Client %d authenticated with team %s\n",
-        client->fd, client->team_name ? client->team_name : "None");
     if (client->type == CLIENT_TYPE_GRAPHIC) {
         protocol_handle_graphic_command(server, client, command);
     } else {
