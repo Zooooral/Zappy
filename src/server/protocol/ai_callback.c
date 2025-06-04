@@ -28,7 +28,6 @@ static inline void ai_action_forward(server_t *server, client_t *client)
     player_set_position(p, server->game->map,
             p->x + dx[p->orientation], p->y + dy[p->orientation]);
     send_response(client, "ok\n");
-    broadcast_message_to_guis(server, client, send_position_update);
 }
 
 static inline void ai_action_right(server_t *server, client_t *client)
@@ -49,7 +48,6 @@ static inline void ai_action_right(server_t *server, client_t *client)
         return send_response(client, "ko\n");
     p->orientation = (p->orientation + 1) % 4;
     send_response(client, "ok\n");
-    broadcast_message_to_guis(server, client, send_position_update);
 }
 
 static inline void ai_action_left(server_t *server, client_t *client)
@@ -69,7 +67,6 @@ static inline void ai_action_left(server_t *server, client_t *client)
         return send_response(client, "ko\n");
     p->orientation = (p->orientation + 3) % 4;
     send_response(client, "ok\n");
-    broadcast_message_to_guis(server, client, send_position_update);
 }
 
 
