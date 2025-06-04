@@ -255,6 +255,7 @@ export class NetworkClient extends EventEmitter {
   public authenticate(teamName: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.once("welcome", () => {
+        logger.info(`[SENDING TEAM NAME]: ${teamName}`);
         this.socket.write(teamName + "\n");
       });
 
