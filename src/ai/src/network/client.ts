@@ -76,6 +76,7 @@ export class NetworkClient extends EventEmitter {
   }
 
   private handleMessage(message: string): void {
+    logger.info(`RAW: ${message}`);
     logger.debug("Received message:", message);
 
     if (!this.authenticated) {
