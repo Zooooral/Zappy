@@ -41,12 +41,11 @@ void protocol_send_tile_content(server_t *server, client_t *client,
     send_response(client, response);
 }
 
-void protocol_send_player_info(server_t *server, client_t *client,
-    const player_t *player)
+void protocol_send_player_info(client_t *client, const player_t *player)
 {
     char response[128];
 
-    if (!server || !client || !player)
+    if (!client || !player)
         return;
     snprintf(response, sizeof(response), "pnw #%d %d %d %d %d %s\n",
         player->id, player->x, player->y, player->orientation,
@@ -106,8 +105,7 @@ static void handle_player_info_command(server_t *server, client_t *client,
 {
     (void)cmd;
     if (server->game->seeder && server->game->seeder->player) {
-        protocol_send_player_info(server, client,
-            server->game->seeder->player);
+        protocol_send_player_info(client, server->game->seeder->player);
     }
 }
 

@@ -105,3 +105,12 @@ void game_state_update(game_state_t *game, double delta_time)
     if (game->seeder)
         seeder_update(game->seeder, game->map, game->current_time);
 }
+
+void add_player_to_game(game_state_t *game, player_t *player)
+{
+    if (!game || !player)
+        return;
+    if (game->players != NULL) {
+        game->players[game->player_count++] = player;
+    }
+}

@@ -23,7 +23,6 @@ void protocol_handle_graphic_command(server_t *server, client_t *client,
 void protocol_send_map_size(server_t *server, client_t *client);
 void protocol_send_tile_content(server_t *server, client_t *client,
     int x, int y);
-void protocol_send_player_info(server_t *server, client_t *client,
-    const player_t *player);
+void protocol_send_player_info(client_t *client, const player_t *player);
 
 #endif /* !PROTOCOL_GRAPHIC_H_ */

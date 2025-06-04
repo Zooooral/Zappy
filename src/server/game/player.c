@@ -122,3 +122,14 @@ void player_move(player_t *player, map_t *map)
     calculate_movement_direction(player, &dx, &dy);
     player_set_position(player, map, player->x + dx, player->y + dy);
 }
+
+player_t *player_find_by_id(server_t *server, int id)
+{
+    if (!server || !server->game || !server->game->players)
+        return NULL;
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        if (server->game->players[i]->id == id)
+            return server->game->players[i];
+    }
+    return NULL;
+}
