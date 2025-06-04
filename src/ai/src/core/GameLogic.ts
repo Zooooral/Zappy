@@ -14,6 +14,18 @@ interface MovementHistory {
   maxHistory: number;
 }
 
+interface ElevationRequirements {
+  [key: number]: {
+    players: number;
+    linemate: number;
+    deraumere: number;
+    sibur: number;
+    mendiane: number;
+    phiras: number;
+    thystame: number;
+  };
+}
+
 export class GameLogic {
   private client: NetworkClient;
   private currentState: AIState = AIState.SURVIVAL;
@@ -61,6 +73,18 @@ export class GameLogic {
       logger.error("Error in game tick:", error);
     }
   }
+
+  private elevationAttempts: number = 0;
+  private lastReproductionAttempt: number = 0;
+  private elevationRequirements: ElevationRequirements = {
+    1: { players: 1, linemate: 1, deraumere: 0, sibur: 0, mendiane: 0, phiras: 0, thystame: 0 },
+    2: { players: 2, linemate: 1, deraumere: 1, sibur: 1, mendiane: 0, phiras: 0, thystame: 0 },
+    3: { players: 2, linemate: 2, deraumere: 0, sibur: 1, mendiane: 0, phiras: 2, thystame: 0 },
+    4: { players: 4, linemate: 1, deraumere: 1, sibur: 2, mendiane: 0, phiras: 1, thystame: 0 },
+    5: { players: 4, linemate: 1, deraumere: 2, sibur: 1, mendiane: 3, phiras: 0, thystame: 0 },
+    6: { players: 6, linemate: 1, deraumere: 2, sibur: 3, mendiane: 0, phiras: 1, thystame: 0 },
+    7: { players: 6, linemate: 2, deraumere: 2, sibur: 2, mendiane: 2, phiras: 2, thystame: 1 }
+  };
 
   private async updateContext(): Promise<void> {
     try {
@@ -114,21 +138,91 @@ export class GameLogic {
     this.commandCooldown = true;
 
     try {
-      // PRIORITY 1: Always check and collect food on current tile first
-      if (await this.collectFoodOnCurrentTile(context)) {
-        return;
+      switch (context.currentState) {
+        case AIState.SURVIVAL:
+          await this.executeSurvivalStrategy(context);
+          break;
+        case AIState.COORDINATION:
+          await this.executeReproductionStrategy(context);
+          break;
+        case AIState.ELEVATION:
+          await this.executeElevationStrategy(context);
+          break;
+        case AIState.EXPLORATION:
+        default:
+          await this.executeExplorationStrategy(context);
+          break;
       }
-
-      // PRIORITY 2: Look for food in vision and move towards it
-      if (await this.moveTowardsFood(context)) {
-        return;
-      }
-
-      await this.exploreIntelligently(context);
-
     } finally {
       this.commandCooldown = false;
     }
+  }
+
+  private async executeSurvivalStrategy(context: GameContext): Promise<void> {
+    // PRIORITÉ 1: Nourriture sur la case actuelle
+    if (await this.collectFoodOnCurrentTile(context)) {
+      return;
+    }
+
+    // PRIORITÉ 2: Chercher de la nourriture dans la vision
+    if (await this.moveTowardsFood(context)) {
+      return;
+    }
+  }
+
+  private async executeReproductionStrategy(context: GameContext): Promise<void> {
+    logger.info("Attempting reproduction (fork)...");
+
+    try {
+
+      await this.client.broadcast("REPRODUCTION_READY");
+
+      const success = await this.client.fork();
+      if (success) {
+        logger.info("Successfully forked! New team member incoming.");
+        this.lastReproductionAttempt = Date.now();
+        this.currentState = AIState.SURVIVAL;
+      } else {
+        logger.warn("Fork failed, continuing with current strategy");
+        this.currentState = AIState.GATHERING;
+      }
+    } catch (error) {
+      logger.error("Error during reproduction:", error);
+      this.currentState = AIState.GATHERING;
+    }
+  }
+
+  private async executeElevationStrategy(context: GameContext): Promise<void> {
+    logger.info(`Attempting elevation from level ${context.gameState.playerLevel}`);
+    try {
+      await this.client.broadcast(`ELEVATION_${context.gameState.playerLevel}_READY`);
+      if (this.hasElevationResources(context)) {
+        const success = await this.client.incantation();
+        if (success) {
+          logger.info("Incantation started successfully!");
+          this.elevationAttempts++;
+        } else {
+          logger.warn("Incantation failed");
+          this.currentState = AIState.GATHERING;
+        }
+      } else {
+        logger.info("Missing resources for elevation, switching to gathering");
+        this.currentState = AIState.GATHERING;
+      }
+    } catch (error) {
+      logger.error("Error during elevation:", error);
+      this.currentState = AIState.GATHERING;
+    }
+  }
+
+  private async executeExplorationStrategy(context: GameContext): Promise<void> {
+    if (await this.collectFoodOnCurrentTile(context)) {
+      return;
+    }
+    if (await this.collectAnyResourceOnCurrentTile(context)) {
+      return;
+    }
+    await this.exploreIntelligently(context);
   }
 
   private async collectFoodOnCurrentTile(context: GameContext): Promise<boolean> {
@@ -200,6 +294,49 @@ export class GameLogic {
       }
       return true;
     }
+  }
+
+  private async collectAnyResourceOnCurrentTile(context: GameContext): Promise<boolean> {
+    if (!context.vision.tiles || context.vision.tiles.length === 0) {
+      return false;
+    }
+
+    const currentTile = context.vision.tiles[0];
+    const resources = ['linemate', 'deraumere', 'sibur', 'mendiane', 'phiras', 'thystame'];
+    for (const resource of resources) {
+      if (currentTile.includes(resource)) {
+        logger.info(`${resource} found on current tile! Collecting...`);
+        try {
+          const success = await this.client.take(resource);
+          if (success) {
+            logger.info(`Successfully collected ${resource}`);
+            this.stuckCounter = 0;
+            return true;
+          }
+        } catch (error) {
+          logger.warn(`Failed to collect ${resource}:`, error);
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private hasElevationResources(context: GameContext): boolean {
+    const level = context.gameState.playerLevel;
+    const requirements = this.elevationRequirements[level];
+
+    if (!requirements) return false;
+
+    const inv = context.inventory;
+    return (
+      inv.linemate >= requirements.linemate &&
+      inv.deraumere >= requirements.deraumere &&
+      inv.sibur >= requirements.sibur &&
+      inv.mendiane >= requirements.mendiane &&
+      inv.phiras >= requirements.phiras &&
+      inv.thystame >= requirements.thystame
+    );
   }
 
   private findClosestFood(tiles: string[][]): number {
