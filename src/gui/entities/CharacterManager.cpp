@@ -55,10 +55,8 @@ void CharacterManager::update(float dt) {
         UpdateModelAnimation(_characterModel, _animations[0], _frameCounter);
     }
     
-    updateTilePositions();
-    updateElevationParticles(dt);
-    
     for (auto& character : _characters) {
+        character->updateMovement(dt, _timeUnit);
         if (character->isElevating()) {
             if (_particleTimer > 0.05f) {
                 createElevationParticles(character.get());
@@ -66,6 +64,9 @@ void CharacterManager::update(float dt) {
             }
         }
     }
+    
+    updateTilePositions();
+    updateElevationParticles(dt);
 }
 
 void CharacterManager::updateElevationParticles(float dt) {
@@ -310,7 +311,9 @@ void CharacterManager::drawCharacter(Character* character, Camera camera, bool i
     
     float scale = 0.000025f;
     position.y -= 0.16f;
-    DrawModel(_characterModel, position, scale, tint);
+    Vector3 rotationAxis = { 0.0f, 1.0f, 0.0f };
+        float rotationAngle = character->getRotationAngle();
+        DrawModelEx(_characterModel, position, rotationAxis, rotationAngle, Vector3{scale, scale, scale}, tint);
     if (isHovered) {
         drawCharacterOutline(character, YELLOW);
     }
@@ -338,5 +341,3 @@ std::string CharacterManager::getTileKey(const Vector2& pos) const {
     oss << static_cast<int>(pos.x) << "," << static_cast<int>(pos.y);
     return oss.str();
 }
-// Updated: 2025-05-31 00:53:28
-// Updated: 2025-05-31 00:53:48

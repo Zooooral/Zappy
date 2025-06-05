@@ -99,7 +99,9 @@ static void initialize_clients(server_t *server)
         client->buffer_pos = 0;
         client->is_authenticated = false;
         client->team_name = NULL;
-        command_queue_init(&client->cmd_queue);
+        client->action_queue_head = NULL;
+        client->action_queue_tail = NULL;
+        client->action_queue_count = 0;
     }
 }
 

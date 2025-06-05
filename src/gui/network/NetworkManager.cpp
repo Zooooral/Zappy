@@ -174,6 +174,7 @@ void NetworkManager::networkThreadFunction()
 
 void NetworkManager::handleServerMessage(const std::string& message)
 {
+    std::cout << "[SERVER->GUI] " << message << std::endl;
     if (_connectionState == ConnectionState::CONNECTED && message == "WELCOME") {
         processWelcome();
     } else if (_connectionState == ConnectionState::CONNECTED && message.substr(0, 4) == "msz ") {
@@ -279,4 +280,3 @@ void NetworkManager::processReceiveBuffer()
         }
     }
 }
-// Updated: 2025-05-31 00:53:31

@@ -120,4 +120,3 @@ Vector2 Slider::getHandlePosition() const
     float y = _position.y + _size.y / 2;
     return { x, y };
 }
-// Updated: 2025-05-31 00:53:20
