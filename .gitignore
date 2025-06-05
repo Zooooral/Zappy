@@ -65,3 +65,8 @@ zappy_ai
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# AI specific files
+node_modules/
+src/ai/log
+yarn.lock
