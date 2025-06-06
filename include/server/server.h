@@ -56,6 +56,7 @@ typedef struct client_s {
     action_t *action_queue_head;
     action_t *action_queue_tail;
     size_t action_queue_count;
+    struct player_s *player;
 } client_t;
 
 typedef struct tile_s {
@@ -76,6 +77,7 @@ typedef struct player_s {
     double last_action_time;
     bool is_elevating;
     double elevation_start_time;
+    client_t *client;
 } player_t;
 
 typedef struct map_s {
@@ -140,9 +142,8 @@ map_t *map_create(int width, int height);
 int allocate_map_tiles(map_t *map);
 void send_response(client_t *client, const char *response);
 void map_destroy(map_t *map);
-void map_place_resources(map_t *map);
 tile_t *map_get_tile(const map_t *map, int x, int y);
-player_t *player_create(int id, int x, int y, const char *team_name);
+player_t *player_create(client_t *, int x, int y, const char *team_name);
 void player_destroy(player_t *player);
 void player_move(player_t *player, map_t *map);
 player_t *player_find_by_id(server_t *server, int id);

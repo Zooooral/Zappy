@@ -131,19 +131,18 @@ client_t *client_find_by_fd(server_t *server, int fd)
 
 static void client_validate(server_t *server, client_t *client, const char *message)
 {
-    char response[32];
-    player_t *player;
-    int id = client->fd;
+    char response[128];
     int pos[2] = {rand() % server->config.width, rand() % server->config.height};
 
+    client->player = NULL;
     client->type = CLIENT_TYPE_AI;
     client->team_name = strdup(message);
     client->is_authenticated = true;
     if (server->game->player_count < server->game->player_capacity) {
-        player = player_create(id, pos[0], pos[1], message);
-        if (player) {
-            player_set_position(player, server->game->map, pos[0], pos[1]);
-            add_player_to_game(server->game, player);
+        client->player = player_create(client, pos[0], pos[1], message);
+        if (client->player) {
+            player_set_position(client->player, server->game->map, pos[0], pos[1]);
+            add_player_to_game(server->game, client->player);
             broadcast_message_to_guis(server, client, protocol_send_player_info);
         }
     }

@@ -5,6 +5,7 @@
 ** Enhanced server main loop with time management
 */
 
+#include "server/resource.h"
 #include "server/server.h"
 #include "server/server_broadcast.h"
 #include "server/time.h"
@@ -76,6 +77,7 @@ static int handle_poll_events(server_t *server)
 static void update_game_and_broadcast(server_t *server, double delta_time,
     double *broadcast_timer)
 {
+    respawn_resources(server->game->map);
     if (server->game)
         game_state_update(server->game, delta_time);
     process_actions(server);

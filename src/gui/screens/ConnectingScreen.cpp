@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 ConnectingScreen::ConnectingScreen()
 {
