@@ -51,6 +51,9 @@ zappy_server
 zappy_gui
 zappy_ai
 
+# Project configuration files
+config.ini
+
 # Debug files
 *.dSYM/
 *.su
