@@ -5,13 +5,11 @@
 ** Fixed map and tile management system
 */
 
-#include "server/server.h"
 #include <stdlib.h>
 #include <string.h>
 
-static const double resource_density[RESOURCE_COUNT] = {
-    0.5, 0.3, 0.15, 0.1, 0.1, 0.08, 0.05
-};
+#include "server/server.h"
+#include "server/game.h"
 
 static void tile_init(tile_t *tile)
 {
@@ -89,32 +87,4 @@ void map_destroy(map_t *map)
         return;
     cleanup_all_tiles(map);
     free(map);
-}
-
-static void place_resource_type(map_t *map, int type)
-{
-    int total_quantity = (int)(map->width * map->height *
-        resource_density[type]);
-    int i;
-    int x;
-    int y;
-    tile_t *tile;
-
-    for (i = 0; i < total_quantity; i++) {
-        x = rand() % map->width;
-        y = rand() % map->height;
-        tile = map_get_tile(map, x, y);
-        if (tile)
-            tile->resources[type]++;
-    }
-}
-
-void map_place_resources(map_t *map)
-{
-    int type;
-
-    if (!map)
-        return;
-    for (type = 0; type < RESOURCE_COUNT; type++)
-        place_resource_type(map, type);
 }

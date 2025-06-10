@@ -7,6 +7,7 @@
 
 #include "server/server.h"
 #include "server/protocol_graphic.h"
+#include "server/server_updates.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
@@ -41,12 +42,11 @@ void protocol_send_tile_content(server_t *server, client_t *client,
     send_response(client, response);
 }
 
-void protocol_send_player_info(server_t *server, client_t *client,
-    const player_t *player)
+void protocol_send_player_info(client_t *client, const player_t *player)
 {
     char response[128];
 
-    if (!server || !client || !player)
+    if (!client || !player)
         return;
     snprintf(response, sizeof(response), "pnw #%d %d %d %d %d %s\n",
         player->id, player->x, player->y, player->orientation,
@@ -106,8 +106,20 @@ static void handle_player_info_command(server_t *server, client_t *client,
 {
     (void)cmd;
     if (server->game->seeder && server->game->seeder->player) {
-        protocol_send_player_info(server, client,
-            server->game->seeder->player);
+        protocol_send_player_info(client, server->game->seeder->player);
+    }
+}
+
+static void handle_position_update(server_t *server, client_t *client,
+    const char *cmd)
+{
+    int player_id;
+    player_t *player;
+
+    sscanf(cmd, "ppo #%d", &player_id);
+    player = player_find_by_id(server, player_id);
+    if (player) {
+        send_position_update(client, player);
     }
 }
 
@@ -120,6 +132,7 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {"bct ", handle_tile_content_command},
         {"tna", handle_team_names_command},
         {"pnw", handle_player_info_command},
+        {"ppo", handle_position_update},
         {NULL, NULL}
     };
 

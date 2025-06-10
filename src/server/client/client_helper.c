@@ -5,10 +5,11 @@
 ** Client helper functions
 */
 
-#include "server/server.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <errno.h>
+
+#include "server/server.h"
 
 static int expand_client_buffer(client_t *client, ssize_t received)
 {
@@ -53,8 +54,9 @@ static int receive_client_data(client_t *client)
 static void process_command(server_t *server, client_t *client,
     const char *command)
 {
+    printf("Processing command: %s\n", command);
     if (!client->is_authenticated) {
-        client_authenticate(client, command);
+        client_authenticate(server, client, command);
         return;
     }
     if (client->type == CLIENT_TYPE_GRAPHIC) {

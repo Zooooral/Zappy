@@ -5,7 +5,6 @@
 ** Enhanced signal handling for graceful shutdown
 */
 
-#define _GNU_SOURCE
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>

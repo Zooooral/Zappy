@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <malloc.h>
+
 #include "server/dynamic_array.h"
 
 void *da_create_with_cappacity(size_t size)

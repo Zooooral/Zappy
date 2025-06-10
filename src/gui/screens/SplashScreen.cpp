@@ -118,4 +118,3 @@ bool SplashScreen::isFinished() const
 {
     return _finished;
 }
-// Updated: 2025-05-31 00:53:29

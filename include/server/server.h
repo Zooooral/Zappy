@@ -43,17 +43,7 @@ typedef enum resource_type_e {
     RESOURCE_COUNT
 } resource_type_t;
 
-typedef struct command_s {
-    char *data;
-    size_t length;
-    struct command_s *next;
-} command_t;
-
-typedef struct command_queue_s {
-    command_t *head;
-    command_t *tail;
-    size_t count;
-} command_queue_t;
+typedef struct action_s action_t;
 
 typedef struct client_s {
     int fd;
@@ -63,7 +53,10 @@ typedef struct client_s {
     size_t buffer_pos;
     bool is_authenticated;
     char *team_name;
-    command_queue_t cmd_queue;
+    action_t *action_queue_head;
+    action_t *action_queue_tail;
+    size_t action_queue_count;
+    struct player_s *player;
 } client_t;
 
 typedef struct tile_s {
@@ -84,6 +77,7 @@ typedef struct player_s {
     double last_action_time;
     bool is_elevating;
     double elevation_start_time;
+    client_t *client;
 } player_t;
 
 typedef struct map_s {
@@ -143,15 +137,16 @@ int process_argument(const char **argv, int *i, int argc,
 game_state_t *game_state_create(const server_config_t *config);
 void game_state_destroy(game_state_t *game);
 void game_state_update(game_state_t *game, double delta_time);
+void add_player_to_game(game_state_t *game, player_t *player);
 map_t *map_create(int width, int height);
 int allocate_map_tiles(map_t *map);
 void send_response(client_t *client, const char *response);
 void map_destroy(map_t *map);
-void map_place_resources(map_t *map);
 tile_t *map_get_tile(const map_t *map, int x, int y);
-player_t *player_create(int id, int x, int y, const char *team_name);
+player_t *player_create(client_t *, int x, int y, const char *team_name);
 void player_destroy(player_t *player);
 void player_move(player_t *player, map_t *map);
+player_t *player_find_by_id(server_t *server, int id);
 void player_set_position(player_t *player, map_t *map, int x, int y);
 seeder_state_t *seeder_create(map_t *map);
 void seeder_destroy(seeder_state_t *seeder);
@@ -160,12 +155,7 @@ double get_current_time(void);
 int client_add(server_t *server, int client_fd);
 void client_remove(server_t *server, size_t index);
 client_t *client_find_by_fd(server_t *server, int fd);
-void client_authenticate(client_t *client, const char *message);
-void command_queue_init(command_queue_t *queue);
-void command_queue_destroy(command_queue_t *queue);
-int command_queue_push(command_queue_t *queue, const char *data,
-    size_t length);
-command_t *command_queue_pop(command_queue_t *queue);
+void client_authenticate(server_t *server, client_t *client, const char *message);
 void protocol_handle_graphic_command(server_t *server, client_t *client,
     const char *cmd);
 void protocol_handle_ai_command(server_t *server, client_t *client,
@@ -173,8 +163,7 @@ void protocol_handle_ai_command(server_t *server, client_t *client,
 void protocol_send_map_size(server_t *server, client_t *client);
 void protocol_send_tile_content(server_t *server, client_t *client,
     int x, int y);
-void protocol_send_player_info(server_t *server, client_t *client,
-    const player_t *player);
+void protocol_send_player_info(client_t *client, const player_t *player);
 void network_handle_events(server_t *server, int ready_count);
 int signal_handler_init(void);
 void signal_handler_cleanup(int signal_fd);

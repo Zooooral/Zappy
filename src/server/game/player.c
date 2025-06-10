@@ -5,23 +5,23 @@
 ** Player management system
 */
 
-#define _GNU_SOURCE
-#include "server/server.h"
 #include <stdlib.h>
 #include <string.h>
 
-player_t *player_create(int id, int x, int y, const char *team_name)
+#include "server/server.h"
+
+player_t *player_create(client_t *client, int x, int y, const char *team_name)
 {
-    player_t *player = malloc(sizeof(player_t));
+    player_t *player = calloc(sizeof(player_t), 1);
 
     if (!player)
         return NULL;
-    memset(player, 0, sizeof(player_t));
-    player->id = id;
+    player->id = client->fd;
     player->x = x;
     player->y = y;
     player->orientation = 1;
-    player->level = 1;
+    player->level = 0;
+    player->client = client;
     player->team_name = strdup(team_name);
     if (!player->team_name) {
         free(player);
@@ -121,4 +121,15 @@ void player_move(player_t *player, map_t *map)
         return;
     calculate_movement_direction(player, &dx, &dy);
     player_set_position(player, map, player->x + dx, player->y + dy);
+}
+
+player_t *player_find_by_id(server_t *server, int id)
+{
+    if (!server || !server->game || !server->game->players)
+        return NULL;
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        if (server->game->players[i]->id == id)
+            return server->game->players[i];
+    }
+    return NULL;
 }

@@ -5,11 +5,14 @@
 ** Enhanced server main loop with time management
 */
 
+#include "server/resource.h"
 #include "server/server.h"
 #include "server/server_broadcast.h"
+#include "server/time.h"
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 static void print_server_teams(const server_t *server)
 {
@@ -58,7 +61,7 @@ static double calculate_delta_time(double *last_time)
 
 static int handle_poll_events(server_t *server)
 {
-    int ready = poll(server->poll_fds, server->poll_count, 16);
+    int ready = poll(server->poll_fds, server->poll_count, 0);
 
     if (ready == -1) {
         if (errno == EINTR)
@@ -74,12 +77,24 @@ static int handle_poll_events(server_t *server)
 static void update_game_and_broadcast(server_t *server, double delta_time,
     double *broadcast_timer)
 {
+    respawn_resources(server->game->map);
     if (server->game)
         game_state_update(server->game, delta_time);
+    process_actions(server);
     *broadcast_timer += delta_time;
     if (*broadcast_timer >= 0.1) {
         broadcast_seeder_updates(server);
         *broadcast_timer = 0.0;
+    }
+}
+
+static void wait_for_next_tick(server_t *server, double delta_time)
+{
+    double target_time = get_time_unit(server);
+    double sleep_time = target_time - delta_time;
+
+    if (sleep_time > 0.0) {
+        usleep((sleep_time * 1e6));
     }
 }
 
@@ -97,6 +112,7 @@ void server_run(server_t *server)
         if (handle_poll_events(server) == -1)
             break;
         update_game_and_broadcast(server, delta_time, &broadcast_timer);
+        wait_for_next_tick(server, delta_time);
     }
     printf("[SERVER] Server shutting down\n");
 }

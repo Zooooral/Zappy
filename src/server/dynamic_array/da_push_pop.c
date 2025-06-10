@@ -10,6 +10,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdbool.h>
+
 #include "server/dynamic_array.h"
 
 void *da_push(void *array, const void *data, size_t size)

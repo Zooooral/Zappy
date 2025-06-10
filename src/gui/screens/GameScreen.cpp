@@ -11,10 +11,11 @@
 #include "../core/CameraController.hpp"
 #include "../core/DebugSystem.hpp"
 #include "../core/GameStateManager.hpp"
-#include "../core/CharacterManager.hpp"
+#include "../entities/CharacterManager.hpp"
 #include "../core/SoundManager.hpp"
-#include "../core/NetworkManager.hpp"
+#include "../network/NetworkManager.hpp"
 #include "../core/ConfigManager.hpp"
+#include "../core/ChatSystem.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -34,6 +35,8 @@ GameScreen::GameScreen() {
     );
 
     _mapInitialized = false;
+    _updateTimer = 0.0f;
+    _nextPlayerId = 1;
 }
 
 GameScreen::~GameScreen() {
@@ -46,6 +49,8 @@ void GameScreen::onEnter() {
     _finished = false;
     _shouldReturn = false;
     _mapInitialized = false;
+    _updateTimer = 0.0f;
+    _nextPlayerId = 1;
     
     CharacterManager::getInstance().initialize();
     
@@ -82,10 +87,20 @@ void GameScreen::setupNetworkAndRequestData() {
 void GameScreen::requestInitialGameData() {
     NetworkManager& network = NetworkManager::getInstance();
     
+    std::cout << "[DEBUG] Requesting initial game data" << std::endl;
     network.sendCommand("msz");
     network.sendCommand("mct");
     network.sendCommand("tna");
-    network.sendCommand("pnw");
+}
+
+void GameScreen::requestPlayerUpdates() {
+    NetworkManager& network = NetworkManager::getInstance();
+    
+    for (int i = 1; i <= _nextPlayerId; i++) {
+        network.sendCommand("ppo #" + std::to_string(i));
+        network.sendCommand("plv #" + std::to_string(i));
+        network.sendCommand("pin #" + std::to_string(i));
+    }
 }
 
 void GameScreen::handleServerCommand(const std::string& command) {
@@ -93,9 +108,12 @@ void GameScreen::handleServerCommand(const std::string& command) {
     std::string cmd;
     iss >> cmd;
     
+    std::cout << "[DEBUG] Handling command: " << cmd << " (full: " << command << ")" << std::endl;
+    
     if (cmd == "msz") {
         int width, height;
         if (iss >> width >> height) {
+            std::cout << "[DEBUG] Map size: " << width << "x" << height << std::endl;
             GameWorld::getInstance().initialize(width, height);
             _mapInitialized = true;
         }
@@ -112,6 +130,12 @@ void GameScreen::handleServerCommand(const std::string& command) {
             resources.thystame = thystame;
             GameWorld::getInstance().updateTileResources(x + 1, y + 1, resources);
         }
+    } else if (cmd == "tna") {
+        std::string teamName;
+        if (iss >> teamName) {
+            std::cout << "[DEBUG] Team found: " << teamName << std::endl;
+            ChatSystem::getInstance().addMessage("System", "Team: " + teamName, BLUE);
+        }
     } else if (cmd == "pnw") {
         std::string idStr;
         int x, y, orientation, level;
@@ -119,7 +143,13 @@ void GameScreen::handleServerCommand(const std::string& command) {
         if (iss >> idStr >> x >> y >> orientation >> level >> team) {
             if (idStr.front() == '#') {
                 int id = std::stoi(idStr.substr(1));
+                std::cout << "[DEBUG] New player: ID=" << id << " pos=(" << x << "," << y << ") orient=" << orientation << " team=" << team << std::endl;
+                _nextPlayerId = std::max(_nextPlayerId, id + 1);
                 CharacterManager::getInstance().addCharacter(id, Vector3{(float)(x + 1), 1.0f, (float)(y + 1)}, team, level);
+                Character* character = CharacterManager::getInstance().getCharacter(id);
+                if (character) {
+                    character->setOrientation(orientation);
+                }
             }
         }
     } else if (cmd == "ppo") {
@@ -128,10 +158,13 @@ void GameScreen::handleServerCommand(const std::string& command) {
         if (iss >> idStr >> x >> y >> orientation) {
             if (idStr.front() == '#') {
                 int id = std::stoi(idStr.substr(1));
+                std::cout << "[DEBUG] Player position update: ID=" << id << " pos=(" << x << "," << y << ") orient=" << orientation << std::endl;
                 Character* character = CharacterManager::getInstance().getCharacter(id);
                 if (character) {
-                    character->setPosition(Vector3{(float)(x + 1), 1.0f, (float)(y + 1)});
+                    character->setTargetPosition(Vector3{(float)(x + 1), 1.0f, (float)(y + 1)});
                     character->setOrientation(orientation);
+                } else {
+                    std::cout << "[DEBUG] Character ID " << id << " not found for position update!" << std::endl;
                 }
             }
         }
@@ -167,6 +200,44 @@ void GameScreen::handleServerCommand(const std::string& command) {
                 }
             }
         }
+    } else if (cmd == "pbc") {
+        std::string idStr, message;
+        if (iss >> idStr) {
+            std::getline(iss, message);
+            if (idStr.front() == '#') {
+                ChatSystem::getInstance().addMessage("Player " + idStr, message, YELLOW);
+            }
+        }
+    } else if (cmd == "pex") {
+        std::string idStr;
+        if (iss >> idStr) {
+            if (idStr.front() == '#') {
+                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " was expelled", RED);
+            }
+        }
+    } else if (cmd == "pfk") {
+        std::string idStr;
+        if (iss >> idStr) {
+            if (idStr.front() == '#') {
+                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " laid an egg", GREEN);
+            }
+        }
+    } else if (cmd == "pdr") {
+        std::string idStr;
+        int resource;
+        if (iss >> idStr >> resource) {
+            if (idStr.front() == '#') {
+                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " dropped resource", ORANGE);
+            }
+        }
+    } else if (cmd == "pgt") {
+        std::string idStr;
+        int resource;
+        if (iss >> idStr >> resource) {
+            if (idStr.front() == '#') {
+                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " collected resource", LIME);
+            }
+        }
     } else if (cmd == "pic") {
         int x, y, level;
         if (iss >> x >> y >> level) {
@@ -189,6 +260,11 @@ void GameScreen::handleServerCommand(const std::string& command) {
         int x, y, result;
         if (iss >> x >> y >> result) {
             CharacterManager::getInstance().endAllElevations();
+            if (result == 1) {
+                ChatSystem::getInstance().addMessage("System", "Incantation succeeded!", GREEN);
+            } else {
+                ChatSystem::getInstance().addMessage("System", "Incantation failed!", RED);
+            }
         }
     } else if (cmd == "pdi") {
         std::string idStr;
@@ -196,6 +272,7 @@ void GameScreen::handleServerCommand(const std::string& command) {
             if (idStr.front() == '#') {
                 int id = std::stoi(idStr.substr(1));
                 CharacterManager::getInstance().removeCharacter(id);
+                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " died", RED);
             }
         }
     } else if (cmd == "seg") {
@@ -203,6 +280,31 @@ void GameScreen::handleServerCommand(const std::string& command) {
         if (iss >> teamName) {
             triggerGameEnd(teamName);
         }
+    } else if (cmd == "sgt") {
+        int timeUnit;
+        if (iss >> timeUnit) {
+            std::cout << "[DEBUG] Time unit received: " << timeUnit << std::endl;
+            CharacterManager::getInstance().setTimeUnit(timeUnit);
+        }
+    } else if (cmd == "sst") {
+        int timeUnit;
+        if (iss >> timeUnit) {
+            CharacterManager::getInstance().setTimeUnit(timeUnit);
+            ChatSystem::getInstance().addMessage("System", "Time unit changed to " + std::to_string(timeUnit), BLUE);
+        }
+    } else if (cmd == "smg") {
+        std::string message;
+        std::getline(iss, message);
+        ChatSystem::getInstance().addMessage("Server", message, PURPLE);
+    } else if (cmd == "suc") {
+        std::cout << "[DEBUG] Server sent unknown command response!" << std::endl;
+        ChatSystem::getInstance().addMessage("Error", "Unknown command sent to server", RED);
+    } else if (cmd == "sbp") {
+        std::cout << "[DEBUG] Server sent bad parameter response!" << std::endl;
+        ChatSystem::getInstance().addMessage("Error", "Bad parameter sent to server", RED);
+    } else {
+        std::cout << "[DEBUG] Unhandled command: " << cmd << " (full: " << command << ")" << std::endl;
+        ChatSystem::getInstance().addMessage("Debug", "Unhandled: " + command, GRAY);
     }
 }
 
@@ -218,6 +320,13 @@ void GameScreen::update(float dt) {
     CharacterManager::getInstance().update(dt);
     _backButton->update(dt);
     _inventoryUI->update(dt);
+    
+    _updateTimer += dt;
+    if (_updateTimer >= 2.0f && _mapInitialized) {
+        std::cout << "[DEBUG] Requesting player updates for " << _nextPlayerId << " players" << std::endl;
+        requestPlayerUpdates();
+        _updateTimer = 0.0f;
+    }
     
     if (IsKeyPressed(KEY_ESCAPE)) {
         if (_inventoryUI->isVisible()) {
@@ -314,4 +423,3 @@ void GameScreen::triggerGameEnd(const std::string& winningTeam) {
             GameStateManager::Transition::FADE);
     }
 }
-// Updated: 2025-05-31 00:53:46

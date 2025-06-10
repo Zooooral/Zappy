@@ -149,4 +149,3 @@ GameState* GameStateManager::getStateInstance(const std::string &name)
     }
     return nullptr;
 }
-// Updated: 2025-05-31 00:53:04

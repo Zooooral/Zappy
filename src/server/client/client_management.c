@@ -5,12 +5,15 @@
 ** Enhanced client management with command queuing
 */
 
-#define _GNU_SOURCE
-#include "server/server.h"
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+
+#include "server/server.h"
+#include "server/time.h"
+#include "server/broadcast.h"
+#include "server/protocol_graphic.h"
 
 static int initialize_client_buffer(client_t *client)
 {
@@ -33,7 +36,9 @@ static int setup_client_connection(client_t *client,
         close(client_fd);
         return -1;
     }
-    command_queue_init(&client->cmd_queue);
+    client->action_queue_head = NULL;
+    client->action_queue_tail = NULL;
+    client->action_queue_count = 0;
     return 0;
 }
 
@@ -69,7 +74,17 @@ static void cleanup_client_resources(client_t *client)
         free(client->buffer);
     if (client->team_name)
         free(client->team_name);
-    command_queue_destroy(&client->cmd_queue);
+    // Free all actions in the action queue
+    action_t *action = client->action_queue_head;
+    while (action) {
+        action_t *next = action->next;
+        free(action->command);
+        free(action);
+        action = next;
+    }
+    client->action_queue_head = NULL;
+    client->action_queue_tail = NULL;
+    client->action_queue_count = 0;
 }
 
 static void shift_clients_array(server_t *server, size_t index)
@@ -114,11 +129,36 @@ client_t *client_find_by_fd(server_t *server, int fd)
     return NULL;
 }
 
-void client_authenticate(client_t *client, const char *message)
+static void client_validate(server_t *server, client_t *client, const char *message)
+{
+    char response[128];
+    int pos[2] = {rand() % server->config.width, rand() % server->config.height};
+
+    client->player = NULL;
+    client->type = CLIENT_TYPE_AI;
+    client->team_name = strdup(message);
+    client->is_authenticated = true;
+    if (server->game->player_count < server->game->player_capacity) {
+        client->player = player_create(client, pos[0], pos[1], message);
+        if (client->player) {
+            player_set_position(client->player, server->game->map, pos[0], pos[1]);
+            add_player_to_game(server->game, client->player);
+            broadcast_message_to_guis(server, client, protocol_send_player_info);
+        }
+    }
+    snprintf(response, sizeof(response), "%ld\n",
+        server->config.max_clients_per_team);
+    send_response(client, response);
+    snprintf(response, sizeof(response), "%ld %ld\n", server->config.width,
+        server->config.height);
+    send_response(client, response);
+}
+
+void client_authenticate(server_t *server, client_t *client, const char *message)
 {
     ssize_t sent;
 
-    if (!client || !message)
+    if (!server || !client || !message)
         return;
     if (strcmp(message, "GRAPHIC") == 0) {
         client->type = CLIENT_TYPE_GRAPHIC;
@@ -126,8 +166,7 @@ void client_authenticate(client_t *client, const char *message)
         sent = send(client->fd, "msz 10 10\n", 10, 0);
         (void)sent;
     } else {
-        client->type = CLIENT_TYPE_AI;
-        client->team_name = strdup(message);
-        client->is_authenticated = true;
+        printf("AI client authenticated with team: %s\n", message);
+        client_validate(server, client, message);
     }
 }

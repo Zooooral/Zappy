@@ -33,11 +33,11 @@ static const uint32_t ressource_density_percent[RESSOURCE_COUNT] = {
     [RESSOURCE_THYSTAME] = 5,
 };
 
-static inline uint32_t ressource_quantity(server_state_t *state,
+static inline uint32_t ressource_quantity(map_t *map,
     ressource_t ressource)
 {
     assert(ressource < RESSOURCE_COUNT);
-    return (state->conf.width * state->conf.height *
+    return (map->width * map->height *
         ressource_density_percent[ressource]) / 100;
 }
 

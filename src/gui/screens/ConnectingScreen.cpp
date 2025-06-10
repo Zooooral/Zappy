@@ -9,11 +9,12 @@
 #include "../core/FontManager.hpp"
 #include "../core/SoundManager.hpp"
 #include "../core/GameStateManager.hpp"
-#include "../core/NetworkManager.hpp"
+#include "../network/NetworkManager.hpp"
 #include "../core/ConfigManager.hpp"
 
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 ConnectingScreen::ConnectingScreen()
 {
@@ -426,4 +427,3 @@ bool ConnectingScreen::hasShaderBackground() const
 {
     return true;
 }
-// Updated: 2025-05-31 00:53:25

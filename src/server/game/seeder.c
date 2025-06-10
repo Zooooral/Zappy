@@ -5,9 +5,10 @@
 ** Seeder functionality for GUI testing
 */
 
-#include "server/server.h"
 #include <stdlib.h>
 #include <string.h>
+
+#include "server/server.h"
 
 static const int circle_moves[][2] = {
     {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}
@@ -22,7 +23,7 @@ seeder_state_t *seeder_create(map_t *map)
     if (!seeder)
         return NULL;
     memset(seeder, 0, sizeof(seeder_state_t));
-    seeder->player = player_create(1, 0, 0, "Seeders");
+    seeder->player = player_create(NULL, 0, 0, "Seeders");
     if (!seeder->player) {
         free(seeder);
         return NULL;

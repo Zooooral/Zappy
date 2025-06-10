@@ -5,10 +5,12 @@
 ** Game state management with seeding support
 */
 
-#include "server/server.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+
+#include "server/resource.h"
+#include "server/server.h"
 
 double get_current_time(void)
 {
@@ -34,7 +36,6 @@ static int setup_game_map(game_state_t *game, const server_config_t *config)
     game->map = map_create(config->width, config->height);
     if (!game->map)
         return -1;
-    map_place_resources(game->map);
     return 0;
 }
 
@@ -100,7 +101,17 @@ void game_state_update(game_state_t *game, double delta_time)
 {
     if (!game)
         return;
+    respawn_resources(game->map);
     game->current_time += delta_time;
     if (game->seeder)
         seeder_update(game->seeder, game->map, game->current_time);
+}
+
+void add_player_to_game(game_state_t *game, player_t *player)
+{
+    if (!game || !player)
+        return;
+    if (game->players != NULL) {
+        game->players[game->player_count++] = player;
+    }
 }

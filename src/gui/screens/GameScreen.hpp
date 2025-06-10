@@ -32,11 +32,14 @@ private:
     bool _finished = false;
     bool _shouldReturn = false;
     bool _mapInitialized = false;
+    float _updateTimer = 0.0f;
+    int _nextPlayerId = 1;
     std::unique_ptr<Button> _backButton;
     std::unique_ptr<InventoryUI> _inventoryUI;
     
     void setupNetworkAndRequestData();
     void requestInitialGameData();
+    void requestPlayerUpdates();
     void handleServerCommand(const std::string& command);
 };
 
