@@ -10,18 +10,18 @@
 
 #include "server/server.h"
 
-player_t *player_create(int id, int x, int y, const char *team_name)
+player_t *player_create(client_t *client, int x, int y, const char *team_name)
 {
-    player_t *player = malloc(sizeof(player_t));
+    player_t *player = calloc(sizeof(player_t), 1);
 
     if (!player)
         return NULL;
-    memset(player, 0, sizeof(player_t));
-    player->id = id;
+    player->id = client->fd;
     player->x = x;
     player->y = y;
     player->orientation = 1;
-    player->level = 1;
+    player->level = 0;
+    player->client = client;
     player->team_name = strdup(team_name);
     if (!player->team_name) {
         free(player);

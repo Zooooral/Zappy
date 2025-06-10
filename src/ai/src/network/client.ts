@@ -245,7 +245,7 @@ export class NetworkClient extends EventEmitter {
       const timeout = setTimeout(() => {
         logger.error(`[TIMEOUT]: ${command} (no response after 5s)`);
         reject(new Error(`Command timeout: ${command}`));
-      }, 5000);
+      }, 15000);
 
       this.commandQueue.push({
         command,
