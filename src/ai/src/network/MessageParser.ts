@@ -111,10 +111,10 @@ export class MessageParser {
             return { tiles: [[]] };
         }
 
-        if (response.startsWith("[") && response.includes(",")) {
-            if (response.includes("player") || response.includes("food") || response.includes("linemate")) {
+        if (response.startsWith("[") && response.endsWith("]")) {
+            if (this.isLookResponse(response)) {
                 return this.parseLookResponse(response);
-            } else {
+            } else if (this.isInventoryResponse(response)) {
                 return this.parseInventoryResponse(response);
             }
         }
@@ -127,15 +127,31 @@ export class MessageParser {
         return response;
     }
 
+    private isLookResponse(response: string): boolean {
+        return response.includes("player") || response.includes("food") || response.includes("linemate") || response.includes("deraumere") || response.includes("sibur") || response.includes("mendiane") || response.includes("phiras") || response.includes("thystame") || (!response.includes(" ") && response.length > 2) || response.includes(",");
+    }
+
+    private isInventoryResponse(response: string): boolean {
+        const content = response.slice(1, -1);
+        return content.includes("food ") || content.includes("linemate ") || content.includes("deraumere ") || content.includes("sibur ") || content.includes("mendiane ") || content.includes("phiras ") || content.includes("thystame ");
+    }
+
     private parseLookResponse(response: string): LookResult {
         const content = response.slice(1, -1);
-        const tiles = content.split(",").map((tile) =>
-            tile
-                .trim()
-                .split(" ")
-                .filter((item) => item.length > 0)
-        );
 
+        if (!content || content.trim() === "") {
+            return { tiles: [[]] };
+        }
+
+        const tiles = content.split(",").map((tile) => {
+            const trimmed = tile.trim();
+            if (!trimmed) {
+                return [];
+            }
+            return trimmed.split(" ").filter((item) => item.length > 0);
+        });
+
+        logger.debug(`Parsed look result: ${JSON.stringify(tiles)}`);
         return { tiles };
     }
 
