@@ -20,7 +20,7 @@ player_t *player_create(client_t *client, int x, int y, const char *team_name)
     player->x = x;
     player->y = y;
     player->orientation = 1;
-    player->level = 0;
+    player->level = 1;
     player->client = client;
     player->team_name = strdup(team_name);
     if (!player->team_name) {
