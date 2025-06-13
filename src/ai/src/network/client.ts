@@ -9,6 +9,14 @@ import {
   ElevationResult,
 } from "./types";
 
+interface PendingCommand {
+  command: string;
+  resolve: (value: any) => void;
+  reject: (error: Error) => void;
+  timeout: NodeJS.Timeout;
+  timestamp: number;
+}
+
 export class NetworkClient extends EventEmitter {
   private socket: net.Socket;
   private host: string;
@@ -16,12 +24,11 @@ export class NetworkClient extends EventEmitter {
   private connected: boolean = false;
   private authenticated: boolean = false;
   private messageBuffer: string = "";
-  private commandQueue: Array<{
-    command: string;
-    resolve: (value: any) => void;
-    reject: (error: Error) => void;
-  }> = [];
-  private waitingForResponse: boolean = false;
+
+  private pendingCommands: PendingCommand[] = [];
+  private maxPendingCommands: number = 10;
+  private commandIdCounter: number = 0;
+  private waitingForElevationResult: boolean = false;
 
   public gameState: GameState = {
     worldWidth: 0,
@@ -37,6 +44,8 @@ export class NetworkClient extends EventEmitter {
     this.port = port;
     this.socket = new net.Socket();
     this.setupSocketHandlers();
+    
+    setInterval(() => this.cleanupExpiredCommands(), 1000);
   }
 
   private setupSocketHandlers(): void {
@@ -54,12 +63,14 @@ export class NetworkClient extends EventEmitter {
     this.socket.on("close", () => {
       this.connected = false;
       this.authenticated = false;
+      this.rejectAllPendingCommands("Connection closed");
       logger.info("Disconnected from server");
       this.emit("disconnected");
     });
 
     this.socket.on("error", (error: Error) => {
       logger.error("Socket error:", error);
+      this.rejectAllPendingCommands(`Socket error: ${error.message}`);
       this.emit("error", error);
     });
   }
@@ -76,8 +87,7 @@ export class NetworkClient extends EventEmitter {
   }
 
   private handleMessage(message: string): void {
-    logger.info(`RAW: ${message}`);
-    logger.debug("Received message:", message);
+    logger.debug(`[RAW RECEIVED]: ${message}`);
 
     if (!this.authenticated) {
       this.handleHandshakeMessage(message);
@@ -85,44 +95,40 @@ export class NetworkClient extends EventEmitter {
     }
 
     if (message.startsWith("message ")) {
-      const match = message.match(/^message (\d+),\s*(.*)$/);
-      if (match) {
-        const broadcast: BroadcastMessage = {
-          direction: parseInt(match[1]),
-          message: match[2],
-        };
-        this.emit("broadcast", broadcast);
+      this.handleBroadcastMessage(message);
+      return;
+    }
+
+    if (message.startsWith("eject: ")) {
+      this.handleEjectionMessage(message);
+      return;
+    }
+
+    if (message === "Elevation underway") {
+      this.waitingForElevationResult = true;
+      logger.info("Elevation started, waiting for result...");
+      return;
+    }
+
+    if (this.waitingForElevationResult && message.startsWith("Current level:")) {
+      this.waitingForElevationResult = false;
+      const levelMatch = message.match(/Current level: (\d+)/);
+      if (levelMatch) {
+        const newLevel = parseInt(levelMatch[1]);
+        this.gameState.playerLevel = newLevel;
+        logger.info(`Level up! New level: ${newLevel}`);
+        this.resolveNextCommand({ success: true, newLevel });
         return;
       }
     }
 
-    if (message.startsWith("eject: ")) {
-      const direction = parseInt(message.split(": ")[1]);
-      this.emit("ejected", direction);
-      return;
-    }
-
     if (message === "dead") {
       this.emit("dead");
+      this.resolveNextCommand("dead");
       return;
     }
 
-    if (this.waitingForResponse && this.commandQueue.length > 0) {
-      const currentCommand = this.commandQueue.shift()!;
-      this.waitingForResponse = false;
-
-      try {
-        const result = this.parseCommandResponse(
-          currentCommand.command,
-          message
-        );
-        currentCommand.resolve(result);
-      } catch (error) {
-        currentCommand.reject(error as Error);
-      }
-
-      this.processNextCommand();
-    }
+    this.handleCommandResponse(message);
   }
 
   private handleHandshakeMessage(message: string): void {
@@ -143,37 +149,64 @@ export class NetworkClient extends EventEmitter {
     }
   }
 
-  private parseCommandResponse(command: string, response: string): any {
-    const cmd = command.toLowerCase();
+  private handleBroadcastMessage(message: string): void {
+    const match = message.match(/^message (\d+),\s*(.*)$/);
+    if (match) {
+      const broadcast: BroadcastMessage = {
+        direction: parseInt(match[1]),
+        message: match[2],
+      };
+      logger.info(`[BROADCAST] Direction ${broadcast.direction}: ${broadcast.message}`);
+      this.emit("broadcast", broadcast);
+    }
+  }
 
+  private handleEjectionMessage(message: string): void {
+    const match = message.match(/^eject: (\d+)$/);
+    if (match) {
+      const direction = parseInt(match[1]);
+      logger.warn(`[EJECTED] From direction: ${direction}`);
+      this.emit("ejected", direction);
+    }
+  }
+
+  private handleCommandResponse(message: string): void {
+    if (this.pendingCommands.length === 0) {
+      logger.warn(`Received response but no pending commands: ${message}`);
+      return;
+    }
+
+    try {
+      const result = this.parseCommandResponse(message);
+      this.resolveNextCommand(result);
+    } catch (error) {
+      this.rejectNextCommand(error as Error);
+    }
+  }
+
+  private parseCommandResponse(response: string): any {
     if (response === "ko") {
-      throw new Error(`Command failed: ${command}`);
+      throw new Error("Command failed (ko)");
     }
 
-    if (cmd === "look") {
-      return this.parseLookResponse(response);
+    if (response === "ok") {
+      return true;
     }
 
-    if (cmd === "inventory") {
-      return this.parseInventoryResponse(response);
+    if (response.startsWith("[") && response.includes(",")) {
+      if (response.includes("player") || response.includes("food") || response.includes("linemate")) {
+        return this.parseLookResponse(response);
+      } else {
+        return this.parseInventoryResponse(response);
+      }
     }
 
-    if (cmd === "connect_nbr") {
+    if (/^\d+$/.test(response)) {
       return parseInt(response);
     }
 
-    if (cmd.startsWith("incantation")) {
-      if (response.includes("Elevation underway")) {
-        const levelMatch = response.match(/Current level: (\d+)/);
-        if (levelMatch) {
-          this.gameState.playerLevel = parseInt(levelMatch[1]);
-          return { success: true, newLevel: this.gameState.playerLevel };
-        }
-      }
-      return { success: false };
-    }
-
-    return response === "ok";
+    logger.warn(`Unknown response format: ${response}`);
+    return response;
   }
 
   private parseLookResponse(response: string): LookResult {
@@ -199,72 +232,105 @@ export class NetworkClient extends EventEmitter {
       thystame: 0,
     };
 
-    const content = response.slice(1, -1);
-    const items = content.split(",").map((item) => item.trim());
+    const content = response.replace(/^\[|\]$/g, '').trim();
+    if (!content) return inventory;
 
+    const items = content.split(',');
     for (const item of items) {
-      const parts = item.split(" ").filter((p) => p.length > 0);
-      if (parts.length >= 2) {
-        const itemName = parts[0] as keyof InventoryItem;
-        const quantity = parseInt(parts[1]);
-        if (itemName in inventory) {
-          inventory[itemName] = quantity;
-        }
+      const cleaned = item.trim();
+      if (!cleaned) continue;
+      const lastSpaceIndex = cleaned.lastIndexOf(' ');
+      if (lastSpaceIndex === -1) continue;
+      const itemName = cleaned.substring(0, lastSpaceIndex).trim();
+      const quantityStr = cleaned.substring(lastSpaceIndex + 1).trim();
+      const quantity = parseInt(quantityStr);
+      if (isNaN(quantity)) continue;
+      if (itemName in inventory) {
+        (inventory as any)[itemName] = quantity;
       }
     }
 
     return inventory;
   }
 
-  private processNextCommand(): void {
-    if (this.commandQueue.length > 0 && !this.waitingForResponse) {
-      this.waitingForResponse = true;
-      const command = this.commandQueue[0].command;
-      const dataToSend = command + "\n";
-      logger.info(`[SENDING RAW]: "${dataToSend.replace('\n', '\\n')}"`);
-      this.socket.write(dataToSend);
-      logger.info(`[SENT]: ${dataToSend.length} bytes`);
+  private resolveNextCommand(result: any): void {
+    if (this.pendingCommands.length > 0) {
+      const command = this.pendingCommands.shift()!;
+      clearTimeout(command.timeout);
+      const duration = Date.now() - command.timestamp;
+      logger.info(`[COMMAND COMPLETED]: ${command.command} -> resolved in ${duration}ms`);
+      command.resolve(result);
     }
   }
 
-  private sendCommand(command: string): Promise<any> {
+  private rejectNextCommand(error: Error): void {
+    if (this.pendingCommands.length > 0) {
+      const command = this.pendingCommands.shift()!;
+      clearTimeout(command.timeout);
+      logger.error(`[COMMAND FAILED]: ${command.command} -> ${error.message}`);
+      command.reject(error);
+    }
+  }
+
+  private rejectAllPendingCommands(reason: string): void {
+    while (this.pendingCommands.length > 0) {
+      const command = this.pendingCommands.shift()!;
+      clearTimeout(command.timeout);
+      command.reject(new Error(reason));
+    }
+  }
+
+  private cleanupExpiredCommands(): void {
+    const now = Date.now();
+    const expired = this.pendingCommands.filter(cmd => now - cmd.timestamp > 30000);
+    for (const cmd of expired) {
+      const index = this.pendingCommands.indexOf(cmd);
+      if (index !== -1) {
+        this.pendingCommands.splice(index, 1);
+        clearTimeout(cmd.timeout);
+        cmd.reject(new Error("Command expired"));
+        logger.warn(`[EXPIRED]: ${cmd.command}`);
+      }
+    }
+  }
+
+  private async sendCommand(command: string, timeoutMs: number = 15000): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.connected || !this.authenticated) {
         reject(new Error("Not connected or authenticated"));
         return;
       }
 
-      if (this.commandQueue.length >= 10) {
-        reject(new Error("Command queue is full (max 10 commands)"));
-        return;
-      }
-
-      const startTime = Date.now();
-      logger.info(`[SENDING]: ${command}`);
-
-      const timeout = setTimeout(() => {
-        logger.error(`[TIMEOUT]: ${command} (no response after 5s)`);
-        reject(new Error(`Command timeout: ${command}`));
-      }, 15000);
-
-      this.commandQueue.push({
-        command,
-        resolve: (value) => {
-          clearTimeout(timeout);
-          const duration = Date.now() - startTime;
-          logger.info(`[RESPONSE]: ${command} -> got response in ${duration}ms`);
-          resolve(value);
-        },
-        reject: (error) => {
-          clearTimeout(timeout);
-          logger.error(`[ERROR]: ${command} -> ${error.message}`);
-          reject(error);
+      const trySend = () => {
+        if (this.pendingCommands.length >= this.maxPendingCommands) {
+          setTimeout(trySend, 10);
+          return;
         }
-      });
 
-      if (!this.waitingForResponse) {
-        this.processNextCommand();
-      }
+        const timeout = setTimeout(() => {
+          const index = this.pendingCommands.findIndex(cmd => cmd.command === command);
+          if (index !== -1) {
+            this.pendingCommands.splice(index, 1);
+            reject(new Error(`Command timeout: ${command}`));
+          }
+        }, timeoutMs);
+
+        const pendingCommand: PendingCommand = {
+          command,
+          resolve,
+          reject,
+          timeout,
+          timestamp: Date.now()
+        };
+
+        this.pendingCommands.push(pendingCommand);
+
+        const dataToSend = command + "\n";
+        this.socket.write(dataToSend);
+        logger.info(`[SENT]: ${command} (pending: ${this.pendingCommands.length}/${this.maxPendingCommands})`);
+      };
+
+      trySend();
     });
   }
 
@@ -401,5 +467,15 @@ export class NetworkClient extends EventEmitter {
 
   public getGameState(): GameState {
     return { ...this.gameState };
+  }
+
+  public getNetworkStats(): any {
+    return {
+      connected: this.connected,
+      authenticated: this.authenticated,
+      pendingCommands: this.pendingCommands.length,
+      maxPendingCommands: this.maxPendingCommands,
+      oldestPendingCommand: this.pendingCommands.length > 0 ? Date.now() - this.pendingCommands[0].timestamp : 0
+    };
   }
 }
