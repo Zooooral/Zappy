@@ -23,6 +23,16 @@ typedef enum {
     RESSOURCE_COUNT,
 } ressource_t;
 
+static const char *ressource_string_table[] = {
+    [RESSOURCE_FOOD] = "food",
+    [RESSOURCE_LINEMATE] = "linemate",
+    [RESSOURCE_DERAUMERE] = "deraumere",
+    [RESSOURCE_SIBUR] = "sibur",
+    [RESSOURCE_MENDIANE] = "mendiane",
+    [RESSOURCE_PHIRAS] = "phiras",
+    [RESSOURCE_THYSTAME] = "thystame",
+};
+
 static const uint32_t ressource_density_percent[RESSOURCE_COUNT] = {
     [RESSOURCE_FOOD] = 50,
     [RESSOURCE_LINEMATE] = 30,

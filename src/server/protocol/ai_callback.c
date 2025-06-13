@@ -5,6 +5,7 @@
 ** ai callbacks (after the ticks passed)
 */
 
+#include "server/dynamic_array.h"
 #include "server/server.h"
 #include "server/protocol_ai.h"
 #include "server/server_updates.h"
@@ -79,7 +80,7 @@ static inline void ai_action_look(server_t *server, client_t *client)
     result = vision_look(client, server->game->map);
     if (result) {
         send_response(client, result);
-        free(result);
+        da_destroy(result);
     } else {
         send_response(client, "[]\n");
     }
