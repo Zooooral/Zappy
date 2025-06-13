@@ -122,11 +122,11 @@ typedef struct server_s {
     client_t *clients;
     size_t client_count;
     size_t client_capacity;
-    size_t tick_count;
     struct pollfd *poll_fds;
     size_t poll_count;
     bool is_running;
     game_state_t *game;
+    size_t tick_count;
 } server_t;
 
 int server_create(server_t *server, const server_config_t *config);
