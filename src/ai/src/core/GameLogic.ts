@@ -34,7 +34,6 @@ export class GameLogic {
 
   private lastInventory?: InventoryItem;
   private lastVision?: LookResult;
-  private commandCooldown: boolean = false;
 
   private movementHistory: MovementHistory = {
     moves: [],
@@ -51,10 +50,6 @@ export class GameLogic {
   }
 
   public async tick(): Promise<void> {
-    if (this.commandCooldown) {
-      return;
-    }
-
     const now = Date.now();
     this.timeInState += now - this.lastTick;
     this.lastTick = now;
@@ -109,7 +104,6 @@ export class GameLogic {
     if (food < 5) {
       this.currentState = AIState.SURVIVAL;
       logger.warn(`Critical survival mode - food: ${food}`);
-    // TODO: Intégrer logique de reproduction et élévation
     } else {
       // Exploration par défaut
       this.currentState = AIState.EXPLORATION;
@@ -135,8 +129,6 @@ export class GameLogic {
   }
 
   private async executeStrategy(context: GameContext): Promise<void> {
-    this.commandCooldown = true;
-
     try {
       switch (context.currentState) {
         case AIState.SURVIVAL:
@@ -153,8 +145,8 @@ export class GameLogic {
           await this.executeExplorationStrategy(context);
           break;
       }
-    } finally {
-      this.commandCooldown = false;
+    } catch (error) {
+      logger.error("Error in strategy execution:", error);
     }
   }
 
@@ -197,8 +189,8 @@ export class GameLogic {
     try {
       await this.client.broadcast(`ELEVATION_${context.gameState.playerLevel}_READY`);
       if (this.hasElevationResources(context)) {
-        const success = await this.client.incantation();
-        if (success) {
+        const result = await this.client.incantation();
+        if (result.success) {
           logger.info("Incantation started successfully!");
           this.elevationAttempts++;
         } else {
@@ -216,6 +208,7 @@ export class GameLogic {
   }
 
   private async executeExplorationStrategy(context: GameContext): Promise<void> {
+    const actionsToTake = [];
     if (await this.collectFoodOnCurrentTile(context)) {
       return;
     }
@@ -270,19 +263,18 @@ export class GameLogic {
     const currentDirection = this.lastDirection;
     const turnDirection = this.calculateTurnDirection(currentDirection, targetDirection);
 
-    if (turnDirection === "right") {
-      logger.debug("Turning right towards food");
-      await this.client.turnRight();
-      this.lastDirection = (this.lastDirection + 1) % 4;
-      this.addToMovementHistory("turnRight");
-      return true;
-    } else if (turnDirection === "left") {
-      logger.debug("Turning left towards food");
-      await this.client.turnLeft();
-      this.lastDirection = (this.lastDirection + 3) % 4;
-      this.addToMovementHistory("turnLeft");
-      return true;
-    } else {
+    try {
+      if (turnDirection === "right") {
+        logger.debug("Turning right towards food");
+        await this.client.turnRight();
+        this.lastDirection = (this.lastDirection + 1) % 4;
+        this.addToMovementHistory("turnRight");
+      } else if (turnDirection === "left") {
+        logger.debug("Turning left towards food");
+        await this.client.turnLeft();
+        this.lastDirection = (this.lastDirection + 3) % 4;
+        this.addToMovementHistory("turnLeft");
+      }
       logger.debug("Moving forward towards food");
       const moved = await this.client.moveForward();
       if (moved) {
@@ -293,6 +285,9 @@ export class GameLogic {
         this.stuckCounter++;
       }
       return true;
+    } catch (error) {
+      logger.error("Error while moving towards food:", error);
+      return false;
     }
   }
 
@@ -413,37 +408,41 @@ export class GameLogic {
       return true;
     }
 
-    if (Math.random() < 0.7) {
-      logger.debug("Exploring: moving forward");
-      const moved = await this.client.moveForward();
-      if (moved) {
-        this.updateEstimatedPosition();
-        this.addToMovementHistory("moveForward");
-        this.stuckCounter = 0;
+    try {
+      if (Math.random() < 0.7) {
+        logger.debug("Exploring: moving forward");
+        const moved = await this.client.moveForward();
+        if (moved) {
+          this.updateEstimatedPosition();
+          this.addToMovementHistory("moveForward");
+          this.stuckCounter = 0;
+        } else {
+          this.stuckCounter++;
+          if (Math.random() < 0.5) {
+            await this.client.turnRight();
+            this.lastDirection = (this.lastDirection + 1) % 4;
+            this.addToMovementHistory("turnRight");
+          } else {
+            await this.client.turnLeft();
+            this.lastDirection = (this.lastDirection + 3) % 4;
+            this.addToMovementHistory("turnLeft");
+          }
+        }
       } else {
-        this.stuckCounter++;
         if (Math.random() < 0.5) {
+          logger.debug("Exploring: turning right");
           await this.client.turnRight();
           this.lastDirection = (this.lastDirection + 1) % 4;
           this.addToMovementHistory("turnRight");
         } else {
+          logger.debug("Exploring: turning left");
           await this.client.turnLeft();
           this.lastDirection = (this.lastDirection + 3) % 4;
           this.addToMovementHistory("turnLeft");
         }
       }
-    } else {
-      if (Math.random() < 0.5) {
-        logger.debug("Exploring: turning right");
-        await this.client.turnRight();
-        this.lastDirection = (this.lastDirection + 1) % 4;
-        this.addToMovementHistory("turnRight");
-      } else {
-        logger.debug("Exploring: turning left");
-        await this.client.turnLeft();
-        this.lastDirection = (this.lastDirection + 3) % 4;
-        this.addToMovementHistory("turnLeft");
-      }
+    } catch (error) {
+      logger.error("Error during exploration:", error);
     }
 
     return true;
@@ -470,24 +469,28 @@ export class GameLogic {
     const actions = ["moveForward", "turnRight", "turnLeft"];
     const randomAction = actions[Math.floor(Math.random() * actions.length)];
 
-    switch (randomAction) {
-      case "moveForward":
-        const moved = await this.client.moveForward();
-        if (moved) {
-          this.updateEstimatedPosition();
-        }
-        break;
-      case "turnRight":
-        await this.client.turnRight();
-        this.lastDirection = (this.lastDirection + 1) % 4;
-        break;
-      case "turnLeft":
-        await this.client.turnLeft();
-        this.lastDirection = (this.lastDirection + 3) % 4;
-        break;
-    }
+    try {
+      switch (randomAction) {
+        case "moveForward":
+          const moved = await this.client.moveForward();
+          if (moved) {
+            this.updateEstimatedPosition();
+          }
+          break;
+        case "turnRight":
+          await this.client.turnRight();
+          this.lastDirection = (this.lastDirection + 1) % 4;
+          break;
+        case "turnLeft":
+          await this.client.turnLeft();
+          this.lastDirection = (this.lastDirection + 3) % 4;
+          break;
+      }
 
-    this.addToMovementHistory(randomAction);
+      this.addToMovementHistory(randomAction);
+    } catch (error) {
+      logger.error("Error while breaking out of loop:", error);
+    }
   }
 
   private addToMovementHistory(move: string): void {
@@ -520,7 +523,6 @@ export class GameLogic {
   }
 
   public handleBroadcast(message: BroadcastMessage): void {
-    // TODO: recuperation de message broadcast
     logger.debug(
       `Received broadcast from direction ${message.direction}: ${message.message}`
     );
@@ -528,7 +530,6 @@ export class GameLogic {
 
   public handleEjection(direction: number): void {
     logger.warn(`Handling ejection from direction ${direction}`);
-    // Reset movement history and force exploration
     this.movementHistory.moves = [];
     this.stuckCounter = 0;
     this.currentState = AIState.EXPLORATION;
