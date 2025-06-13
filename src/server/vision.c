@@ -30,7 +30,7 @@ static char *print_tile(tile_t *tile) {
         }
     }
     DA_PUSH(str, *"");
-    return tile;
+    return str;
 }
 
 char *vision_look(client_t *client, map_t *map)
