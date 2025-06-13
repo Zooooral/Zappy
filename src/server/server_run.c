@@ -77,7 +77,8 @@ static int handle_poll_events(server_t *server)
 static void update_game_and_broadcast(server_t *server, double delta_time,
     double *broadcast_timer)
 {
-    respawn_resources(server->game->map);
+    if (server->tick_count % 20 == 0)
+        respawn_resources(server->game->map);
     if (server->game)
         game_state_update(server->game, delta_time);
     process_actions(server);
@@ -96,6 +97,7 @@ static void wait_for_next_tick(server_t *server, double delta_time)
     if (sleep_time > 0.0) {
         usleep((sleep_time * 1e6));
     }
+    server->tick_count++;
 }
 
 void server_run(server_t *server)
