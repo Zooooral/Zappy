@@ -5,13 +5,15 @@
 ** TileInteraction
 */
 
+#include <raylib.h>
+#include <raymath.h>
+#include <cfloat>
+
 #include "TileInteraction.hpp"
 #include "GameWorld.hpp"
 #include "CameraController.hpp"
 #include "DebugSystem.hpp"
 #include "../entities/CharacterManager.hpp"
-#include <raymath.h>
-#include <cfloat>
 
 TileInteraction& TileInteraction::getInstance() {
     static TileInteraction instance;
@@ -74,9 +76,9 @@ void TileInteraction::clearSelection() {
 
 void TileInteraction::checkTileClick(GameWorld* world) {
     if (!IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) return;
-    
+
     CameraController& cam = CameraController::getInstance();
-    
+
     if (cam.is3DMode()) {
         CharacterManager& charMgr = CharacterManager::getInstance();
         Character* clickedChar = charMgr.getHoveredCharacter(cam.getCamera3D());
@@ -84,7 +86,7 @@ void TileInteraction::checkTileClick(GameWorld* world) {
             return;
         }
     }
-    
+
     if (cam.is3DMode()) {
         Ray ray = getMouseRay(cam.getCamera3D());
         float closestDistance = FLT_MAX;

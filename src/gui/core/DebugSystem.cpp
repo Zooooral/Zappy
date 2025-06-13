@@ -5,15 +5,16 @@
 ** DebugSystem
 */
 
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
+
 #include "DebugSystem.hpp"
 #include "GameWorld.hpp"
 #include "CameraController.hpp"
 #include "TileInteraction.hpp"
 #include "ChatSystem.hpp"
 #include "FontManager.hpp"
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
 
 DebugSystem& DebugSystem::getInstance() {
     static DebugSystem instance;

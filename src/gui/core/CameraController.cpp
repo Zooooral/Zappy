@@ -5,12 +5,14 @@
 ** CameraController
 */
 
-#include "CameraController.hpp"
-#include "GameWorld.hpp"
-#include "ConfigManager.hpp"
+#include <raylib.h>
 #include <raymath.h>
 #include <algorithm>
 #include <cmath>
+
+#include "CameraController.hpp"
+#include "GameWorld.hpp"
+#include "ConfigManager.hpp"
 
 CameraController& CameraController::getInstance() {
     static CameraController instance;

@@ -32,9 +32,9 @@ void PropManager::initialize() {
 
 void PropManager::cleanup() {
     if (_cleaned_up) return;
-    
+
     _cleaned_up = true;
-    
+
     try {
         for (auto& resource : _propModels) {
             if (IsWindowReady() && resource.model.meshCount > 0) {
@@ -51,12 +51,12 @@ void PropManager::cleanup() {
 
 void PropManager::generatePropsForTile(std::vector<Prop>& props) {
     if (_propModels.empty() || _cleaned_up) return;
-    
+
     int propCount = _propCountDist(_rng);
     props.clear();
-    
+
     std::vector<std::string> usedProps;
-    
+
     for (int i = 0; i < propCount; i++) {
         std::vector<PropModelResource*> availableProps;
         for (auto& propModel : _propModels) {
@@ -64,32 +64,32 @@ void PropManager::generatePropsForTile(std::vector<Prop>& props) {
                 availableProps.push_back(&propModel);
             }
         }
-        
+
         if (availableProps.empty()) break;
-        
+
         std::uniform_int_distribution<size_t> propDist(0, availableProps.size() - 1);
         PropModelResource* selectedProp = availableProps[propDist(_rng)];
-        
+
         Vector3 propPosition;
         bool validPosition = false;
         int attempts = 0;
         const int maxAttempts = 20;
-        
+
         while (!validPosition && attempts < maxAttempts) {
             propPosition = {
                 _positionDist(_rng),
                 1.0f,
                 _positionDist(_rng)
             };
-            
+
             validPosition = !isPropColliding(propPosition, props);
             attempts++;
         }
-        
+
         if (validPosition) {
             Vector3 rotation = {0.0f, _rotationDist(_rng), 0.0f};
             Vector3 scale;
-            
+
             if (isMushroomOrFlower(selectedProp->name)) {
                 float scaleFactor = _scaleDist(_rng);
                 scale = {scaleFactor, scaleFactor, scaleFactor};
@@ -98,7 +98,7 @@ void PropManager::generatePropsForTile(std::vector<Prop>& props) {
             } else {
                 scale = {0.55f, 0.55f, 0.55f};
             }
-            
+
             props.emplace_back(selectedProp->name, propPosition, rotation, scale, &selectedProp->model);
             usedProps.push_back(selectedProp->name);
         }
@@ -108,22 +108,22 @@ void PropManager::generatePropsForTile(std::vector<Prop>& props) {
 void PropManager::drawProp3D(const Prop& prop, int tileX, int tileY, bool wireframe) {
     if (!prop.model || prop.model->meshCount == 0 || _cleaned_up) return;
     if (!DebugSystem::getInstance().showObstacles()) return;
-    
+
     Vector3 tileCenter = {(float)tileX, 0.0f, (float)tileY};
     Vector3 worldPos = {
         tileCenter.x + prop.position.x,
         tileCenter.y + prop.position.y,
         tileCenter.z + prop.position.z
     };
-    
+
     Vector3 rotationAxis = { 0.0f, 1.0f, 0.0f };
-    
+
     if (wireframe) {
         DrawModelWires(*prop.model, worldPos, prop.scale.x, WHITE);
     } else {
         DrawModelEx(*prop.model, worldPos, rotationAxis, prop.rotation.y, prop.scale, WHITE);
     }
-    
+
     if (DebugSystem::getInstance().showDebugSpheres()) {
         DrawSphere(Vector3{worldPos.x, worldPos.y + 0.1f, worldPos.z}, 0.02f, BLUE);
     }
@@ -137,7 +137,7 @@ void PropManager::drawProp2D(const Prop& prop, Vector2 tileCenter, float tileSiz
 
 void PropManager::loadPropModels() {
     if (_cleaned_up) return;
-    
+
     std::vector<std::string> propFiles = {
         "tree_oak_dark.obj",
         "tree_oak_fall.obj",
@@ -161,7 +161,7 @@ void PropManager::loadPropModels() {
         "grass_leafs.obj",
         "log_stack.obj"
     };
-    
+
     for (const std::string& filename : propFiles) {
         std::string path = "assets/environment/" + filename;
         if (FileExists(path.c_str())) {
@@ -176,7 +176,7 @@ void PropManager::loadPropModels() {
             }
         }
     }
-    
+
     std::cout << "INFO: Loaded " << _propModels.size() << " prop models" << std::endl;
 }
 
@@ -203,7 +203,7 @@ bool PropManager::isPropColliding(const Vector3& newPos, const std::vector<Prop>
 
 Model* PropManager::getPropModel(const std::string& name) {
     if (_cleaned_up) return nullptr;
-    
+
     for (auto& resource : _propModels) {
         if (resource.name == name) {
             return &resource.model;

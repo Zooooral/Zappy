@@ -5,16 +5,16 @@
 ** Beautiful connecting screen implementation
 */
 
+#include <iostream>
+#include <cmath>
+#include <algorithm>
+
 #include "ConnectingScreen.hpp"
 #include "../core/FontManager.hpp"
 #include "../core/SoundManager.hpp"
 #include "../core/GameStateManager.hpp"
 #include "../network/NetworkManager.hpp"
 #include "../core/ConfigManager.hpp"
-
-#include <iostream>
-#include <cmath>
-#include <algorithm>
 
 ConnectingScreen::ConnectingScreen()
 {
@@ -58,16 +58,16 @@ void ConnectingScreen::onEnter()
     _pulseTimer = 0.0f;
     _particleTimer = 0.0f;
     _particles.clear();
-    
+
     ConfigManager& config = ConfigManager::getInstance();
     _host = config.getHost();
     _port = config.getPort();
-    
+
     _connectionStatus = "Connecting to " + _host + ":" + std::to_string(_port);
-    
+
     NetworkManager& network = NetworkManager::getInstance();
     network.setCommandCallback([](const std::string&) {});
-    
+
     if (!network.connectToServer(_host, _port)) {
         setConnectionError("Failed to connect to server");
     }
@@ -115,7 +115,7 @@ void ConnectingScreen::setupConnectionDots()
     _connectionDots.clear();
     int screenW = GetScreenWidth();
     int screenH = GetScreenHeight();
-    
+
     for (int i = 0; i < 8; i++) {
         ConnectionDot dot;
         dot.position = Vector2{
@@ -168,9 +168,9 @@ void ConnectingScreen::update(float dt)
 
     NetworkManager& network = NetworkManager::getInstance();
     network.update();
-    
+
     NetworkManager::ConnectionState state = network.getConnectionState();
-    
+
     switch (state) {
         case NetworkManager::ConnectionState::CONNECTING:
             setConnectionStatus("Connecting to server...");
@@ -218,7 +218,7 @@ void ConnectingScreen::update(float dt)
     if (_finished && !_transitionStarted && _animationTimer > 0.5f) {
         std::cout << "[GUI] Initiating transition to game screen..." << std::endl;
         _transitionStarted = true;
-        GameStateManager::getInstance().changeState("game", 
+        GameStateManager::getInstance().changeState("game",
             GameStateManager::Transition::FADE);
     }
 }
@@ -229,12 +229,12 @@ void ConnectingScreen::updateParticles(float dt)
         particle.life -= dt;
         particle.position.x += particle.velocity.x * dt;
         particle.position.y += particle.velocity.y * dt;
-        
+
         float lifeRatio = particle.life / particle.maxLife;
         particle.color.a = (unsigned char)(255 * lifeRatio);
         particle.size = 2.0f + sinf(particle.life * 5.0f) * 1.0f;
     }
-    
+
     _particles.erase(
         std::remove_if(_particles.begin(), _particles.end(),
                       [](const Particle& p) { return p.life <= 0.0f; }),
@@ -258,10 +258,10 @@ void ConnectingScreen::updateConnectionAnimation(float dt)
 void ConnectingScreen::createParticles()
 {
     if (_particles.size() >= 50) return;
-    
+
     int screenW = GetScreenWidth();
     int screenH = GetScreenHeight();
-    
+
     for (int i = 0; i < 3; i++) {
         Particle particle;
         particle.position = Vector2{
@@ -274,11 +274,11 @@ void ConnectingScreen::createParticles()
         };
         particle.life = particle.maxLife = (float)(rand() % 300 + 200) / 100.0f;
         particle.size = (float)(rand() % 4 + 2);
-        
+
         Color particleColor = getStatusColor();
         particleColor.a = (unsigned char)(rand() % 128 + 127);
         particle.color = particleColor;
-        
+
         _particles.push_back(particle);
     }
 }
@@ -287,7 +287,7 @@ Color ConnectingScreen::getStatusColor() const
 {
     if (_showError) return RED;
     if (_isConnected) return GREEN;
-    
+
     float pulse = (sinf(_pulseTimer * 4.0f) + 1.0f) * 0.5f;
     return ColorLerp(SKYBLUE, BLUE, pulse);
 }
@@ -313,7 +313,7 @@ void ConnectingScreen::draw()
         int barHeight = 4;
         int barX = (screenW - barWidth) / 2;
         int barY = screenH * 0.75f;
-        
+
         DrawRectangle(barX, barY, barWidth, barHeight, Fade(WHITE, 0.3f));
         DrawRectangle(barX, barY, (int)(barWidth * progress), barHeight, 
                      getStatusColor());
@@ -336,37 +336,37 @@ void ConnectingScreen::drawConnectionVisual()
 {
     int screenW = GetScreenWidth();
     int screenH = GetScreenHeight();
-    
+
     for (const auto& dot : _connectionDots) {
         if (!dot.active) continue;
-        
+
         float scale = 1.0f + sinf(dot.animation) * 0.3f;
         float alpha = 0.7f + sinf(dot.animation * 2.0f) * 0.3f;
-        
+
         Color dotColor = getStatusColor();
         dotColor.a = (unsigned char)(255 * alpha * _transitionAlpha);
-        
+
         DrawCircleV(dot.position, 8.0f * scale, dotColor);
         DrawRing(dot.position, 8.0f * scale, 12.0f * scale, 0, 360, 32, 
                 Fade(dotColor, 0.3f));
     }
-    
+
     for (size_t i = 0; i < _connectionDots.size() - 1; i++) {
         if (_connectionDots[i].active && _connectionDots[i + 1].active) {
             float alpha = sinf(_animationTimer * 2.0f + i) * 0.5f + 0.5f;
             Color lineColor = getStatusColor();
             lineColor.a = (unsigned char)(255 * alpha * _transitionAlpha * 0.6f);
-            
+
             DrawLineEx(_connectionDots[i].position, _connectionDots[i + 1].position,
                       2.0f, lineColor);
         }
     }
-    
+
     Vector2 center = Vector2{(float)(screenW * 0.5f), (float)(screenH * 0.45f)};
     float hubPulse = 1.0f + sinf(_pulseTimer * 3.0f) * 0.2f;
     Color hubColor = getStatusColor();
     hubColor.a = (unsigned char)(255 * _transitionAlpha);
-    
+
     DrawCircleV(center, 30.0f * hubPulse, Fade(hubColor, 0.3f));
     DrawCircleV(center, 20.0f * hubPulse, hubColor);
     DrawRing(center, 25.0f * hubPulse, 35.0f * hubPulse, 0, 360, 32, 
@@ -383,13 +383,13 @@ void ConnectingScreen::drawStatusText()
     const char* title = "CONNECTING TO ZAPPY";
     int titleSize = 48;
     Vector2 titleTextSize = MeasureTextEx(fontBold, title, titleSize, 1);
-    DrawTextEx(fontBold, title, 
+    DrawTextEx(fontBold, title,
                {(float)(screenW - titleTextSize.x) / 2, screenH * 0.25f},
                titleSize, 1, Fade(WHITE, _transitionAlpha));
 
     Color statusColor = _showError ? RED : getStatusColor();
     statusColor.a = (unsigned char)(255 * _transitionAlpha);
-    
+
     Vector2 statusSize = MeasureTextEx(fontMedium, _connectionStatus.c_str(), 24, 1);
     DrawTextEx(fontMedium, _connectionStatus.c_str(),
                {(float)(screenW - statusSize.x) / 2, screenH * 0.8f},
@@ -402,7 +402,7 @@ void ConnectingScreen::drawStatusText()
                    20, 1, Fade(RED, _transitionAlpha));
     }
 
-    const char* instruction = _showError ? 
+    const char* instruction = _showError ?
         "Press ESCAPE to return to menu or click Retry" :
         "Press ESCAPE to cancel connection";
     Vector2 instrSize = MeasureTextEx(fontMedium, instruction, 16, 1);

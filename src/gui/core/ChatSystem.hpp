@@ -8,9 +8,10 @@
 #ifndef CHATSYSTEM_HPP_
     #define CHATSYSTEM_HPP_
 
-#include "raylib.h"
-#include <vector>
-#include <string>
+    #include <vector>
+    #include <string>
+
+    #include "raylib.h"
 
 struct ChatMessage {
     std::string sender;
