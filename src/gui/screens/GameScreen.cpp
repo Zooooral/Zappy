@@ -5,6 +5,9 @@
 ** GameScreen
 */
 
+#include <iostream>
+#include <sstream>
+
 #include "GameScreen.hpp"
 #include "EndScreen.hpp"
 #include "../core/GameWorld.hpp"
@@ -16,8 +19,6 @@
 #include "../network/NetworkManager.hpp"
 #include "../core/ConfigManager.hpp"
 #include "../core/ChatSystem.hpp"
-#include <iostream>
-#include <sstream>
 
 GameScreen::GameScreen() {
     _backButton = std::make_unique<Button>(
@@ -28,7 +29,7 @@ GameScreen::GameScreen() {
     _backButton->setCallback([]() {
         GameStateManager::getInstance().changeState("main_menu", GameStateManager::Transition::FADE);
     });
-    
+
     _inventoryUI = std::make_unique<InventoryUI>(
         Vector2{(float)GetScreenWidth() - 320, 330},
         Vector2{300, 400}
@@ -51,20 +52,20 @@ void GameScreen::onEnter() {
     _mapInitialized = false;
     _updateTimer = 0.0f;
     _nextPlayerId = 1;
-    
+
     CharacterManager::getInstance().initialize();
-    
+
     SoundManager& soundMgr = SoundManager::getInstance();
     ConfigManager& config = ConfigManager::getInstance();
     float volume = config.getVolume();
-    
+
     soundMgr.loadSound("birds", "assets/sounds/birds.ogg");
     soundMgr.loadSound("waves", "assets/sounds/waves.ogg");
     soundMgr.playSound("birds", true);
     soundMgr.playSound("waves", true);
     soundMgr.setSoundVolume("birds", volume * 0.3f);
     soundMgr.setSoundVolume("waves", volume * 0.5f);
-    
+
     setupNetworkAndRequestData();
 }
 
@@ -76,17 +77,17 @@ void GameScreen::onExit() {
 
 void GameScreen::setupNetworkAndRequestData() {
     NetworkManager& network = NetworkManager::getInstance();
-    
+
     network.setCommandCallback([this](const std::string& command) {
         handleServerCommand(command);
     });
-    
+
     requestInitialGameData();
 }
 
 void GameScreen::requestInitialGameData() {
     NetworkManager& network = NetworkManager::getInstance();
-    
+
     std::cout << "[DEBUG] Requesting initial game data" << std::endl;
     network.sendCommand("msz");
     network.sendCommand("mct");
@@ -95,7 +96,7 @@ void GameScreen::requestInitialGameData() {
 
 void GameScreen::requestPlayerUpdates() {
     NetworkManager& network = NetworkManager::getInstance();
-    
+
     network.sendCommand("mct");
     for (int i = 1; i <= _nextPlayerId; i++) {
         network.sendCommand("ppo #" + std::to_string(i));
@@ -108,9 +109,9 @@ void GameScreen::handleServerCommand(const std::string& command) {
     std::istringstream iss(command);
     std::string cmd;
     iss >> cmd;
-    
+
     std::cout << "[DEBUG] Handling command: " << cmd << " (full: " << command << ")" << std::endl;
-    
+
     if (cmd == "msz") {
         int width, height;
         if (iss >> width >> height) {
@@ -244,7 +245,7 @@ void GameScreen::handleServerCommand(const std::string& command) {
         if (iss >> x >> y >> level) {
             std::string playerIds;
             std::getline(iss, playerIds);
-            
+
             std::istringstream playerStream(playerIds);
             std::string playerId;
             while (playerStream >> playerId) {
@@ -311,24 +312,24 @@ void GameScreen::handleServerCommand(const std::string& command) {
 
 void GameScreen::update(float dt) {
     NetworkManager::getInstance().update();
-    
+
     SoundManager::getInstance().updateSounds();
-    
+
     if (_mapInitialized) {
         GameWorld::getInstance().update(dt);
     }
-    
+
     CharacterManager::getInstance().update(dt);
     _backButton->update(dt);
     _inventoryUI->update(dt);
-    
+
     _updateTimer += dt;
     if (_updateTimer >= 2.0f && _mapInitialized) {
         std::cout << "[DEBUG] Requesting player updates for " << _nextPlayerId << " players" << std::endl;
         requestPlayerUpdates();
         _updateTimer = 0.0f;
     }
-    
+
     if (IsKeyPressed(KEY_ESCAPE)) {
         if (_inventoryUI->isVisible()) {
             _inventoryUI->setVisible(false);
@@ -336,7 +337,7 @@ void GameScreen::update(float dt) {
             _shouldReturn = true;
         }
     }
-    
+
     if (_mapInitialized) {
         CameraController& cam = CameraController::getInstance();
         if (cam.is3DMode()) {
@@ -347,7 +348,7 @@ void GameScreen::update(float dt) {
             }
         }
     }
-    
+
     if (IsKeyPressed(KEY_G)) {
         triggerGameEnd("Team Alpha");
     }
@@ -356,7 +357,7 @@ void GameScreen::update(float dt) {
 void GameScreen::draw() {
     if (_mapInitialized) {
         GameWorld::getInstance().draw();
-        
+
         CameraController& cam = CameraController::getInstance();
         if (cam.is3DMode()) {
             CharacterManager::getInstance().draw3D(cam.getCamera3D());
@@ -369,14 +370,14 @@ void GameScreen::draw() {
         int textWidth = MeasureText(loadingText, 40);
         DrawText(loadingText, (GetScreenWidth() - textWidth) / 2, GetScreenHeight() / 2, 40, WHITE);
     }
-    
+
     _backButton->draw();
     _inventoryUI->draw();
-    
+
     NetworkManager::ConnectionState connectionState = NetworkManager::getInstance().getConnectionState();
     const char* stateText = "Disconnected";
     Color stateColor = RED;
-    
+
     switch (connectionState) {
         case NetworkManager::ConnectionState::CONNECTING:
             stateText = "Connecting...";
@@ -397,9 +398,9 @@ void GameScreen::draw() {
         default:
             break;
     }
-    
+
     DrawText(stateText, 10, GetScreenHeight() - 30, 20, stateColor);
-    
+
     if (_shouldReturn) {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.5f));
         const char* text = "Press ESCAPE again to return to menu";

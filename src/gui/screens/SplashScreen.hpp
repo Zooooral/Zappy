@@ -8,11 +8,11 @@
 #ifndef SPLASHSCREEN_HPP_
     #define SPLASHSCREEN_HPP_
 
-#include "../core/GameState.hpp"
-#include "raylib.h"
+    #include <string>
+    #include <vector>
 
-#include <string>
-#include <vector>
+    #include "../core/GameState.hpp"
+    #include "raylib.h"
 
 class SplashScreen : public GameState {
 public:

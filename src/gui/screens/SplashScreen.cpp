@@ -5,13 +5,13 @@
 ** SplashScreen
 */
 
+#include <iostream>
+#include <cmath>
+
 #include "SplashScreen.hpp"
 #include "../core/FontManager.hpp"
 #include "../core/SoundManager.hpp"
 #include "../core/GameStateManager.hpp"
-
-#include <iostream>
-#include <cmath>
 
 SplashScreen::SplashScreen()
 {

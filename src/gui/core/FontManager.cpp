@@ -5,9 +5,9 @@
 ** FontManager
 */
 
-#include "FontManager.hpp"
-
 #include <iostream>
+
+#include "FontManager.hpp"
 
 FontManager &FontManager::getInstance()
 {

@@ -8,12 +8,13 @@
 #ifndef GAMESCREEN_HPP_
     #define GAMESCREEN_HPP_
 
-#include "../core/GameState.hpp"
-#include "../ui/Button.hpp"
-#include "../ui/InventoryUI.hpp"
-#include "raylib.h"
-#include <memory>
-#include <string>
+    #include <memory>
+    #include <string>
+
+    #include "../core/GameState.hpp"
+    #include "../ui/Button.hpp"
+    #include "../ui/InventoryUI.hpp"
+    #include "raylib.h"
 
 class GameScreen : public GameState {
 public:
@@ -36,7 +37,7 @@ private:
     int _nextPlayerId = 1;
     std::unique_ptr<Button> _backButton;
     std::unique_ptr<InventoryUI> _inventoryUI;
-    
+
     void setupNetworkAndRequestData();
     void requestInitialGameData();
     void requestPlayerUpdates();

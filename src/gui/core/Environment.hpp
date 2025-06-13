@@ -6,10 +6,11 @@
 */
 
 #ifndef ENVIRONMENT_HPP_
-#define ENVIRONMENT_HPP_
+    #define ENVIRONMENT_HPP_
 
-#include "raylib.h"
-#include <vector>
+    #include <vector>
+
+    #include "raylib.h"
 
 class Environment {
 public:
@@ -29,7 +30,7 @@ private:
     Model _seaModel;
     Shader _waterShader;
     std::vector<float> _originalVertices;
-    
+
     float _time = 0.0f;
     bool _initialized = false;
 

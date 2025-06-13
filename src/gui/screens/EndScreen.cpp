@@ -38,7 +38,7 @@ void EndScreen::onEnter()
     _exitRequested = false;
     _celebrationTimer = 0.0f;
     setTransitionAlpha(1.0f);
-    
+
     SoundManager::getInstance().stopMusic();
 }
 
@@ -110,8 +110,8 @@ void EndScreen::draw()
     const char* gameOverText = "GAME OVER";
     int gameOverFontSize = 72;
     Vector2 gameOverSize = MeasureTextEx(fontBold, gameOverText, gameOverFontSize, 1);
-    DrawTextEx(fontBold, gameOverText, 
-               {(float)(screenW - gameOverSize.x) / 2, screenH * 0.2f}, 
+    DrawTextEx(fontBold, gameOverText,
+               {(float)(screenW - gameOverSize.x) / 2, screenH * 0.2f},
                gameOverFontSize, 1, textColor);
 
     std::string winText = _winningTeam + " Won the game!";

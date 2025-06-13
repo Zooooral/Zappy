@@ -8,16 +8,16 @@
 #ifndef SETTINGSMENU_HPP_
     #define SETTINGSMENU_HPP_
 
-#include "../core/GameState.hpp"
-#include "../ui/Button.hpp"
-#include "../ui/Slider.hpp"
-#include "../ui/KeyBindButton.hpp"
-#include "raylib.h"
+    #include <memory>
+    #include <vector>
+    #include <string>
+    #include <unordered_map>
 
-#include <memory>
-#include <vector>
-#include <string>
-#include <unordered_map>
+    #include "../core/GameState.hpp"
+    #include "../ui/Button.hpp"
+    #include "../ui/Slider.hpp"
+    #include "../ui/KeyBindButton.hpp"
+    #include "raylib.h"
 
 class SettingsMenu : public GameState {
 public:
