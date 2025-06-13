@@ -91,6 +91,8 @@ static void wait_for_next_tick(server_t *server, double delta_time)
     accumulated_time += delta_time;
     if (accumulated_time < time_unit)
         return;
+    printf("[SERVER] Tick %zu: Delta time: %.3f seconds\n",
+            server->tick_count, delta_time);
     accumulated_time -= time_unit;
     server->tick_count++;
     update_game_and_broadcast(server, delta_time);
@@ -110,8 +112,6 @@ void server_run(server_t *server)
         if (handle_poll_events(server) == -1)
             break;
         wait_for_next_tick(server, delta_time);
-        printf("[SERVER] Tick %zu: Delta time: %.3f seconds\n",
-            server->tick_count, delta_time);
     }
     printf("[SERVER] Server shutting down\n");
 }
