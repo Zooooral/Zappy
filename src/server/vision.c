@@ -58,6 +58,6 @@ char *vision_look(client_t *client, map_t *map)
             da_destroy(tile);
         }
     }
-    DA_PUSH(res, "]");
+    DA_PUSH(res, "]\n");
     return res;
 }
