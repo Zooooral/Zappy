@@ -96,6 +96,7 @@ void GameScreen::requestInitialGameData() {
 void GameScreen::requestPlayerUpdates() {
     NetworkManager& network = NetworkManager::getInstance();
     
+    network.sendCommand("mct");
     for (int i = 1; i <= _nextPlayerId; i++) {
         network.sendCommand("ppo #" + std::to_string(i));
         network.sendCommand("plv #" + std::to_string(i));
