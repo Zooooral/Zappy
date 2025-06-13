@@ -8,9 +8,10 @@
 #ifndef CHARACTER_HPP_
     #define CHARACTER_HPP_
 
-#include "raylib.h"
-#include <string>
-#include <unordered_map>
+    #include <string>
+    #include <unordered_map>
+
+    #include "raylib.h"
 
 struct CharacterInventory {
     int food = 0;
@@ -47,7 +48,7 @@ public:
     Vector2 getTilePosition() const { return _tilePosition; }
     bool isElevating() const { return _isElevating; }
     bool isMoving() const { return _isMoving; }
-    
+
     bool isMouseOver(Camera camera) const;
     BoundingBox getBoundingBox() const;
 
@@ -65,7 +66,7 @@ private:
     bool _isMoving;
     float _moveProgress;
     Vector3 _moveStartPos;
-    
+
     static constexpr float CHARACTER_SIZE = 0.5f;
     static constexpr float CHARACTER_HEIGHT = 1.0f;
     static constexpr float BASE_MOVE_SPEED = 2.0f;

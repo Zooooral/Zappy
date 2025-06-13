@@ -8,11 +8,12 @@
 #ifndef GAMEWORLD_HPP_
     #define GAMEWORLD_HPP_
 
-#include "raylib.h"
-#include "../entities/PropManager.hpp"
-#include <vector>
-#include <string>
-#include <unordered_map>
+    #include <vector>
+    #include <string>
+    #include <unordered_map>
+
+    #include "raylib.h"
+    #include "../entities/PropManager.hpp"
 
 class GameWorld {
 public:
@@ -38,7 +39,7 @@ public:
         float rotation;
         std::vector<Prop> props;
         TileResources resources;
-        
+
         Tile() : type(TileType::GROUND_GRASS), rotation(0.0f) {}
         Tile(TileType t, float r = 0.0f) : type(t), rotation(r) {}
     };
@@ -73,10 +74,10 @@ private:
         std::string name;
         TileType type;
     };
-    
+
     std::vector<ModelResource> _models;
     std::unordered_map<std::string, Texture2D> _textures;
-    
+
     Model _turkeyModel;
     Model _eggModel;
     Model _linemateModel;

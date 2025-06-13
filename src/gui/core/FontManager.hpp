@@ -8,10 +8,10 @@
 #ifndef FONTMANAGER_HPP_
     #define FONTMANAGER_HPP_
 
-#include "raylib.h"
+    #include <string>
+    #include <unordered_map>
 
-#include <string>
-#include <unordered_map>
+    #include "raylib.h"
 
 class FontManager {
 public:

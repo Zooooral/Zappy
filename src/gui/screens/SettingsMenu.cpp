@@ -5,13 +5,13 @@
 ** SettingsMenu
 */
 
+#include <iostream>
+
 #include "SettingsMenu.hpp"
 #include "../core/FontManager.hpp"
 #include "../core/SoundManager.hpp"
 #include "../core/GameStateManager.hpp"
 #include "../core/ConfigManager.hpp"
-
-#include <iostream>
 
 SettingsMenu::SettingsMenu()
 {

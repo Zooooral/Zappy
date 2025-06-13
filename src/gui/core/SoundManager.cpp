@@ -5,10 +5,10 @@
 ** SoundManager
 */
 
+#include <iostream>
+
 #include "SoundManager.hpp"
 #include "ConfigManager.hpp"
-
-#include <iostream>
 
 SoundManager &SoundManager::getInstance()
 {

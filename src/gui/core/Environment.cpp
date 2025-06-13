@@ -5,9 +5,10 @@
 ** Environment
 */
 
-#include "Environment.hpp"
 #include <cmath>
 #include <iostream>
+
+#include "Environment.hpp"
 
 Environment& Environment::getInstance() {
     static Environment instance;

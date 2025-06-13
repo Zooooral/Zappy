@@ -8,10 +8,10 @@
 #ifndef SOUNDMANAGER_HPP_
     #define SOUNDMANAGER_HPP_
 
-#include "raylib.h"
+    #include <string>
+    #include <vector>
 
-#include <string>
-#include <vector>
+    #include "raylib.h"
 
 struct SoundEffect {
     Sound sound;
@@ -30,7 +30,7 @@ public:
     bool isMusicPlaying() const;
     void updateMusicStream();
     void updateSounds();
-    
+
     void loadSound(const std::string &name, const std::string &path);
     void playSound(const std::string &name, bool loop = false);
     void stopSound(const std::string &name);
@@ -47,7 +47,7 @@ private:
     bool _musicLoaded = false;
     std::vector<SoundEffect> _sounds;
     float _globalVolume = 1.0f;
-    
+
     SoundEffect* findSound(const std::string &name);
 };
 
