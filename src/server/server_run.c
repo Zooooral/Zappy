@@ -61,7 +61,7 @@ static double calculate_delta_time(double *last_time)
 
 static int handle_poll_events(server_t *server)
 {
-    int ready = poll(server->poll_fds, server->poll_count, 0);
+    int ready = poll(server->poll_fds, server->poll_count, 2);
 
     if (ready == -1) {
         if (errno == EINTR)
