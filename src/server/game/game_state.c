@@ -52,11 +52,10 @@ static int setup_seeder_if_needed(game_state_t *game,
 
 game_state_t *game_state_create(const server_config_t *config)
 {
-    game_state_t *game = malloc(sizeof(game_state_t));
+    game_state_t *game = calloc(sizeof(game_state_t), 1);
 
     if (!game)
         return NULL;
-    memset(game, 0, sizeof(game_state_t));
     if (setup_game_map(game, config) == -1) {
         free(game);
         return NULL;
