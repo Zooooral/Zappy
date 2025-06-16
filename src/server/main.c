@@ -55,7 +55,7 @@ static int handle_arguments(int argc, const char **argv,
 
 static int create_and_run_server(const server_config_t *config)
 {
-    server_t server;
+    server_t server = {0};
 
     if (server_create(&server, config) == -1) {
         fprintf(stderr, "Error: Failed to create server\n");
