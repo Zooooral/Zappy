@@ -27,8 +27,8 @@ AI_NAME      =  zappy_ai
 
 CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include
 GUI_LIBS     =  -lraylib
-CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar -D_GNU_SOURCE
-SERVER_LIBS  =  -lpthread
+CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar -D_GNU_SOURCE -O2
+MAKEFLAGS    += -j$(shell expr $(shell nproc) - 2)
 
 BUILD_DIR    =  ./build
 SRC_DIR      =  ./src
@@ -85,7 +85,7 @@ assets:
 
 server: $(SERVER_OBJS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Linking server...$(RESET)\n"
-	@$(CC) -o $(SERVER_NAME) $(SERVER_OBJS) $(SERVER_LIBS)
+	@$(CC) -o $(SERVER_NAME) $(SERVER_OBJS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Server built successfully$(RESET)\n"
 
 gui: $(GUI_OBJS)
