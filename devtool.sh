@@ -296,7 +296,17 @@ stop_gui() {
     kill_process "gui"
     log_success "GUI stopped"
   else
-    log_warning "GUI is not running"
+    log_warning "GUI is not running (checking for any remaining GUI processes...)"
+    if pkill -f "zappy_gui" 2>/dev/null; then
+      sleep 1
+      if pgrep -f "zappy_gui" >/dev/null 2>&1; then
+        log_warning "GUI didn't respond to SIGTERM, force killing..."
+        pkill -9 -f "zappy_gui" 2>/dev/null
+      fi
+      log_success "Remaining GUI processes terminated"
+    else
+      log_warning "No GUI processes found"
+    fi
   fi
 }
 
@@ -369,7 +379,6 @@ dev_setup() {
   start_ai
   
   log_success "Development environment ready!"
-  status
 }
 
 dev_restart() {
@@ -403,87 +412,43 @@ quick_test() {
 stop_all() {
   log_info "Stopping all processes..."
   
-  stop_ai
-  stop_gui
-  stop_server
+  log_info "Terminating AI clients..."
+  if pkill -f "zappy_ai" 2>/dev/null; then
+    log_success "AI clients terminated"
+  else
+    log_warning "No AI clients found running"
+  fi
+  
+  log_info "Terminating GUI..."
+  if pkill -f "zappy_gui" 2>/dev/null; then
+    sleep 1
+    if pgrep -f "zappy_gui" >/dev/null 2>&1; then
+      log_warning "GUI didn't respond to SIGTERM, force killing..."
+      pkill -9 -f "zappy_gui" 2>/dev/null
+    fi
+    log_success "GUI terminated"
+  else
+    log_warning "No GUI found running"
+  fi
+  
+  log_info "Terminating server..."
+  if pkill -f "zappy_server" 2>/dev/null; then
+    sleep 1
+    if pgrep -f "zappy_server" >/dev/null 2>&1; then
+      log_warning "Server didn't respond to SIGTERM, force killing..."
+      pkill -9 -f "zappy_server" 2>/dev/null
+    fi
+    log_success "Server terminated"
+  else
+    log_warning "No server found running"
+  fi
+  
+  sleep 1
   
   log_info "Cleaning PID directory..."
   rm -f "${PID_DIR}"/*.pid
   
   log_success "All processes stopped and PID directory cleaned"
-}
-
-status() {
-  echo -e "\n${BOLD}📊 Zappy Development Status${NC}\n"
-  
-  echo -e "${CYAN}🖥️  Server:${NC}"
-  if is_running "server"; then
-    local server_pid
-    server_pid=$(get_pid "server")
-    echo -e "   ${GREEN}✓${NC} Running (PID: ${server_pid}, Port: ${ZAPPY_PORT})"
-  else
-    echo -e "   ${RED}✗${NC} Not running"
-  fi
-  
-  echo -e "\n${CYAN}🎮 GUI:${NC}"
-  if is_running "gui"; then
-    local gui_pid
-    gui_pid=$(get_pid "gui")
-    echo -e "   ${GREEN}✓${NC} Running (PID: ${gui_pid})"
-  else
-    echo -e "   ${RED}✗${NC} Not running"
-  fi
-  
-  echo -e "\n${CYAN}🤖 AI Clients:${NC}"
-  local ai_count=0
-  for pid_file in "${PID_DIR}"/ai_*.pid; do
-    if [[ -f "${pid_file}" ]]; then
-      local name
-      name=$(basename "${pid_file}" .pid)
-      if is_running "${name}"; then
-        local ai_pid
-        ai_pid=$(get_pid "${name}")
-        echo -e "   ${GREEN}✓${NC} ${name} (PID: ${ai_pid})"
-        ((ai_count++))
-      fi
-    fi
-  done
-  
-  if [[ ${ai_count} -eq 0 ]]; then
-    echo -e "   ${RED}✗${NC} No AI clients running"
-  fi
-  
-  echo -e "\n${CYAN}📊 Summary:${NC}"
-  echo -e "   Map Size: ${ZAPPY_WIDTH}x${ZAPPY_HEIGHT}"
-  echo -e "   Teams: ${ZAPPY_TEAMS}"
-  echo -e "   Port: ${ZAPPY_PORT}"
-  echo -e "   Active AIs: ${ai_count}"
-}
-
-logs() {
-  local component="${1:-all}"
-  
-  case "${component}" in
-    "server")
-      tail -f "${LOG_DIR}/server.log"
-      ;;
-    "gui")
-      tail -f "${LOG_DIR}/gui.log"
-      ;;
-    "ai")
-      tail -f "${LOG_DIR}"/ai_*.log
-      ;;
-    "build")
-      tail -f "${LOG_DIR}"/build_*.log
-      ;;
-    "all")
-      tail -f "${LOG_DIR}"/*.log
-      ;;
-    *)
-      log_error "Unknown component: ${component}"
-      echo "Available: server, gui, ai, build, all"
-      ;;
-  esac
 }
 
 config() {
@@ -536,11 +501,7 @@ help() {
   echo -e "  dev                        Full development setup"
   echo -e "  restart                    Restart everything"
   echo -e "  test [team]                Quick test setup"
-  echo -e "  stop                       Stop all processes"
-  
-  echo -e "\n${CYAN}📊 Monitoring Commands:${NC}"
-  echo -e "  status                     Show process status"
-  echo -e "  logs [component]           Show logs"
+  echo -e "  stop                       Stop all processes (force kill if needed)"
   
   echo -e "\n${CYAN}⚙️  Configuration Commands:${NC}"
   echo -e "  config [show|edit|reset]   Manage configuration"
@@ -549,7 +510,7 @@ help() {
   echo -e "  ${0} dev                     Start full development environment"
   echo -e "  ${0} test Alpha              Quick test with Alpha team"
   echo -e "  ${0} ai start Beta 5         Start 5 AI clients for Beta team"
-  echo -e "  ${0} logs server             Watch server logs"
+  echo -e "  ${0} stop                    Stop all processes (force kill if needed)"
 }
 
 main() {
@@ -603,9 +564,6 @@ main() {
     "restart") dev_restart ;;
     "test") quick_test "${2}" ;;
     "stop") stop_all ;;
-    
-    "status") status ;;
-    "logs") logs "${2}" ;;
     
     "config") config "${2}" ;;
     
