@@ -8,11 +8,11 @@
 #ifndef GAMESTATEMANAGER_HPP_
     #define GAMESTATEMANAGER_HPP_
 
-#include "GameState.hpp"
+    #include <memory>
+    #include <unordered_map>
+    #include <string>
 
-#include <memory>
-#include <unordered_map>
-#include <string>
+    #include "GameState.hpp"
 
 class GameStateManager {
 public:

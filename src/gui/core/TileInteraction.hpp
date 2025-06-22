@@ -6,11 +6,12 @@
 */
 
 #ifndef TILEINTERACTION_HPP_
-#define TILEINTERACTION_HPP_
+    #define TILEINTERACTION_HPP_
 
-#include "raylib.h"
-#include "GameWorld.hpp"
-#include <vector>
+    #include <vector>
+
+    #include "raylib.h"
+    #include "GameWorld.hpp"
 
 class GameWorld;
 

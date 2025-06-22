@@ -8,10 +8,11 @@
 #ifndef DEBUGSYSTEM_HPP_
     #define DEBUGSYSTEM_HPP_
 
-#include "raylib.h"
-#include <vector>
-#include <string>
-#include <memory>
+    #include <vector>
+    #include <string>
+    #include <memory>
+
+    #include "raylib.h"
 
 class GameWorld;
 

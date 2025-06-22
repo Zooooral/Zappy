@@ -8,12 +8,12 @@
 #ifndef MAINMENU_HPP_
     #define MAINMENU_HPP_
 
-#include "../core/GameState.hpp"
-#include "../ui/Button.hpp"
-#include "raylib.h"
+    #include <memory>
+    #include <vector>
 
-#include <memory>
-#include <vector>
+    #include "../core/GameState.hpp"
+    #include "../ui/Button.hpp"
+    #include "raylib.h"
 
 class MainMenu : public GameState {
 public:

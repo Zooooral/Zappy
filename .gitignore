@@ -73,3 +73,7 @@ Thumbs.db
 node_modules/
 src/ai/log
 yarn.lock
+
+# Dev tools
+.pids/
+.env

@@ -5,11 +5,11 @@
 ** GameStateManager
 */
 
+#include <iostream>
+
 #include "GameStateManager.hpp"
 #include "../screens/EndScreen.hpp"
 #include "raylib.h"
-
-#include <iostream>
 
 GameStateManager &GameStateManager::getInstance()
 {

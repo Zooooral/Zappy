@@ -50,13 +50,13 @@ void Character::updateMovement(float dt, float timeUnit) {
     if (_isMoving) {
         float moveSpeed = BASE_MOVE_SPEED * (timeUnit / 100.0f);
         _moveProgress += dt * moveSpeed;
-        
+
         if (_moveProgress >= 1.0f) {
             _moveProgress = 1.0f;
             _isMoving = false;
             _position = _targetPosition;
         }
-        
+
         _position = Vector3Lerp(_moveStartPos, _targetPosition, _moveProgress);
         _tilePosition = {std::floor(_position.x), std::floor(_position.z)};
     }
@@ -64,17 +64,17 @@ void Character::updateMovement(float dt, float timeUnit) {
 
 void Character::updateTilePosition(const Vector2& tilePos, int indexOnTile, int totalOnTile) {
     _tilePosition = tilePos;
-    
+
     Vector3 basePos = _position;
-    
+
     if (totalOnTile == 1) {
         _displayPosition = {basePos.x, basePos.y, basePos.z};
         return;
     }
-    
+
     float radius = 0.35f;
     float angle = (2.0f * PI * indexOnTile) / totalOnTile;
-    
+
     _displayPosition.x = basePos.x + radius * cosf(angle);
     _displayPosition.y = basePos.y;
     _displayPosition.z = basePos.z + radius * sinf(angle);

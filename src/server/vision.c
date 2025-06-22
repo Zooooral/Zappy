@@ -7,12 +7,65 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "server/vision.h"
+#include "server/dynamic_array.h"
+#include "server/game.h"
+#include "server/server.h"
+
+static char *print_tile(tile_t *tile) {
+    char *str = da_create();
+
+    if (!tile)
+        return da_create();
+    int first = 1;
+    if (tile->player_count) {
+        str = da_push(str, "player", 6);
+        first = 0;
+    }
+    for (int i = 0; i < 7; ++i) {
+        for (int j = 0; j < tile->resources[i]; ++j) {
+            if (!first)
+                DA_PUSH(str, *" ");
+            str = da_push(str, ressource_string_table[i], strlen(ressource_string_table[i]));
+            first = 0;
+        }
+    }
+    return str;
+}
 
 char *vision_look(client_t *client, map_t *map)
 {
-    // TODO: Implémenter la logique de vision selon le niveau et l'orientation
-    // Retourne une chaîne formatée [tile1, tile2, ...]
-    return NULL;
+    char *res = da_create();
+    int x, y;
+    char *tile = NULL;
+    int first = 1;
+
+    DA_PUSH(res, *"[");
+    for (int dist = 0; dist <= client->player->level - 1; ++dist) {
+        for (int offset = -dist; offset <= dist; ++offset) {
+            if (client->player->orientation == 1) { // NORD
+                x = (client->player->x + offset + map->width) % map->width;
+                y = (client->player->y - dist + map->height) % map->height;
+            } else if (client->player->orientation == 2) { // EST
+                x = (client->player->x + dist + map->width) % map->width;
+                y = (client->player->y + offset + map->height) % map->height;
+            } else if (client->player->orientation == 3) { // SUD
+                x = (client->player->x - offset + map->width) % map->width;
+                y = (client->player->y + dist + map->height) % map->height;
+            } else { // OUEST
+                x = (client->player->x - dist + map->width) % map->width;
+                y = (client->player->y - offset + map->height) % map->height;
+            }
+            if (!first)
+                DA_PUSH(res, *",");
+            tile = print_tile(map_get_tile(map, x, y));
+            res = da_push(res, tile, strlen(tile));
+            da_destroy(tile);
+            first = 0;
+        }
+    }
+    DA_PUSH(res, "]\n");
+    return res;
 }

@@ -5,14 +5,15 @@
 ** GameWorld
 */
 
+#include <iostream>
+#include <cmath>
+
 #include "GameWorld.hpp"
 #include "CameraController.hpp"
 #include "DebugSystem.hpp"
 #include "TileInteraction.hpp"
 #include "Environment.hpp"
 #include "FontManager.hpp"
-#include <iostream>
-#include <cmath>
 #include "rlgl.h"
 
 GameWorld& GameWorld::getInstance() {
@@ -36,10 +37,10 @@ void GameWorld::initialize(int playableWidth, int playableHeight) {
     generateMap(playableWidth, playableHeight);
     loadResources();
     loadResourceModels();
-    
+
     PropManager::getInstance().initialize();
     generateProps();
-    
+
     CameraController& cam = CameraController::getInstance();
     cam.initialize();
     cam.setConstraints(0.2f, 5.0f, _totalWidth, _totalHeight);
@@ -66,7 +67,7 @@ Vector3 GameWorld::getResourcePosition(int index, Vector3 basePos) const {
         {basePos.x, basePos.y, basePos.z + 0.4f},
         {basePos.x - 0.4f, basePos.y, basePos.z}
     };
-    
+
     return positions[index % 8];
 }
 
@@ -97,7 +98,7 @@ void GameWorld::generateMap(int playableWidth, int playableHeight) {
 
 void GameWorld::generateProps() {
     PropManager& propManager = PropManager::getInstance();
-    
+
     for (int y = 1; y < _totalHeight - 1; y++) {
         for (int x = 1; x < _totalWidth - 1; x++) {
             if (_tileMap[y][x].type == TileType::GROUND_GRASS) {
@@ -159,7 +160,7 @@ void GameWorld::draw2D() {
     }
 
     EndMode2D();
-    
+
     drawModernUI();
 }
 
@@ -167,7 +168,7 @@ void GameWorld::drawModernUI() {
     char mapInfo[64];
     Font font = FontManager::getInstance().getFont("medium");
     snprintf(mapInfo, sizeof(mapInfo), "Map: %dx%d", _playableWidth, _playableHeight);
-    
+
     DrawTextEx(font, "2D TACTICAL VIEW", {20, 15}, 28, 1, Color{100, 255, 200, 255});
     DrawTextEx(font, "Press P to switch to 3D view", {20, 45}, 16, 1, Color{150, 200, 255, 200});
     DrawTextEx(font, mapInfo, {20, 65}, 16, 1, Color{150, 200, 255, 200});
@@ -239,16 +240,16 @@ void GameWorld::drawTile2D(int x, int y, const Tile& tile) {
         TILE_SIZE,
         TILE_SIZE
     };
-    
+
     if (tile.type == TileType::GROUND_GRASS) {
         Color baseColor = Color{34, 139, 34, 255};
         Color shadowColor = Color{20, 80, 20, 255};
-        
+
         Rectangle shadowRect = {tileRect.x + 2, tileRect.y + 2, tileRect.width, tileRect.height};
         DrawRectangleRounded(shadowRect, 0.1f, 8, shadowColor);
         DrawRectangleRounded(tileRect, 0.1f, 8, baseColor);
         DrawRectangleRoundedLines(tileRect, 0.1f, 8, Color{50, 200, 50, 150});
-        
+
         drawTileResources2D(x + 1, y + 1, tile.resources, center, TILE_SIZE);
     } else {
         Color tileColor = getColorForTileType(tile.type);
@@ -259,7 +260,7 @@ void GameWorld::drawTile2D(int x, int y, const Tile& tile) {
 
 void GameWorld::drawTileResources2D(int, int, const TileResources& resources, Vector2 center, float tileSize) {
     std::vector<std::pair<int, Color>> resourceList;
-    
+
     if (resources.food > 0) {
         resourceList.push_back({resources.food, Color{255, 223, 0, 255}});
     }
@@ -284,16 +285,16 @@ void GameWorld::drawTileResources2D(int, int, const TileResources& resources, Ve
     if (resources.eggs > 0) {
         resourceList.push_back({resources.eggs, Color{255, 255, 255, 255}});
     }
-    
+
     int resourceCount = resourceList.size();
     if (resourceCount == 0) return;
-    
+
     float resourceRadius = tileSize * 0.25f;
     for (int i = 0; i < resourceCount; i++) {
         float angle = (2.0f * PI * i) / resourceCount;
         float x = center.x + cosf(angle) * resourceRadius;
         float y = center.y + sinf(angle) * resourceRadius;
-        
+
         DrawCircle(x + 1, y + 1, 3.0f, Fade(BLACK, 0.3f));
         DrawCircle(x, y, 3.0f, resourceList[i].second);
     }
@@ -304,7 +305,7 @@ void GameWorld::drawTile3D(int x, int y, const Tile& tile) {
     Vector3 position = originalPosition;
     Color tileColor = getColorForTileType(tile.type);
     Model* model = getModelForTileType(tile.type);
-    
+
     if (model && model->meshCount > 0) {
         Vector3 rotationAxis = { 0.0f, 1.0f, 0.0f };
         Vector3 scale = { 1.0f, 1.0f, 1.0f };
@@ -361,7 +362,7 @@ void GameWorld::drawTile3D(int x, int y, const Tile& tile) {
             DrawSphere(lineEnd, 0.05f, YELLOW);
         }
     }
-    
+
     if (tile.type == TileType::GROUND_GRASS) {
         PropManager& propManager = PropManager::getInstance();
         bool wireframe = DebugSystem::getInstance().showWireframe();
@@ -484,20 +485,20 @@ void GameWorld::unloadResources() {
             }
         }
         _models.clear();
-        
+
         if (_resourceModelsLoaded && IsWindowReady()) {
             const std::vector<Model*> resourceModels = {
                 &_turkeyModel, &_eggModel, &_linemateModel, &_deraumereModel,
                 &_siburModel, &_mendianeModel, &_phirasModel, &_thystameModel
             };
-            
+
             for (Model* model : resourceModels) {
                 if (model->meshCount > 0) {
                     UnloadModel(*model);
                 }
             }
         }
-        
+
         PropManager::getInstance().cleanup();
     } catch (...) {
         std::cout << "ERROR: Exception in unloadResources" << std::endl;
@@ -534,7 +535,7 @@ bool GameWorld::isCorner(int x, int y) const {
 }
 
 bool GameWorld::isEdge(int x, int y) const {
-    return x == 0 || x == _totalWidth - 1 || 
+    return x == 0 || x == _totalWidth - 1 ||
            y == 0 || y == _totalHeight - 1;
 }
 

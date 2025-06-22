@@ -71,7 +71,7 @@ private:
     float _animationTimer;
     float _pulseTimer;
     float _particleTimer;
-    
+
     std::vector<Particle> _particles;
     std::vector<ConnectionDot> _connectionDots;
 

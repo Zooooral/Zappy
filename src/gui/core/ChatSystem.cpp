@@ -5,9 +5,10 @@
 ** ChatSystem
 */
 
+#include <algorithm>
+
 #include "ChatSystem.hpp"
 #include "FontManager.hpp"
-#include <algorithm>
 
 ChatSystem& ChatSystem::getInstance() {
     static ChatSystem instance;

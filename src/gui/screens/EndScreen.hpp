@@ -27,7 +27,7 @@ public:
 
     void onEnter() override;
     void onExit() override;
-    
+
     void setWinningTeam(const std::string& teamName);
 
 private:

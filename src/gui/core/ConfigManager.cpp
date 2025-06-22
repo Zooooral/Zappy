@@ -5,12 +5,12 @@
 ** ConfigManager
 */
 
-#include "ConfigManager.hpp"
-
-#include "raylib.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
+#include "ConfigManager.hpp"
+#include "raylib.h"
 
 ConfigManager &ConfigManager::getInstance()
 {
