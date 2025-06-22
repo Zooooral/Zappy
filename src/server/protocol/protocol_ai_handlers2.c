@@ -37,5 +37,21 @@ void handle_eject(server_t *server, client_t *client, const char *arg)
 
 void handle_take(server_t *server, client_t *client, const char *resource)
 {
+    player_t *p = NULL;
+    int resource_id = atoi(resource);
+
+    if (!server || !client)
+        return;
+    for (int i = 0; i < server->game->player_count; ++i) {
+        if (server->game->players[i]->id == client->fd) {
+            p = server->game->players[i];
+            break;
+        }
+    }
+    if (!p || take_resource(client, server->game->map, resource_id) == -1) {
+        return send_response(client, "ko\n");
+    }
+    ++p->resources[resource_id];
+    send_response(client, "ok\n");
     return;
 }
