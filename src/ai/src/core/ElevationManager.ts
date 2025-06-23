@@ -2,224 +2,232 @@ import { NetworkClient } from "../network";
 import { GameContext } from "./types";
 import { logger } from "../logger";
 
-interface ElevationRequirements {
-    [key: number]: {
-        players: number;
-        linemate: number;
-        deraumere: number;
-        sibur: number;
-        mendiane: number;
-        phiras: number;
-        thystame: number;
-    };
+interface ResourceRequirement {
+  players: number;
+  linemate: number;
+  deraumere: number;
+  sibur: number;
+  mendiane: number;
+  phiras: number;
+  thystame: number;
 }
 
+interface ResourceCount {
+  linemate: number;
+  deraumere: number;
+  sibur: number;
+  mendiane: number;
+  phiras: number;
+  thystame: number;
+}
+
+type ResourceType = keyof ResourceCount;
+
 export class ElevationManager {
-    private elevationAttempts: number = 0;
-    private lastReproductionAttempt: number = 0;
+  private elevationAttempts: number = 0;
+  private lastReproductionAttempt: number = 0;
 
-    private readonly elevationRequirements: ElevationRequirements = {
-        1: { players: 1, linemate: 1, deraumere: 0, sibur: 0, mendiane: 0, phiras: 0, thystame: 0 },
-        2: { players: 2, linemate: 1, deraumere: 1, sibur: 1, mendiane: 0, phiras: 0, thystame: 0 },
-        3: { players: 2, linemate: 2, deraumere: 0, sibur: 1, mendiane: 0, phiras: 2, thystame: 0 },
-        4: { players: 4, linemate: 1, deraumere: 1, sibur: 2, mendiane: 0, phiras: 1, thystame: 0 },
-        5: { players: 4, linemate: 1, deraumere: 2, sibur: 1, mendiane: 3, phiras: 0, thystame: 0 },
-        6: { players: 6, linemate: 1, deraumere: 2, sibur: 3, mendiane: 0, phiras: 1, thystame: 0 },
-        7: { players: 6, linemate: 2, deraumere: 2, sibur: 2, mendiane: 2, phiras: 2, thystame: 1 }
-    };
+  private static readonly ELEVATION_REQUIREMENTS: Record<number, ResourceRequirement> = {
+    1: { players: 1, linemate: 1, deraumere: 0, sibur: 0, mendiane: 0, phiras: 0, thystame: 0 },
+    2: { players: 2, linemate: 1, deraumere: 1, sibur: 1, mendiane: 0, phiras: 0, thystame: 0 },
+    3: { players: 2, linemate: 2, deraumere: 0, sibur: 1, mendiane: 0, phiras: 2, thystame: 0 },
+    4: { players: 4, linemate: 1, deraumere: 1, sibur: 2, mendiane: 0, phiras: 1, thystame: 0 },
+    5: { players: 4, linemate: 1, deraumere: 2, sibur: 1, mendiane: 3, phiras: 0, thystame: 0 },
+    6: { players: 6, linemate: 1, deraumere: 2, sibur: 3, mendiane: 0, phiras: 1, thystame: 0 },
+    7: { players: 6, linemate: 2, deraumere: 2, sibur: 2, mendiane: 2, phiras: 2, thystame: 1 }
+  } as const;
 
-    public getElevationRequirements(level: number): any {
-        return this.elevationRequirements[level] || null;
+  private static readonly REPRODUCTION_COOLDOWN = 30000;
+  private static readonly RESOURCE_TYPES: readonly ResourceType[] = [
+    'linemate', 'deraumere', 'sibur', 'mendiane', 'phiras', 'thystame'
+  ] as const;
+
+  public getElevationRequirements(level: number): ResourceRequirement | null {
+    return ElevationManager.ELEVATION_REQUIREMENTS[level] || null;
+  }
+
+  public hasElevationResources(context: GameContext): boolean {
+    const requirements = this.getRequirementsForLevel(context.gameState.playerLevel);
+    if (!requirements) return false;
+
+    return this.checkResourceRequirements(context.inventory, requirements);
+  }
+
+  public hasElevationResourcesOnGround(context: GameContext): boolean {
+    const currentTile = this.getCurrentTile(context);
+    if (!currentTile) return false;
+
+    const requirements = this.getRequirementsForLevel(context.gameState.playerLevel);
+    if (!requirements) return false;
+
+    const groundResources = this.countResourcesOnGround(currentTile);
+    return this.checkResourceRequirements(groundResources, requirements);
+  }
+
+  public hasEnoughPlayers(context: GameContext): boolean {
+    const currentTile = this.getCurrentTile(context);
+    if (!currentTile) return false;
+
+    const requirements = this.getRequirementsForLevel(context.gameState.playerLevel);
+    if (!requirements) return false;
+
+    const playerCount = this.countPlayersOnTile(currentTile);
+    return playerCount >= requirements.players;
+  }
+
+  public canElevate(context: GameContext): boolean {
+    const hasResources = this.hasElevationResources(context) ||
+                        this.hasElevationResourcesOnGround(context);
+    return hasResources && this.hasEnoughPlayers(context);
+  }
+
+  public async attemptElevation(client: NetworkClient, context: GameContext): Promise<boolean> {
+    if (!this.canElevate(context)) {
+      logger.info("Cannot elevate - missing requirements");
+      return false;
     }
 
-    public hasElevationResources(context: GameContext): boolean {
-        const level = context.gameState.playerLevel;
-        const requirements = this.elevationRequirements[level];
+    const level = context.gameState.playerLevel;
+    logger.info(`Attempting elevation from level ${level}`);
 
-        if (!requirements) return false;
+    try {
+      await this.broadcastElevationReady(client, level);
+      const result = await client.incantation();
 
-        const inv = context.inventory;
-        return (
-            inv.linemate >= requirements.linemate &&
-            inv.deraumere >= requirements.deraumere &&
-            inv.sibur >= requirements.sibur &&
-            inv.mendiane >= requirements.mendiane &&
-            inv.phiras >= requirements.phiras &&
-            inv.thystame >= requirements.thystame
-        );
+      if (result.success) {
+        logger.info("Incantation started successfully!");
+        this.elevationAttempts++;
+        return true;
+      }
+      logger.warn("Incantation failed");
+      return false;
+    } catch (error) {
+      logger.error("Error during elevation:", error);
+      return false;
     }
+  }
 
-    public hasElevationResourcesOnGround(context: GameContext): boolean {
-        if (!context.vision.tiles || context.vision.tiles.length === 0) {
-            return false;
-        }
+  public async requestElevationHelp(client: NetworkClient, context: GameContext): Promise<void> {
+    const level = context.gameState.playerLevel;
+    const requirements = this.getRequirementsForLevel(level);
+    if (!requirements) return;
 
-        const level = context.gameState.playerLevel;
-        const requirements = this.elevationRequirements[level];
-
-        if (!requirements) return false;
-
-        const currentTile = context.vision.tiles[0];
-        const groundResources = this.countResourcesOnGround(currentTile);
-
-        return (
-            groundResources.linemate >= requirements.linemate &&
-            groundResources.deraumere >= requirements.deraumere &&
-            groundResources.sibur >= requirements.sibur &&
-            groundResources.mendiane >= requirements.mendiane &&
-            groundResources.phiras >= requirements.phiras &&
-            groundResources.thystame >= requirements.thystame
-        );
+    const playersNeeded = this.calculatePlayersNeeded(context, requirements);
+    if (playersNeeded > 0) {
+      await this.broadcastPlayerRequest(client, playersNeeded, level);
     }
+  }
 
-    public hasEnoughPlayers(context: GameContext): boolean {
-        if (!context.vision.tiles || context.vision.tiles.length === 0) {
-            return false;
-        }
+  public async attemptReproduction(client: NetworkClient): Promise<boolean> {
+    logger.info("Attempting reproduction (fork)...");
 
-        const level = context.gameState.playerLevel;
-        const requirements = this.elevationRequirements[level];
+    try {
+      await client.broadcast("REPRODUCTION_READY");
+      const success = await client.fork();
 
-        if (!requirements) return false;
-
-        const currentTile = context.vision.tiles[0];
-        const playerCount = currentTile.filter(item => item === "player").length;
-
-        return playerCount >= requirements.players;
+      if (success) {
+        logger.info("Successfully forked! New team member incoming.");
+        this.lastReproductionAttempt = Date.now();
+        return true;
+      }
+      logger.warn("Fork failed");
+      return false;
+    } catch (error) {
+      logger.error("Error during reproduction:", error);
+      return false;
     }
+  }
 
-    public canElevate(context: GameContext): boolean {
-        return (
-            (this.hasElevationResources(context) ||
-                this.hasElevationResourcesOnGround(context)) &&
-            this.hasEnoughPlayers(context)
-        );
-    }
+  public shouldAttemptReproduction(): boolean {
+    const timeSinceLastAttempt = Date.now() - this.lastReproductionAttempt;
+    return timeSinceLastAttempt > ElevationManager.REPRODUCTION_COOLDOWN;
+  }
 
-    public async attemptElevation(client: NetworkClient, context: GameContext): Promise<boolean> {
-        if (!this.canElevate(context)) {
-            logger.info("Cannot elevate - missing requirements");
-            return false;
-        }
+  public getMissingResources(context: GameContext): ResourceType[] {
+    const requirements = this.getRequirementsForLevel(context.gameState.playerLevel);
+    if (!requirements) return [];
 
-        logger.info(`Attempting elevation from level ${context.gameState.playerLevel}`);
+    return ElevationManager.RESOURCE_TYPES.filter(resource =>
+      context.inventory[resource] < requirements[resource]
+    );
+  }
 
-        try {
-            await client.broadcast(`ELEVATION_${context.gameState.playerLevel}_READY`);
+  public getElevationProgress(context: GameContext): number {
+    const requirements = this.getRequirementsForLevel(context.gameState.playerLevel);
+    if (!requirements) return 0;
 
-            const result = await client.incantation();
-            if (result.success) {
-                logger.info("Incantation started successfully!");
-                this.elevationAttempts++;
-                return true;
-            } else {
-                logger.warn("Incantation failed");
-                return false;
-            }
-        } catch (error) {
-            logger.error("Error during elevation:", error);
-            return false;
-        }
-    }
+    const totalRequired = this.calculateTotalRequiredResources(requirements);
+    if (totalRequired === 0) return 1;
 
-    public async requestElevationHelp(client: NetworkClient, context: GameContext): Promise<void> {
-        const level = context.gameState.playerLevel;
-        const requirements = this.elevationRequirements[level];
+    const currentHave = this.calculateCurrentResources(context.inventory, requirements);
+    return Math.min(currentHave / totalRequired, 1);
+  }
 
-        if (!requirements) return;
+  public getElevationAttempts(): number {
+    return this.elevationAttempts;
+  }
 
-        const currentTile = context.vision.tiles?.[0] || [];
-        const playerCount = currentTile.filter(item => item === "player").length;
-        const playersNeeded = requirements.players - playerCount;
+  public getLastReproductionAttempt(): number {
+    return this.lastReproductionAttempt;
+  }
 
-        if (playersNeeded > 0) {
-            const message = `NEED_${playersNeeded}_PLAYERS_LVL_${level}`;
-            await client.broadcast(message);
-            logger.info(`Requesting ${playersNeeded} more players for level ${level} elevation`);
-        }
-    }
+  public reset(): void {
+    this.elevationAttempts = 0;
+    this.lastReproductionAttempt = 0;
+  }
 
-    public async attemptReproduction(client: NetworkClient): Promise<boolean> {
-        logger.info("Attempting reproduction (fork)...");
+  private getRequirementsForLevel(level: number): ResourceRequirement | null {
+    return ElevationManager.ELEVATION_REQUIREMENTS[level] || null;
+  }
 
-        try {
-            await client.broadcast("REPRODUCTION_READY");
+  private getCurrentTile(context: GameContext): string[] | null {
+    return context.vision.tiles?.[0] || null;
+  }
 
-            const success = await client.fork();
-            if (success) {
-                logger.info("Successfully forked! New team member incoming.");
-                this.lastReproductionAttempt = Date.now();
-                return true;
-            } else {
-                logger.warn("Fork failed");
-                return false;
-            }
-        } catch (error) {
-            logger.error("Error during reproduction:", error);
-            return false;
-        }
-    }
+  private checkResourceRequirements(available: ResourceCount, required: ResourceRequirement): boolean {
+    return ElevationManager.RESOURCE_TYPES.every(resource =>
+      available[resource] >= required[resource]
+    );
+  }
 
-    public shouldAttemptReproduction(): boolean {
-        const timeSinceLastAttempt = Date.now() - this.lastReproductionAttempt;
-        return timeSinceLastAttempt > 30000; // 30 seconds cooldown
-    }
+  private countResourcesOnGround(tile: string[]): ResourceCount {
+    return ElevationManager.RESOURCE_TYPES.reduce((acc, resource) => {
+      acc[resource] = tile.filter(item => item === resource).length;
+      return acc;
+    }, {} as ResourceCount);
+  }
 
-    public getMissingResources(context: GameContext): string[] {
-        const level = context.gameState.playerLevel;
-        const requirements = this.elevationRequirements[level];
+  private countPlayersOnTile(tile: string[]): number {
+    return tile.filter(item => item === "player").length;
+  }
 
-        if (!requirements) return [];
+  private calculatePlayersNeeded(context: GameContext, requirements: ResourceRequirement): number {
+    const currentTile = this.getCurrentTile(context);
+    if (!currentTile) return requirements.players;
 
-        const inv = context.inventory;
-        const missing: string[] = [];
+    const currentPlayerCount = this.countPlayersOnTile(currentTile);
+    return Math.max(0, requirements.players - currentPlayerCount);
+  }
 
-        if (inv.linemate < requirements.linemate) missing.push("linemate");
-        if (inv.deraumere < requirements.deraumere) missing.push("deraumere");
-        if (inv.sibur < requirements.sibur) missing.push("sibur");
-        if (inv.mendiane < requirements.mendiane) missing.push("mendiane");
-        if (inv.phiras < requirements.phiras) missing.push("phiras");
-        if (inv.thystame < requirements.thystame) missing.push("thystame");
+  private calculateTotalRequiredResources(requirements: ResourceRequirement): number {
+    return ElevationManager.RESOURCE_TYPES.reduce((total, resource) =>
+      total + requirements[resource], 0
+    );
+  }
 
-        return missing;
-    }
+  private calculateCurrentResources(inventory: ResourceCount, requirements: ResourceRequirement): number {
+    return ElevationManager.RESOURCE_TYPES.reduce((total, resource) =>
+      total + Math.min(inventory[resource], requirements[resource]), 0
+    );
+  }
 
-    public getElevationProgress(context: GameContext): number {
-        const level = context.gameState.playerLevel;
-        const requirements = this.elevationRequirements[level];
+  private async broadcastElevationReady(client: NetworkClient, level: number): Promise<void> {
+    await client.broadcast(`ELEVATION_${level}_READY`);
+  }
 
-        if (!requirements) return 0;
-
-        const inv = context.inventory;
-        const totalRequired =
-            requirements.linemate +
-            requirements.deraumere +
-            requirements.sibur +
-            requirements.mendiane +
-            requirements.phiras +
-            requirements.thystame;
-
-        if (totalRequired === 0) return 1;
-
-        const currentHave =
-            Math.min(inv.linemate, requirements.linemate) +
-            Math.min(inv.deraumere, requirements.deraumere) +
-            Math.min(inv.sibur, requirements.sibur) +
-            Math.min(inv.mendiane, requirements.mendiane) +
-            Math.min(inv.phiras, requirements.phiras) +
-            Math.min(inv.thystame, requirements.thystame);
-
-        return currentHave / totalRequired;
-    }
-
-    private countResourcesOnGround(tile: string[]): any {
-        return {
-            linemate: tile.filter(item => item === "linemate").length,
-            deraumere: tile.filter(item => item === "deraumere").length,
-            sibur: tile.filter(item => item === "sibur").length,
-            mendiane: tile.filter(item => item === "mendiane").length,
-            phiras: tile.filter(item => item === "phiras").length,
-            thystame: tile.filter(item => item === "thystame").length,
-        };
-    }
+  private async broadcastPlayerRequest(client: NetworkClient, playersNeeded: number, level: number): Promise<void> {
+    const message = `NEED_${playersNeeded}_PLAYERS_LVL_${level}`;
+    await client.broadcast(message);
+    logger.info(`Requesting ${playersNeeded} more players for level ${level} elevation`);
+  }
 }
