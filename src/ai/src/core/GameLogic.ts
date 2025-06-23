@@ -33,15 +33,27 @@ export class GameLogic {
 
     public async tick(): Promise<void> {
         this.stateManager.updateTime();
+        const context = await this.safeUpdateContext();
+        if (!context) return;
+        this.stateManager.updateState(context);
+        await this.safeExecuteStrategy(context);
+    }
 
+    private async safeUpdateContext(): Promise<GameContext | null> {
         try {
             await this.updateContext();
-            const context = this.getContext();
+            return this.getContext();
+        } catch (error) {
+            logger.error("Failed to update game context:", error);
+            return null;
+        }
+    }
 
-            this.stateManager.updateState(context);
+    private async safeExecuteStrategy(context: GameContext): Promise<void> {
+        try {
             await this.executeStrategy(context);
         } catch (error) {
-            logger.error("Error in game tick:", error);
+            logger.error("Strategy execution failed:", error);
         }
     }
 
