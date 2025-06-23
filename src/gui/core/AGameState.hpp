@@ -15,6 +15,12 @@ public:
     AGameState() = default;
     virtual ~AGameState() = default;
 
+    // Rule of 5 - since we have virtual destructor
+    AGameState(const AGameState&) = delete;
+    AGameState& operator=(const AGameState&) = delete;
+    AGameState(AGameState&&) = delete;
+    AGameState& operator=(AGameState&&) = delete;
+
     virtual bool hasShaderBackground() const { return false; }
     void setTransitionAlpha(float alpha) { _transitionAlpha = alpha; }
     float getTransitionAlpha() const { return _transitionAlpha; }
@@ -24,4 +30,4 @@ protected:
     bool _finished = false;
 };
 
-#endif
+#endif /* !AGAMESTATE_HPP_ */
