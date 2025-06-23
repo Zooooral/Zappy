@@ -123,6 +123,34 @@ static void handle_position_update(server_t *server, client_t *client,
     }
 }
 
+static void handle_player_inventory(server_t *server, client_t *client, const char *cmd)
+{
+    int player_id;
+    player_t *player;
+    char response[128];
+
+    if (sscanf(cmd, "pin #%d", &player_id) != 1) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    player = player_find_by_id(server, player_id);
+    if (!player) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    snprintf(response, sizeof(response),
+        "pin #%d %d %d %d %d %d %d %d %d %d\n",
+        player->id, player->x, player->y,
+        player->resources[RESOURCE_FOOD],
+        player->resources[RESOURCE_LINEMATE],
+        player->resources[RESOURCE_DERAUMERE],
+        player->resources[RESOURCE_SIBUR],
+        player->resources[RESOURCE_MENDIANE],
+        player->resources[RESOURCE_PHIRAS],
+        player->resources[RESOURCE_THYSTAME]);
+    send_response(client, response);
+}
+
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
     size_t i;
@@ -133,6 +161,7 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {"tna", handle_team_names_command},
         {"pnw", handle_player_info_command},
         {"ppo", handle_position_update},
+        {"pin", handle_player_inventory},
         {NULL, NULL}
     };
 
