@@ -78,7 +78,7 @@ void GameScreen::onExit() {
 void GameScreen::setupNetworkAndRequestData() {
     NetworkManager& network = NetworkManager::getInstance();
 
-    network.setCommandCallback([this](const std::string& command) {
+    network.setMessageCallback([this](const std::string& command) {
         handleServerCommand(command);
     });
 
@@ -374,24 +374,24 @@ void GameScreen::draw() {
     _backButton->draw();
     _inventoryUI->draw();
 
-    NetworkManager::ConnectionState connectionState = NetworkManager::getInstance().getConnectionState();
+    ConnectionState connectionState = NetworkManager::getInstance().getConnectionState();
     const char* stateText = "Disconnected";
     Color stateColor = RED;
 
     switch (connectionState) {
-        case NetworkManager::ConnectionState::CONNECTING:
+        case ConnectionState::CONNECTING:
             stateText = "Connecting...";
             stateColor = YELLOW;
             break;
-        case NetworkManager::ConnectionState::CONNECTED:
+        case ConnectionState::CONNECTED:
             stateText = "Connected";
             stateColor = ORANGE;
             break;
-        case NetworkManager::ConnectionState::AUTHENTICATED:
+        case ConnectionState::AUTHENTICATED:
             stateText = "Authenticated";
             stateColor = GREEN;
             break;
-        case NetworkManager::ConnectionState::ERROR:
+        case ConnectionState::ERROR:
             stateText = "Connection Error";
             stateColor = RED;
             break;
