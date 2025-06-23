@@ -12,12 +12,14 @@
 #include "core/GameStateManager.hpp"
 #include "core/GameWorld.hpp"
 #include "core/Environment.hpp"
+#include "core/Constants.hpp"
 #include "screens/SplashScreen.hpp"
 #include "screens/MainMenu.hpp"
 #include "screens/GameScreen.hpp"
 #include "screens/SettingsMenu.hpp"
 #include "screens/EndScreen.hpp"
 #include "screens/ConnectingScreen.hpp"
+#include "network/NetworkPlatform.hpp"
 
 #include <iostream>
 #include <memory>
@@ -25,18 +27,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <csignal>
+#include <atomic>
 
-static bool g_cleanup_done = false;
+void cleanup_resources() noexcept {
 
-void cleanup_resources()
-{
-    if (g_cleanup_done) return;
-    g_cleanup_done = true;
     
     try {
         SoundManager::getInstance().stopMusic();
         SoundManager::getInstance().stopAllSounds();
         FontManager::getInstance().unloadFonts();
+        zappy::network::NetworkPlatform::cleanup();
         if (IsWindowReady()) {
             CloseWindow();
         }
@@ -44,22 +44,14 @@ void cleanup_resources()
     }
 }
 
-void signalHandler(int signum) {
-    std::cout << "ERROR: Received signal " << signum << std::endl;
-    cleanup_resources();
-    std::exit(signum);
-}
-
-void printHelp(const char* programName)
-{
+void printHelp(const char* programName) {
     std::cout << "USAGE: " << programName << " -p port -h machine" << std::endl;
     std::cout << "  option\tdescription" << std::endl;
     std::cout << "  -p port\tport number" << std::endl;
     std::cout << "  -h machine\thostname of the server" << std::endl;
 }
 
-bool parseArgs(int argc, char** argv)
-{
+bool parseArgs(int argc, char** argv) {
     ConfigManager& config = ConfigManager::getInstance();
 
     if (argc == 1) {
@@ -88,22 +80,23 @@ bool parseArgs(int argc, char** argv)
     return true;
 }
 
-int main(int argc, char** argv)
-{
-    std::signal(SIGINT, signalHandler);
-    std::signal(SIGTERM, signalHandler);
-    std::signal(SIGSEGV, signalHandler);
+int main(int argc, char** argv) {
     
     if (!parseArgs(argc, argv)) {
         return 0;
     }
 
-    const int screenWidth = 1920;
-    const int screenHeight = 1080;
+    // Initialize network platform
+    if (!zappy::network::NetworkPlatform::initialize()) {
+        std::cerr << "Failed to initialize network platform" << std::endl;
+        return 1;
+    }
 
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
-    InitWindow(screenWidth, screenHeight, "Zappy - A Tribute to Zaphod Beeblebrox");
-    SetTargetFPS(60);
+    InitWindow(zappy::constants::DEFAULT_SCREEN_WIDTH, 
+               zappy::constants::DEFAULT_SCREEN_HEIGHT, 
+               "Zappy - A Tribute to Zaphod Beeblebrox");
+    SetTargetFPS(zappy::constants::TARGET_FPS);
 
     bool shouldQuit = false;
     
