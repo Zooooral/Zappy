@@ -98,6 +98,7 @@ void game_state_destroy(game_state_t *game)
     free(game);
 }
 
+// unsure if this should be one more tick before death
 static void player_update(player_t *player)
 {
     if (!player || !player->is_alive)
