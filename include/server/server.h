@@ -25,6 +25,7 @@
     #define SEEDER_MOVE_INTERVAL 5.0
     #define SEEDER_ELEVATION_INTERVAL 30.0
     #define SEEDER_ELEVATION_DURATION 5.0
+    #define FOOD_INHALATION_TIME 126
 
 typedef enum client_type_e {
     CLIENT_TYPE_UNKNOWN,
@@ -78,6 +79,8 @@ typedef struct player_s {
     bool is_elevating;
     double elevation_start_time;
     client_t *client;
+    size_t last_food_inhalation;
+    bool is_alive;
 } player_t;
 
 typedef struct map_s {
@@ -126,6 +129,7 @@ typedef struct server_s {
     size_t poll_count;
     bool is_running;
     game_state_t *game;
+    size_t tick_count;
 } server_t;
 
 int server_create(server_t *server, const server_config_t *config);

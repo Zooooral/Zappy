@@ -61,7 +61,7 @@ static double calculate_delta_time(double *last_time)
 
 static int handle_poll_events(server_t *server)
 {
-    int ready = poll(server->poll_fds, server->poll_count, 0);
+    int ready = poll(server->poll_fds, server->poll_count, 2);
 
     if (ready == -1) {
         if (errno == EINTR)
@@ -74,28 +74,43 @@ static int handle_poll_events(server_t *server)
     return 0;
 }
 
-static void update_game_and_broadcast(server_t *server, double delta_time,
-    double *broadcast_timer)
+static void check_for_death(server_t *server)
 {
-    respawn_resources(server->game->map);
+    player_t *player;
+
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        player = server->game->players[i];
+        if (!player->is_alive) {
+            send_response(player->client, "dead\n");
+            client_remove(server, i);
+        }
+    }
+}
+
+
+static void update_game_and_broadcast(server_t *server, double delta_time)
+{
+    if (server->tick_count % 20 == 0)
+        respawn_resources(server->game->map);
     if (server->game)
         game_state_update(server->game, delta_time);
     process_actions(server);
-    *broadcast_timer += delta_time;
-    if (*broadcast_timer >= 0.1) {
-        broadcast_seeder_updates(server);
-        *broadcast_timer = 0.0;
-    }
+    check_for_death(server);
 }
 
 static void wait_for_next_tick(server_t *server, double delta_time)
 {
-    double target_time = get_time_unit(server);
-    double sleep_time = target_time - delta_time;
+    static double accumulated_time = 0.0;
+    double time_unit = get_time_unit(server);
 
-    if (sleep_time > 0.0) {
-        usleep((sleep_time * 1e6));
-    }
+    accumulated_time += delta_time;
+    if (accumulated_time < time_unit)
+        return;
+    printf("[SERVER] Tick %zu: Delta time: %.3f seconds\n",
+            server->tick_count, delta_time);
+    accumulated_time -= time_unit;
+    server->tick_count++;
+    update_game_and_broadcast(server, delta_time);
 }
 
 void server_run(server_t *server)
@@ -111,7 +126,6 @@ void server_run(server_t *server)
             break;
         if (handle_poll_events(server) == -1)
             break;
-        update_game_and_broadcast(server, delta_time, &broadcast_timer);
         wait_for_next_tick(server, delta_time);
     }
     printf("[SERVER] Server shutting down\n");

@@ -47,9 +47,9 @@ static int process_ready_action(client_t *client, double now)
 
     if (!action)
         return 0;
+    if (action->exec_time > now)
+        return 0;
     client->action_queue_head = action->next;
-    if (action->exec_time < now)
-        return 1;
     if (!client->action_queue_head)
         client->action_queue_tail = NULL;
     client->action_queue_count--;
