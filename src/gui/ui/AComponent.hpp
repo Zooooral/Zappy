@@ -18,6 +18,12 @@ public:
     }
     virtual ~AComponent() = default;
 
+    // Rule of 5
+    AComponent(const AComponent&) = delete;
+    AComponent& operator=(const AComponent&) = delete;
+    AComponent(AComponent&&) = delete;
+    AComponent& operator=(AComponent&&) = delete;
+
     virtual void update(float dt) = 0;
     virtual void draw() const = 0;
 
@@ -39,6 +45,11 @@ public:
     bool isClicked() const {
         return isHovered() && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
     }
+    
+    bool isEnabled() const { return _enabled; }
+    bool isVisible() const { return _visible; }
+    void setEnabled(bool enabled) { _enabled = enabled; }
+    void setVisible(bool visible) { _visible = visible; }
 
 protected:
     Vector2 _position;
@@ -52,4 +63,4 @@ protected:
     }
 };
 
-#endif
+#endif /* !ACOMPONENT_HPP_ */

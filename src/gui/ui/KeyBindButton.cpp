@@ -2,76 +2,76 @@
 ** EPITECH PROJECT, 2025
 ** src/gui/ui/KeyBindButton.cpp
 ** File description:
-** KeyBindButton
+** KeyBindButton implementation with safe static management
 */
 
 #include "KeyBindButton.hpp"
 #include "../core/FontManager.hpp"
-
+#include "../core/Constants.hpp"
 #include <algorithm>
 
-std::vector<KeyBindButton*> KeyBindButton::_allKeyBinds;
-
-KeyBindButton::KeyBindButton(const Vector2 &position, const Vector2 &size, const std::string &action, int keyCode) : AComponent(position, size), _action(action), _keyCode(keyCode)
-{
-    registerInstance(this);
+KeyBindButton::KeyBindButton(const Vector2 &position, const Vector2 &size, const std::string &action, int keyCode)
+    : AComponent(position, size), _action(action), _keyCode(keyCode) {
+    getInstanceManager().registerInstance(this);
 }
 
-KeyBindButton::~KeyBindButton()
-{
-    unregisterInstance(this);
+KeyBindButton::~KeyBindButton() {
+    getInstanceManager().unregisterInstance(this);
 }
 
-void KeyBindButton::update(float dt)
-{
+void KeyBindButton::update(float dt) {
     (void)dt;
-    float buttonWidth = 150;
-    float buttonX = _position.x + _size.x - buttonWidth;
-    float buttonY = _position.y + (_size.y - 40) / 2;
-    Rectangle buttonRect = { buttonX, buttonY, buttonWidth, 40 };
-
-    if (CheckCollisionPointRec(GetMousePosition(), buttonRect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+    
+    if (isClicked()) {
         clearListeningState();
         _listening = true;
     }
+
     if (_listening) {
-        int key = GetKeyPressed();
-        if (key > 0) {
-            KeyBindButton* existingBind = findByKeyCode(key, this);
-            if (existingBind) {
-                existingBind->setKeyCode(0);
-                if (existingBind->_callback) {
-                    existingBind->_callback(0);
+        for (int key = 0; key < 400; key++) {
+            if (IsKeyPressed(key)) {
+                auto& manager = getInstanceManager();
+                KeyBindButton* conflicting = manager.findByKeyCode(key, this);
+                
+                if (conflicting != nullptr) {
+                    conflicting->setKeyCode(0);
                 }
+                
+                setKeyCode(key);
+                _listening = false;
+                
+                if (_callback) {
+                    _callback(key);
+                }
+                break;
             }
-            _keyCode = key;
-            _listening = false;
-            if (_callback) {
-                _callback(_keyCode);
-            }
-        }
-        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-            _listening = false;
         }
     }
 }
 
-void KeyBindButton::draw() const
-{
-    Color actionColor = WHITE;
-    Color keyColor = _listening ? BLUE : WHITE;
-    Color bgColor = Fade(BLACK, 0.5f);
+void KeyBindButton::draw() const {
+    if (!_visible || !_enabled) return;
 
     Font font = FontManager::getInstance().getFont("medium");
-    DrawTextEx(font, _action.c_str(), {_position.x + 10, _position.y + (_size.y - 24) / 2}, 24, 1, actionColor);
+    
+    // Draw action label
+    Vector2 labelSize = MeasureTextEx(font, _action.c_str(), zappy::constants::FONT_SIZE_MEDIUM, 1);
+    float labelX = _position.x;
+    float labelY = _position.y + (_size.y - labelSize.y) / 2;
+    DrawTextEx(font, _action.c_str(), {labelX, labelY}, zappy::constants::FONT_SIZE_MEDIUM, 1, RAYWHITE);
 
+    // Draw key binding box
+    Color bgColor = Fade(BLACK, 0.5f);
+    Color keyColor = _listening ? YELLOW : RAYWHITE;
+    
     std::string keyName = _listening ? "Press a key..." : getKeyName(_keyCode);
-    Vector2 keyNameSize = MeasureTextEx(font, keyName.c_str(), 24, 1);
+    Vector2 keyNameSize = MeasureTextEx(font, keyName.c_str(), zappy::constants::FONT_SIZE_MEDIUM, 1);
 
-    float buttonWidth = 150;
+    constexpr float buttonWidth = 150.0f;
+    constexpr float buttonHeight = 40.0f;
     float buttonX = _position.x + _size.x - buttonWidth;
-    float buttonY = _position.y + (_size.y - 40) / 2;
-    Rectangle buttonRect = { buttonX, buttonY, buttonWidth, 40 };
+    float buttonY = _position.y + (_size.y - buttonHeight) / 2;
+    Rectangle buttonRect = { buttonX, buttonY, buttonWidth, buttonHeight };
 
     bool isBoxHovered = CheckCollisionPointRec(GetMousePosition(), buttonRect);
     Color buttonBgColor = _listening ? Fade(BLUE, 0.2f) : bgColor;
@@ -81,33 +81,28 @@ void KeyBindButton::draw() const
     DrawRectangleRoundedLines(buttonRect, 0.3f, 10, buttonBorderColor);
 
     float textX = buttonX + (buttonWidth - keyNameSize.x) / 2;
-    float textY = buttonY + (40 - keyNameSize.y) / 2;
+    float textY = buttonY + (buttonHeight - keyNameSize.y) / 2;
 
-    DrawTextEx(font, keyName.c_str(), {textX, textY}, 24, 1, keyColor);
+    DrawTextEx(font, keyName.c_str(), {textX, textY}, zappy::constants::FONT_SIZE_MEDIUM, 1, keyColor);
 }
 
-void KeyBindButton::setCallback(const std::function<void(int)> &callback)
-{
+void KeyBindButton::setCallback(const std::function<void(int)> &callback) {
     _callback = callback;
 }
 
-void KeyBindButton::setKeyCode(int keyCode)
-{
+void KeyBindButton::setKeyCode(int keyCode) {
     _keyCode = keyCode;
 }
 
-int KeyBindButton::getKeyCode() const
-{
+int KeyBindButton::getKeyCode() const {
     return _keyCode;
 }
 
-std::string KeyBindButton::getAction() const
-{
+std::string KeyBindButton::getAction() const {
     return _action;
 }
 
-std::string KeyBindButton::getKeyName(int keyCode) const
-{
+std::string KeyBindButton::getKeyName(int keyCode) const {
     switch (keyCode) {
         case 0: return "NONE";
         case KEY_A: return "A";
@@ -147,32 +142,43 @@ std::string KeyBindButton::getKeyName(int keyCode) const
     }
 }
 
-void KeyBindButton::registerInstance(KeyBindButton* instance)
-{
-    _allKeyBinds.push_back(instance);
+KeyBindButton::InstanceManager& KeyBindButton::getInstanceManager() {
+    static InstanceManager manager;
+    return manager;
 }
 
-void KeyBindButton::unregisterInstance(KeyBindButton* instance)
-{
-    auto it = std::find(_allKeyBinds.begin(), _allKeyBinds.end(), instance);
-    if (it != _allKeyBinds.end()) {
-        _allKeyBinds.erase(it);
+void KeyBindButton::InstanceManager::registerInstance(KeyBindButton* instance) {
+    std::lock_guard<std::mutex> lock(mutex);
+    instances.push_back(instance);
+}
+
+void KeyBindButton::InstanceManager::unregisterInstance(KeyBindButton* instance) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto it = std::find(instances.begin(), instances.end(), instance);
+    if (it != instances.end()) {
+        instances.erase(it);
     }
 }
 
-void KeyBindButton::clearListeningState()
-{
-    for (KeyBindButton* button : _allKeyBinds) {
-        button->_listening = false;
+void KeyBindButton::InstanceManager::clearAllListening() {
+    std::lock_guard<std::mutex> lock(mutex);
+    for (KeyBindButton* button : instances) {
+        if (button) {
+            button->_listening = false;
+        }
     }
 }
 
-KeyBindButton* KeyBindButton::findByKeyCode(int keyCode, KeyBindButton* except)
-{
-    for (KeyBindButton* button : _allKeyBinds) {
-        if (button != except && button->_keyCode == keyCode) {
+KeyBindButton* KeyBindButton::InstanceManager::findByKeyCode(int keyCode, KeyBindButton* except) {
+    std::lock_guard<std::mutex> lock(mutex);
+    for (KeyBindButton* button : instances) {
+        if (button && button != except && button->_keyCode == keyCode) {
             return button;
         }
     }
     return nullptr;
+}
+
+void KeyBindButton::clearListeningState() {
+    getInstanceManager().clearAllListening();
 }
