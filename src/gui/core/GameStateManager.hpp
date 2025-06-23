@@ -12,7 +12,7 @@
     #include <unordered_map>
     #include <string>
 
-    #include "GameState.hpp"
+    #include "../interfaces/IGameState.hpp"
 
 class GameStateManager {
 public:
@@ -22,14 +22,14 @@ public:
     };
 
     static GameStateManager &getInstance();
-    void registerState(const std::string &name, std::unique_ptr<GameState> state);
+    void registerState(const std::string &name, std::unique_ptr<IGameState> state);
     void changeState(const std::string &name, Transition transition = Transition::NONE);
     void update(float dt);
     void draw();
 
     std::string getCurrentState() const;
     bool shouldQuit() const { return _shouldQuit; }
-    GameState* getStateInstance(const std::string &name);
+    IGameState* getStateInstance(const std::string &name) const;
 
 private:
     GameStateManager();
@@ -37,7 +37,7 @@ private:
     GameStateManager(const GameStateManager &) = delete;
     GameStateManager &operator=(const GameStateManager &) = delete;
 
-    std::unordered_map<std::string, std::unique_ptr<GameState>> _states;
+    std::unordered_map<std::string, std::unique_ptr<IGameState>> _states;
     std::string _currentState;
     std::string _nextState;
 
@@ -49,6 +49,7 @@ private:
     float _transitionDuration = 0.5f;
 
     void drawTransition();
+    void completeTransition();
 };
 
 #endif /* !GAMESTATEMANAGER_HPP_ */
