@@ -74,6 +74,20 @@ static int handle_poll_events(server_t *server)
     return 0;
 }
 
+static void check_for_death(server_t *server)
+{
+    player_t *player;
+
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        player = server->game->players[i];
+        if (!player->is_alive) {
+            send_response(player->client, "dead\n");
+            client_remove(server, i);
+        }
+    }
+}
+
+
 static void update_game_and_broadcast(server_t *server, double delta_time)
 {
     if (server->tick_count % 20 == 0)
@@ -81,6 +95,7 @@ static void update_game_and_broadcast(server_t *server, double delta_time)
     if (server->game)
         game_state_update(server->game, delta_time);
     process_actions(server);
+    check_for_death(server);
 }
 
 static void wait_for_next_tick(server_t *server, double delta_time)
