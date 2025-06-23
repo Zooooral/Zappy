@@ -147,7 +147,7 @@ export class ResourceCollector {
     try {
       const success = await client.take(resourceType);
       if (success) {
-        logger.info(`Successfully collected ${resourceType}`);
+        logger.info(`Successfully collected ressource ${resourceType}`);
         this.movementController.resetStuckCounter();
         return { success: true, resourceType };
       }
@@ -178,14 +178,14 @@ export class ResourceCollector {
     try {
       const moved = await this.movementController.moveTowardsDirection(client, direction);
       if (moved) {
-        logger.debug(`Moving towards ${resourceType}`);
+        logger.debug(`Moving to ressource ${resourceType}`);
         return { success: true, direction };
       }
 
       this.movementController.incrementStuckCounter();
       return { success: false, error: "Movement failed" };
     } catch (error) {
-      const errorMessage = `Error while moving towards ${resourceType}: ${error}`;
+      const errorMessage = `Error while moving to ressource ${resourceType}: ${error}`;
       logger.error(errorMessage);
       return { success: false, error: errorMessage };
     }

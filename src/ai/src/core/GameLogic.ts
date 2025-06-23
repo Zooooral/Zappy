@@ -53,7 +53,7 @@ export class GameLogic {
         try {
             await this.executeStrategy(context);
         } catch (error) {
-            logger.error("Strategy execution failed:", error);
+            logger.error("Strategy logic execution failed:", error);
         }
     }
 

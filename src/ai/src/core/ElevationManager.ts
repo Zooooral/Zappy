@@ -119,18 +119,18 @@ export class ElevationManager {
   }
 
   public async attemptReproduction(client: NetworkClient): Promise<boolean> {
-    logger.info("Attempting reproduction (fork)...");
+    logger.info("Attempting reproduction ...");
 
     try {
       await client.broadcast("REPRODUCTION_READY");
       const success = await client.fork();
 
       if (success) {
-        logger.info("Successfully forked! New team member incoming.");
+        logger.info("Successfully reproducted! New team member incoming.");
         this.lastReproductionAttempt = Date.now();
         return true;
       }
-      logger.warn("Fork failed");
+      logger.warn("Reproduction failed");
       return false;
     } catch (error) {
       logger.error("Error during reproduction:", error);
