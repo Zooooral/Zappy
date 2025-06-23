@@ -1,19 +1,20 @@
 /*
 ** EPITECH PROJECT, 2025
-** Zappy
+** src/gui/entities/CharacterManager.hpp
 ** File description:
-** CharacterManager
+** CharacterManager with proper const correctness
 */
 
 #ifndef CHARACTERMANAGER_HPP_
-    #define CHARACTERMANAGER_HPP_
+#define CHARACTERMANAGER_HPP_
 
 #include "Character.hpp"
-#include "raylib.h"
 #include <vector>
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <string>
+#include <mutex>
+#include "raylib.h"
 
 struct ElevationParticle {
     Vector3 position;
@@ -27,56 +28,65 @@ struct ElevationParticle {
 class CharacterManager {
 public:
     static CharacterManager& getInstance();
+    
+    // Rule of 5
+    ~CharacterManager();
+    CharacterManager(const CharacterManager&) = delete;
+    CharacterManager& operator=(const CharacterManager&) = delete;
+    CharacterManager(CharacterManager&&) = delete;
+    CharacterManager& operator=(CharacterManager&&) = delete;
 
     void initialize();
     void cleanup();
     void update(float dt);
+    void draw2D(Camera2D camera) const;
     void draw3D(Camera camera);
-    void draw2D(Camera2D camera);
 
-    void addCharacter(int id, const Vector3& position, const std::string& team, int level = 1);
+    void addCharacter(int id, const Vector3& position, const std::string& team, int level);
     void removeCharacter(int id);
-    Character* getCharacter(int id);
-    Character* getHoveredCharacter(Camera camera);
-
+    Character* getCharacter(int id) const;
+    Character* getHoveredCharacter(Camera camera) const; // Now const-correct
+    
     void setSelectedCharacter(Character* character);
     Character* getSelectedCharacter() const { return _selectedCharacter; }
-
+    
     void endAllElevations();
-    void setTimeUnit(int timeUnit) { _timeUnit = timeUnit; }
-    bool isModelLoaded() const { return _modelLoaded; }
+    void setTimeUnit(float timeUnit) { _timeUnit = timeUnit; }
+    
+    const std::vector<std::unique_ptr<Character>>& getCharacters() const { return _characters; }
 
 private:
     CharacterManager() = default;
-    ~CharacterManager();
-    CharacterManager(const CharacterManager&) = delete;
-    CharacterManager& operator=(const CharacterManager&) = delete;
 
     std::vector<std::unique_ptr<Character>> _characters;
-    std::map<std::string, std::vector<Character*>> _tileCharacters;
-    std::map<Character*, std::vector<ElevationParticle>> _elevationParticles;
-
+    std::unordered_map<std::string, std::vector<Character*>> _tileCharacters;
+    std::unordered_map<Character*, std::vector<ElevationParticle>> _elevationParticles;
+    
+    Character* _selectedCharacter = nullptr;
+    mutable Character* _hoveredCharacter = nullptr; // Mutable for lazy evaluation
+    
     Model _characterModel;
     ModelAnimation* _animations = nullptr;
     int _animCount = 0;
-    int _frameCounter = 0;
     bool _modelLoaded = false;
-
-    float _particleTimer = 0.0f;
     float _animationTimer = 0.0f;
-    int _timeUnit = 100;
-    Character* _hoveredCharacter = nullptr;
-    Character* _selectedCharacter = nullptr;
+    float _particleTimer = 0.0f;
+    int _frameCounter = 0;
+    float _timeUnit = 1.0f;
+    
+    mutable std::mutex _charactersMutex; // For thread safety
 
     void loadModel();
     void updateTilePositions();
     void updateElevationParticles(float dt);
     void createElevationParticles(Character* character);
-    void drawCharacter(Character* character, Camera camera, bool isHovered, bool isSelected);
-    void drawCharacterOutline(Character* character, Color color);
     void drawElevationParticles(Character* character, Camera camera);
-    Color getTeamColor();
+    
+    void drawCharacter(Character* character, Camera camera, bool isHovered, bool isSelected) const;
+    void drawCharacterOutline(Character* character, Color color) const;
+    
+    Color getTeamColor() const;
     std::string getTileKey(const Vector2& pos) const;
 };
 
-#endif
+#endif /* !CHARACTERMANAGER_HPP_ */
