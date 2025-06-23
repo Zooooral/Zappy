@@ -1,5 +1,5 @@
 ##
-## EPITECH PROJECT, 2024
+## EPITECH PROJECT, 2025
 ## Zappy
 ## File description:
 ## Makefile for Zappy project
