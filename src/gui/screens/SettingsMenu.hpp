@@ -13,13 +13,13 @@
     #include <string>
     #include <unordered_map>
 
-    #include "../core/GameState.hpp"
+    #include "../core/AGameState.hpp"
     #include "../ui/Button.hpp"
     #include "../ui/Slider.hpp"
     #include "../ui/KeyBindButton.hpp"
     #include "raylib.h"
 
-class SettingsMenu : public GameState {
+class SettingsMenu : public AGameState {
 public:
     SettingsMenu();
     ~SettingsMenu();
