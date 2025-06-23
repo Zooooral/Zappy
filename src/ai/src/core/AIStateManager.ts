@@ -52,16 +52,16 @@ export class AIStateManager {
     const previousState = this.currentState;
 
     if (food < AIStateManager.FOOD_THRESHOLDS.CRITICAL) {
-      logger.warn(`Mode survie critique - nourriture: ${food}`);
+      logger.warn(`Critical Survival Mode - food: ${food}`);
     }
-    logger.info(`Transition d'état: ${previousState} -> ${newState}`);
+    logger.info(`State transition: ${previousState} -> ${newState}`);
     this.currentState = newState;
     this.timeInState = 0;
   }
 
   public setState(newState: AIState): void {
     if (this.currentState !== newState) {
-      logger.info(`Changement d'état forcé: ${this.currentState} -> ${newState}`);
+      logger.info(`State force change: ${this.currentState} -> ${newState}`);
       this.currentState = newState;
       this.timeInState = 0;
     }
@@ -89,7 +89,7 @@ export class AIStateManager {
     this.currentState = AIState.SURVIVAL;
     this.timeInState = 0;
     this.lastTick = Date.now();
-    logger.info("AIStateManager réinitialisé");
+    logger.info("AIStateManager reinitialized");
   }
 
   public getDebugInfo(): {
