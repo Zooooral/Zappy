@@ -1,23 +1,18 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Simplified Visual Studio Detection Script
-:: This fixes the syntax error in the original script
-
 echo.
 echo ================================================================
 echo                    ZAPPY GUI WINDOWS SETUP (FIXED)
 echo ================================================================
 echo.
 
-:: Get project directory
 set "PROJECT_DIR=%~dp0"
 cd /d "%PROJECT_DIR%"
 
 echo Project Directory: %PROJECT_DIR%
 echo.
 
-:: Check for Git
 echo [1/5] Checking for Git...
 where git >nul 2>&1
 if %errorLevel% neq 0 (
@@ -29,7 +24,6 @@ if %errorLevel% neq 0 (
     echo ✅ Git found
 )
 
-:: Check for CMake
 echo [2/5] Checking for CMake...
 where cmake >nul 2>&1
 if %errorLevel% neq 0 (
@@ -58,48 +52,41 @@ if %errorLevel% neq 0 (
     echo ✅ CMake found
 )
 
-:: Check for Visual Studio Build Tools (simplified)
 echo [3/5] Checking for Visual Studio Build Tools...
 
 set "VS_FOUND=0"
 set "VS_PATH="
 
-:: Check VS 2022 Community
 if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" (
     set "VS_PATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
     set "VS_FOUND=1"
     goto vs_found
 )
 
-:: Check VS 2022 Professional
 if exist "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat" (
     set "VS_PATH=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
     set "VS_FOUND=1"
     goto vs_found
 )
 
-:: Check VS 2022 Enterprise
 if exist "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" (
     set "VS_PATH=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
     set "VS_FOUND=1"
     goto vs_found
 )
 
-:: Check VS 2019 Community
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat" (
     set "VS_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
     set "VS_FOUND=1"
     goto vs_found
 )
 
-:: Check VS Build Tools
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" (
     set "VS_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
     set "VS_FOUND=1"
     goto vs_found
 )
 
-:: Setup vcpkg
 echo [4/5] Setting up vcpkg...
 
 set "VCPKG_DIR=%PROJECT_DIR%vcpkg"
@@ -139,10 +126,8 @@ if %errorLevel% neq 0 (
 
 echo ✅ vcpkg and raylib installed
 
-:: Return to project directory
 cd /d "%PROJECT_DIR%"
 
-:: Create CMakeLists.txt
 echo [5/5] Creating build files...
 
 (
@@ -168,7 +153,6 @@ echo     COMMAND ${CMAKE_COMMAND} -E copy_directory
 echo     ${CMAKE_SOURCE_DIR}/assets $^<TARGET_FILE_DIR:zappy_gui^>/assets^)
 ) > CMakeLists.txt
 
-:: Create and build
 if exist "build" rmdir /s /q build
 mkdir build
 cd build
@@ -192,7 +176,6 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
-:: Create run script
 cd Release
 (
 echo @echo off

@@ -27,7 +27,7 @@ show_banner() {
     ███████╗██║  ██║██║     ██║        ██║   
     ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝        ╚═╝   
 EOF
-  echo -e "${CYAN}    🚀 Development CLI Tool v1.0${NC}"
+  echo -e "${CYAN}    🚀 Development CLI Tool v1.1${NC}"
   echo -e "${YELLOW}    Making Zappy development a breeze!${NC}\n"
 }
 
@@ -240,26 +240,7 @@ start_server() {
   fi
 }
 
-start_server_seed() {
-  if is_running "server"; then
-    log_warning "Server is already running"
-    return 0
-  fi
-  
-  log_info "Starting Zappy server in seed mode..."
-  
-  ./zappy_server --seed -p "${ZAPPY_PORT}" > "${LOG_DIR}/server_seed.log" 2>&1 &
-  local server_pid=$!
-  save_pid "server" "${server_pid}"
-  
-  sleep 2
-  if is_running "server"; then
-    log_success "Server started in seed mode (PID: ${server_pid}, Port: ${ZAPPY_PORT})"
-  else
-    log_error "Failed to start server. Check ${LOG_DIR}/server_seed.log"
-    return 1
-  fi
-}
+
 
 stop_server() {
   if is_running "server"; then
@@ -368,6 +349,155 @@ stop_ai() {
   fi
 }
 
+show_logs() {
+  local component="${1}"
+  local log_file=""
+  
+  case "${component}" in
+    "server")
+      if [[ -f "${LOG_DIR}/server.log" ]]; then
+        log_file="${LOG_DIR}/server.log"
+      else
+        log_error "No server log file found"
+        return 1
+      fi
+      ;;
+    "gui")
+      log_file="${LOG_DIR}/gui.log"
+      ;;
+    "ai")
+      echo -e "${CYAN}📋 Available AI logs:${NC}"
+      find "${LOG_DIR}" -name "ai_*.log" -type f | sort
+      echo -e "\n${YELLOW}💡 Use: logs ai_[team]_[number] for specific AI${NC}"
+      return 0
+      ;;
+    ai_*)
+      log_file="${LOG_DIR}/${component}.log"
+      ;;
+    "build")
+      echo -e "${CYAN}📋 Available build logs:${NC}"
+      find "${LOG_DIR}" -name "build_*.log" -o -name "clean.log" -o -name "rebuild.log" | sort
+      echo -e "\n${YELLOW}💡 Use: logs build_[component] for specific build log${NC}"
+      return 0
+      ;;
+    build_*|clean|rebuild)
+      log_file="${LOG_DIR}/${component}.log"
+      ;;
+    *)
+      echo -e "${RED}❌ Unknown component: ${component}${NC}"
+      echo -e "${CYAN}Available components: server, gui, ai, build${NC}"
+      return 1
+      ;;
+  esac
+  
+  if [[ ! -f "${log_file}" ]]; then
+    log_error "Log file not found: ${log_file}"
+    echo -e "${CYAN}💡 Start the component first to generate logs${NC}"
+    return 1
+  fi
+  
+  echo -e "${GREEN}📺 Showing live logs for ${component}${NC}"
+  echo -e "${YELLOW}📄 Log file: ${log_file}${NC}"
+  echo -e "${CYAN}⏹️  Press Ctrl+C to exit${NC}\n"
+  
+  tail -f "${log_file}"
+}
+
+show_all_logs() {
+  echo -e "${GREEN}📺 Showing all live logs${NC}"
+  echo -e "${CYAN}⏹️  Press Ctrl+C to exit${NC}\n"
+  
+  local log_files=()
+  
+  if [[ -f "${LOG_DIR}/server.log" ]]; then
+    log_files+=("${LOG_DIR}/server.log")
+  fi
+  
+  if [[ -f "${LOG_DIR}/gui.log" ]]; then
+    log_files+=("${LOG_DIR}/gui.log")
+  fi
+  
+  while IFS= read -r -d '' log_file; do
+    log_files+=("${log_file}")
+  done < <(find "${LOG_DIR}" -name "ai_*.log" -type f -print0 2>/dev/null || true)
+  
+  if [[ ${#log_files[@]} -eq 0 ]]; then
+    log_warning "No log files found. Start some components first."
+    return 1
+  fi
+  
+  tail -f "${log_files[@]}" | while IFS= read -r line; do
+    if [[ "${line}" == "==> "* ]]; then
+      local file_path="${line#==> }"
+      file_path="${file_path% <==}"
+      local filename
+      filename=$(basename "${file_path}" .log)
+      
+      case "${filename}" in
+        "server")
+          echo -e "${RED}[SERVER]${NC}"
+          ;;
+        "gui")
+          echo -e "${BLUE}[GUI]${NC}"
+          ;;
+        ai_*)
+          echo -e "${GREEN}[${filename^^}]${NC}"
+          ;;
+        build_*|clean|rebuild)
+          echo -e "${YELLOW}[BUILD-${filename^^}]${NC}"
+          ;;
+        *)
+          echo -e "${PURPLE}[${filename^^}]${NC}"
+          ;;
+      esac
+    else
+      echo "${line}"
+    fi
+  done
+}
+
+show_log_status() {
+  echo -e "\n${BOLD}📊 Log Files Status${NC}\n"
+  
+  local log_files=(
+    "server.log:Server"
+    "gui.log:GUI"
+    "clean.log:Clean Build"
+    "rebuild.log:Rebuild"
+  )
+  
+  for entry in "${log_files[@]}"; do
+    IFS=':' read -r file desc <<< "${entry}"
+    local full_path="${LOG_DIR}/${file}"
+    
+    if [[ -f "${full_path}" ]]; then
+      local size
+      size=$(du -h "${full_path}" | cut -f1)
+      local modified
+      modified=$(stat -c '%y' "${full_path}" 2>/dev/null | cut -d'.' -f1 || echo "Unknown")
+      echo -e "${GREEN}✓${NC} ${desc}: ${size} (${modified})"
+    else
+      echo -e "${RED}✗${NC} ${desc}: Not found"
+    fi
+  done
+  
+  local ai_count
+  ai_count=$(find "${LOG_DIR}" -name "ai_*.log" -type f 2>/dev/null | wc -l)
+  if [[ ${ai_count} -gt 0 ]]; then
+    echo -e "${GREEN}✓${NC} AI Logs: ${ai_count} files found"
+  else
+    echo -e "${RED}✗${NC} AI Logs: None found"
+  fi
+  
+  local build_count
+  build_count=$(find "${LOG_DIR}" -name "build_*.log" -type f 2>/dev/null | wc -l)
+  if [[ ${build_count} -gt 0 ]]; then
+    echo -e "${GREEN}✓${NC} Build Logs: ${build_count} files found"
+  else
+    echo -e "${RED}✗${NC} Build Logs: None found"
+  fi
+}
+
 dev_setup() {
   log_info "Setting up development environment..."
   
@@ -396,7 +526,7 @@ quick_test() {
   log_info "Quick test setup for team '${team}'..."
   
   if ! is_running "server"; then
-    start_server_seed
+    start_server
     sleep 2
   fi
   
@@ -486,7 +616,6 @@ help() {
   echo -e "\n${CYAN}🖥️  Server Commands:${NC}"
   echo -e "  server start               Start the server"
   echo -e "  server stop                Stop the server"
-  echo -e "  server seed                Start server in seed mode"
   
   echo -e "\n${CYAN}🎮 GUI Commands:${NC}"
   echo -e "  gui start                  Start the GUI"
@@ -496,6 +625,11 @@ help() {
   echo -e "  ai start [team] [count]    Start AI clients"
   echo -e "  ai stop [pattern]          Stop AI clients"
   echo -e "  ai all [count]             Start AIs for all teams"
+  
+  echo -e "\n${CYAN}📺 Log Commands:${NC}"
+  echo -e "  logs [component]           Show live logs for component"
+  echo -e "  logs all                   Show all live logs combined"
+  echo -e "  logs status                Show log files status"
   
   echo -e "\n${CYAN}🔄 Workflow Commands:${NC}"
   echo -e "  dev                        Full development setup"
@@ -510,6 +644,9 @@ help() {
   echo -e "  ${0} dev                     Start full development environment"
   echo -e "  ${0} test Alpha              Quick test with Alpha team"
   echo -e "  ${0} ai start Beta 5         Start 5 AI clients for Beta team"
+  echo -e "  ${0} logs server             Show live server logs"
+  echo -e "  ${0} logs ai_Alpha_1         Show logs for specific AI"
+  echo -e "  ${0} logs all                Show all live logs combined"
   echo -e "  ${0} stop                    Stop all processes (force kill if needed)"
 }
 
@@ -538,8 +675,7 @@ main() {
       case "${2}" in
         "start") start_server ;;
         "stop") stop_server ;;
-        "seed") start_server_seed ;;
-        *) log_error "Usage: server [start|stop|seed]" ;;
+        *) log_error "Usage: server [start|stop]" ;;
       esac
       ;;
     
@@ -557,6 +693,18 @@ main() {
         "stop") stop_ai "${3}" ;;
         "all") start_ai_all_teams "${3}" ;;
         *) log_error "Usage: ai [start|stop|all]" ;;
+      esac
+      ;;
+    
+    "logs")
+      case "${2}" in
+        "all") show_all_logs ;;
+        "status") show_log_status ;;
+        "") 
+          echo -e "${YELLOW}Usage: logs [component|all|status]${NC}"
+          echo -e "${CYAN}Available components: server, gui, ai, build${NC}"
+          ;;
+        *) show_logs "${2}" ;;
       esac
       ;;
     
