@@ -122,7 +122,9 @@ void game_state_update(game_state_t *game, double delta_time)
     game->current_time += delta_time;
     for (size_t i = 0; i < game->player_count; ++i) {
         player = game->players[i];
-        assert(player != NULL && player->is_alive);
+        if (player != NULL && player->is_alive) {
+            continue;
+        }
         player_update(player);
     }
 }
