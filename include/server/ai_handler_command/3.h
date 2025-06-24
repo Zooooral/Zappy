@@ -1,9 +1,27 @@
 #ifndef AI_ACTIONS3_H
     #define AI_ACTIONS3_H
     #include <math.h>
+    #include <string.h>
 
 static inline void ai_action_connect_nbr(server_t *server, client_t *client, char *cmd)
 {
+    if (!server || !client || !client->team_name) {
+        send_response(client, "ko\n");
+        return;
+    }
+    int available = (int)server->config.max_clients_per_team;
+    int current = 0;
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        player_t *p = server->game->players[i];
+        if (p && p->team_name && strcmp(p->team_name, client->team_name) == 0)
+            current++;
+    }
+    available -= current;
+    if (available < 0) available = 0;
+    char *buf = NULL;
+    asprintf(&buf, "%d\n", available);
+    send_response(client, buf);
+    free(buf);
 }
 
 static inline void ai_action_broadcast(server_t *server, client_t *client, char *msg)
