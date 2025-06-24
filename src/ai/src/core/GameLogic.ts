@@ -121,7 +121,7 @@ export class GameLogic {
         await this.movementController.exploreRandomly(this.client);
     }
 
-    private async executeCoordinationStrategy(context: GameContext): Promise<void> {
+    private async executeReproductionStrategy(context: GameContext): Promise<void> {
         if (this.elevationManager.shouldAttemptReproduction()) {
             const success = await this.elevationManager.attemptReproduction(this.client);
             if (success) {
