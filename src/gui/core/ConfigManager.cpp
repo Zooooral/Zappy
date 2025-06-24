@@ -9,27 +9,33 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include "raylib.h"
 
 ConfigManager& ConfigManager::getInstance()
 {
     static ConfigManager instance;
+    static bool initialized = false;
+    if (!initialized) {
+        instance.initializeDefaults();
+        instance.loadConfig();
+        initialized = true;
+    }
     return instance;
 }
 
 void ConfigManager::initializeDefaults()
 {
     _volume = 0.7f;
-    _keyBindings["UP"] = KEY_W;
-    _keyBindings["DOWN"] = KEY_S;
-    _keyBindings["LEFT"] = KEY_A;
-    _keyBindings["RIGHT"] = KEY_D;
-    _keyBindings["ESCAPE"] = KEY_ESCAPE;
-    _keyBindings["ENTER"] = KEY_ENTER;
-    _keyBindings["SPACE"] = KEY_SPACE;
     
-    _host = "";
-    _port = 0;
+    _keyBindings["Move Forward"] = KEY_W;
+    _keyBindings["Move Backward"] = KEY_S;
+    _keyBindings["Move Left"] = KEY_A;
+    _keyBindings["Move Right"] = KEY_D;
+    _keyBindings["Toggle View"] = KEY_P;
+    
+    _host = "localhost";
+    _port = 4242;
 }
 
 int ConfigManager::getKeyBinding(const std::string& action) const
@@ -39,13 +45,11 @@ int ConfigManager::getKeyBinding(const std::string& action) const
         return it->second;
     }
     
-    if (action == "UP") return KEY_W;
-    if (action == "DOWN") return KEY_S;
-    if (action == "LEFT") return KEY_A;
-    if (action == "RIGHT") return KEY_D;
-    if (action == "ESCAPE") return KEY_ESCAPE;
-    if (action == "ENTER") return KEY_ENTER;
-    if (action == "SPACE") return KEY_SPACE;
+    if (action == "Move Forward") return KEY_W;
+    if (action == "Move Backward") return KEY_S;
+    if (action == "Move Left") return KEY_A;
+    if (action == "Move Right") return KEY_D;
+    if (action == "Toggle View") return KEY_P;
     
     return KEY_NULL;
 }
@@ -57,18 +61,16 @@ void ConfigManager::setKeyBinding(const std::string& action, int key)
 
 std::vector<std::string> ConfigManager::getKeyBindingActions() const
 {
-    std::vector<std::string> actions;
-    for (const auto& pair : _keyBindings) {
-        actions.push_back(pair.first);
-    }
+    std::vector<std::string> actions = {
+        "Move Forward", "Move Backward", "Move Left", "Move Right", 
+        "Toggle View"
+    };
     
-    if (_keyBindings.find("UP") == _keyBindings.end()) actions.push_back("UP");
-    if (_keyBindings.find("DOWN") == _keyBindings.end()) actions.push_back("DOWN");
-    if (_keyBindings.find("LEFT") == _keyBindings.end()) actions.push_back("LEFT");
-    if (_keyBindings.find("RIGHT") == _keyBindings.end()) actions.push_back("RIGHT");
-    if (_keyBindings.find("ESCAPE") == _keyBindings.end()) actions.push_back("ESCAPE");
-    if (_keyBindings.find("ENTER") == _keyBindings.end()) actions.push_back("ENTER");
-    if (_keyBindings.find("SPACE") == _keyBindings.end()) actions.push_back("SPACE");
+    for (const auto& pair : _keyBindings) {
+        if (std::find(actions.begin(), actions.end(), pair.first) == actions.end()) {
+            actions.push_back(pair.first);
+        }
+    }
     
     return actions;
 }
