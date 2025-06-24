@@ -10,6 +10,7 @@
 
     #include <memory>
     #include <string>
+    #include <set>
 
     #include "../core/AGameState.hpp"
     #include "../ui/Button.hpp"
@@ -35,6 +36,7 @@ private:
     bool _mapInitialized = false;
     float _updateTimer = 0.0f;
     int _nextPlayerId = 1;
+    std::set<int> _activePlayerIds;
     std::unique_ptr<Button> _backButton;
     std::unique_ptr<InventoryUI> _inventoryUI;
 
