@@ -60,7 +60,7 @@ char *vision_look(client_t *client, map_t *map)
             if (!first)
                 res = da_push(res, ", ", 1);
             tile = print_tile(map_get_tile(map, x, y));
-            res = da_push(res, tile, strlen(tile));
+            res = da_push(res, tile, DA_LEN(tile));
             da_destroy(tile);
             first = 0;
         }
