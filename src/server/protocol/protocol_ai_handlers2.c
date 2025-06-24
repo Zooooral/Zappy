@@ -153,5 +153,14 @@ void handle_take(server_t *server, client_t *client, const char *resource)
     }
     ++p->resources[resource_id];
     send_response(client, "ok\n");
+    char *pgt = NULL;
+    asprintf(&pgt, "pgt #%d %d\n", p->id, resource_id);
+    for (size_t i = 0; i < server->client_count; ++i) {
+        client_t *gui = &server->clients[i];
+        if (gui->type == CLIENT_TYPE_GRAPHIC) {
+            send_response(gui, pgt);
+        }
+    }
+    free(pgt);
     return;
 }
