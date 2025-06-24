@@ -91,7 +91,7 @@ export class GameLogic {
                     await this.executeSurvivalStrategy(context);
                     break;
                 case AIState.COORDINATION:
-                    await this.executeCoordinationStrategy(context);
+                    await this.executeElevationStrategy(context);
                     break;
                 case AIState.ELEVATION:
                     await this.executeElevationStrategy(context);
@@ -157,7 +157,7 @@ export class GameLogic {
     }
 
     private async executeGatheringStrategy(context: GameContext): Promise<void> {
-        if (context.inventory.food < 20) {
+        if (context.inventory.food < 3) {
             this.stateManager.setState(AIState.SURVIVAL);
             return;
         }
@@ -189,7 +189,7 @@ export class GameLogic {
         }
 
         const missingResources = this.elevationManager.getMissingResources(context);
-        if (missingResources.length > 0 && context.inventory.food > 30) {
+        if (missingResources.length > 0 && context.inventory.food > 3) {
             this.stateManager.setState(AIState.GATHERING);
             return;
         }
