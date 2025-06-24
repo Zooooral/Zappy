@@ -8,14 +8,14 @@
 #ifndef ENDSCREEN_HPP_
     #define ENDSCREEN_HPP_
 
-#include "../core/GameState.hpp"
+#include "../core/AGameState.hpp"
 #include "../ui/Button.hpp"
 #include "raylib.h"
 
 #include <memory>
 #include <string>
 
-class EndScreen : public GameState {
+class EndScreen : public AGameState {
 public:
     EndScreen();
     ~EndScreen();

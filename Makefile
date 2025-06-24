@@ -25,7 +25,7 @@ GUI_NAME     =  zappy_gui
 SERVER_NAME  =  zappy_server
 AI_NAME      =  zappy_ai
 
-CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include
+CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include -iquote ./src
 GUI_LIBS     =  -lraylib
 CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar -D_GNU_SOURCE -O2
 LDFLAGS	  =  -lm

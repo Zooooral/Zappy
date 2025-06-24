@@ -6,19 +6,24 @@
 */
 
 #ifndef KEYBINDBUTTON_HPP_
-    #define KEYBINDBUTTON_HPP_
+#define KEYBINDBUTTON_HPP_
 
 #include "AComponent.hpp"
-
 #include <string>
 #include <functional>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 class KeyBindButton : public AComponent {
 public:
     KeyBindButton(const Vector2 &position, const Vector2 &size, const std::string &action, int keyCode);
     ~KeyBindButton();
+
+    KeyBindButton(const KeyBindButton&) = delete;
+    KeyBindButton& operator=(const KeyBindButton&) = delete;
+    KeyBindButton(KeyBindButton&&) = delete;
+    KeyBindButton& operator=(KeyBindButton&&) = delete;
 
     void update(float dt) override;
     void draw() const override;
@@ -38,10 +43,17 @@ private:
 
     std::string getKeyName(int keyCode) const;
 
-    static std::vector<KeyBindButton*> _allKeyBinds;
-    static void registerInstance(KeyBindButton* instance);
-    static void unregisterInstance(KeyBindButton* instance);
-    static KeyBindButton* findByKeyCode(int keyCode, KeyBindButton* except = nullptr);
+    struct InstanceManager {
+        std::vector<KeyBindButton*> instances;
+        std::mutex mutex;
+        
+        void registerInstance(KeyBindButton* instance);
+        void unregisterInstance(KeyBindButton* instance);
+        KeyBindButton* findByKeyCode(int keyCode, KeyBindButton* except = nullptr);
+        void clearAllListening();
+    };
+    
+    static InstanceManager& getInstanceManager();
 };
 
 #endif /* !KEYBINDBUTTON_HPP_ */

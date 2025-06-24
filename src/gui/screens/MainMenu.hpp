@@ -11,11 +11,11 @@
     #include <memory>
     #include <vector>
 
-    #include "../core/GameState.hpp"
+    #include "../core/AGameState.hpp"
     #include "../ui/Button.hpp"
     #include "raylib.h"
 
-class MainMenu : public GameState {
+class MainMenu : public AGameState {
 public:
     MainMenu();
     ~MainMenu();

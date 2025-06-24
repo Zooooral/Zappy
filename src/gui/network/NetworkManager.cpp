@@ -1,162 +1,173 @@
 /*
 ** EPITECH PROJECT, 2025
-** B-YEP-410
+** B-YEP-400-PAR-4-1-zappy-maxence.bunel
 ** File description:
 ** NetworkManager
 */
 
 #include "NetworkManager.hpp"
-#include <sys/select.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <cstring>
+#include "../core/Constants.hpp"
 #include <iostream>
-#include <sstream>
+#include <cstring>
+#include <memory>
+#include <chrono>
 
-NetworkManager& NetworkManager::getInstance()
-{
+NetworkManager& NetworkManager::getInstance() {
     static NetworkManager instance;
     return instance;
 }
 
-NetworkManager::NetworkManager() :
-    _socket(-1),
-    _connectionState(ConnectionState::DISCONNECTED),
-    _shouldStop(false),
-    _port(0)
-{
-}
-
-NetworkManager::~NetworkManager()
-{
+NetworkManager::~NetworkManager() {
     disconnect();
 }
 
-bool NetworkManager::connectToServer(const std::string& host, int port)
-{
-    if (_connectionState != ConnectionState::DISCONNECTED) {
-        return false;
+bool NetworkManager::connectToServer(const std::string& host, int port) {
+    if (_connectionState.load() != ConnectionState::DISCONNECTED) {
+        disconnect();
     }
 
     _host = host;
     _port = port;
-    _connectionState = ConnectionState::CONNECTING;
+    _connectionState.store(ConnectionState::CONNECTING);
 
-    if (!createSocket()) {
-        _connectionState = ConnectionState::ERROR;
-        return false;
-    }
-
-    if (!connectSocket()) {
+    if (!createSocket() || !connectSocket()) {
+        _connectionState.store(ConnectionState::ERROR);
         closeSocket();
-        _connectionState = ConnectionState::ERROR;
         return false;
     }
 
-    _connectionState = ConnectionState::CONNECTED;
-    _shouldStop = false;
-    _networkThread = std::thread(&NetworkManager::networkThreadFunction, this);
+    _connectionState.store(ConnectionState::CONNECTED);
+    _running.store(true);
+    _networkThread = std::thread(&NetworkManager::networkThreadLoop, this);
 
     return true;
 }
 
-void NetworkManager::disconnect()
-{
-    if (_connectionState == ConnectionState::DISCONNECTED) {
-        return;
+void NetworkManager::disconnect() {
+    safeShutdown();
+}
+
+void NetworkManager::safeShutdown() {
+    _running.store(false);
+    
+    {
+        std::lock_guard<std::mutex> lock(_shutdownMutex);
+        _shutdownCV.notify_all();
     }
-
-    _shouldStop = true;
-
+    
     if (_networkThread.joinable()) {
         _networkThread.join();
     }
-
+    
     closeSocket();
-    _connectionState = ConnectionState::DISCONNECTED;
-
+    _connectionState.store(ConnectionState::DISCONNECTED);
+    
     {
         std::lock_guard<std::mutex> sendLock(_sendQueueMutex);
-        std::queue<std::string> emptySendQueue;
-        _sendQueue.swap(emptySendQueue);
-    }
-
-    {
         std::lock_guard<std::mutex> receiveLock(_receiveQueueMutex);
-        std::queue<std::string> emptyReceiveQueue;
-        _receiveQueue.swap(emptyReceiveQueue);
+        
+        while (!_sendQueue.empty()) _sendQueue.pop();
+        while (!_receiveQueue.empty()) _receiveQueue.pop();
     }
+    
+    _receiveBuffer.clear();
 }
 
-void NetworkManager::sendCommand(const std::string& command)
-{
-    if (_connectionState != ConnectionState::AUTHENTICATED) {
-        return;
-    }
+bool NetworkManager::isConnected() const {
+    ConnectionState state = _connectionState.load();
+    return state == ConnectionState::CONNECTED || 
+           state == ConnectionState::AUTHENTICATED;
+}
 
+void NetworkManager::sendCommand(const std::string& command) {
+    if (!isConnected()) return;
+    
     std::lock_guard<std::mutex> lock(_sendQueueMutex);
     _sendQueue.push(command + "\n");
 }
 
-void NetworkManager::sendAuthenticationMessage(const std::string& message)
-{
-    std::lock_guard<std::mutex> lock(_sendQueueMutex);
-    _sendQueue.push(message + "\n");
+void NetworkManager::setMessageCallback(std::function<void(const std::string&)> callback) {
+    std::lock_guard<std::mutex> lock(_callbackMutex);
+    _messageCallback = std::move(callback);
 }
 
-void NetworkManager::update()
-{
+void NetworkManager::update() {
     std::lock_guard<std::mutex> lock(_receiveQueueMutex);
-
     while (!_receiveQueue.empty()) {
         std::string message = _receiveQueue.front();
         _receiveQueue.pop();
-        handleServerMessage(message);
+        
+        if (_protocolHandler) {
+            try {
+                _protocolHandler->handleCommand(message);
+            } catch (const std::exception& e) {
+                std::cerr << "Protocol handler error: " << e.what() << std::endl;
+            }
+        }
+        
+        {
+            std::lock_guard<std::mutex> callbackLock(_callbackMutex);
+            if (_messageCallback) {
+                try {
+                    _messageCallback(message);
+                } catch (const std::exception& e) {
+                    std::cerr << "Message callback error: " << e.what() << std::endl;
+                }
+            }
+        }
     }
 }
 
-void NetworkManager::setCommandCallback(std::function<void(const std::string&)> callback)
-{
-    _commandCallback = callback;
+ConnectionState NetworkManager::getConnectionState() const {
+    return _connectionState.load();
 }
 
-void NetworkManager::networkThreadFunction()
-{
-    while (!_shouldStop) {
-        fd_set readSet, writeSet;
+void NetworkManager::setProtocolHandler(std::shared_ptr<ProtocolHandler> handler) {
+    _protocolHandler = std::move(handler);
+}
+
+void NetworkManager::networkThreadLoop() {
+    fd_set readSet, writeSet;
+    struct timeval timeout;
+
+    while (_running.load()) {
         FD_ZERO(&readSet);
         FD_ZERO(&writeSet);
+        
+#ifdef _WIN32
         FD_SET(_socket, &readSet);
+#else
+        if (_socket != INVALID_SOCKET_VALUE) {
+            FD_SET(_socket, &readSet);
+        }
+#endif
 
-        bool hasSendData = false;
         {
             std::lock_guard<std::mutex> lock(_sendQueueMutex);
-            hasSendData = !_sendQueue.empty();
+            if (!_sendQueue.empty() && _socket != INVALID_SOCKET_VALUE) {
+                FD_SET(_socket, &writeSet);
+            }
         }
 
-        if (hasSendData) {
-            FD_SET(_socket, &writeSet);
-        }
-
-        struct timeval timeout;
         timeout.tv_sec = 0;
-        timeout.tv_usec = 100000;
+        timeout.tv_usec = zappy::constants::NETWORK_TIMEOUT_US;
 
-        int result = select(_socket + 1, &readSet, &writeSet, nullptr, &timeout);
-
-        if (result < 0) {
-            _connectionState = ConnectionState::ERROR;
+        int ready = select(static_cast<int>(_socket + 1), &readSet, &writeSet, nullptr, &timeout);
+        
+        if (ready < 0) {
+            _connectionState.store(ConnectionState::ERROR);
             break;
+        }
+
+        if (ready == 0) {
+            // Timeout
+            continue;
         }
 
         if (FD_ISSET(_socket, &readSet)) {
             std::string data = receiveData();
             if (data.empty()) {
-                _connectionState = ConnectionState::ERROR;
+                _connectionState.store(ConnectionState::ERROR);
                 break;
             }
             _receiveBuffer += data;
@@ -174,99 +185,7 @@ void NetworkManager::networkThreadFunction()
     }
 }
 
-void NetworkManager::handleServerMessage(const std::string& message)
-{
-    std::cout << "[SERVER->GUI] " << message << std::endl;
-    if (_connectionState == ConnectionState::CONNECTED && message == "WELCOME") {
-        processWelcome();
-    } else if (_connectionState == ConnectionState::CONNECTED && message.substr(0, 4) == "msz ") {
-        _connectionState = ConnectionState::AUTHENTICATED;
-        processMapSize(message);
-    } else if (_connectionState == ConnectionState::AUTHENTICATED) {
-        if (message.substr(0, 4) == "msz ") {
-            processMapSize(message);
-        } else {
-            processCommand(message);
-        }
-    }
-}
-
-void NetworkManager::processWelcome()
-{
-    sendAuthenticationMessage("GRAPHIC");
-}
-
-void NetworkManager::processMapSize(const std::string& message)
-{
-    if (_commandCallback) {
-        _commandCallback(message);
-    }
-}
-
-void NetworkManager::processCommand(const std::string& command)
-{
-    if (_commandCallback) {
-        _commandCallback(command);
-    }
-}
-
-bool NetworkManager::createSocket()
-{
-    _socket = socket(AF_INET, SOCK_STREAM, 0);
-    return _socket != -1;
-}
-
-bool NetworkManager::connectSocket()
-{
-    struct hostent* hostEntry = gethostbyname(_host.c_str());
-    if (!hostEntry) {
-        return false;
-    }
-
-    struct sockaddr_in serverAddr;
-    memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(_port);
-    memcpy(&serverAddr.sin_addr, hostEntry->h_addr_list[0], hostEntry->h_length);
-
-    int result = connect(_socket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-    return result == 0;
-}
-
-void NetworkManager::closeSocket()
-{
-    if (_socket != -1) {
-        close(_socket);
-        _socket = -1;
-    }
-}
-
-void NetworkManager::sendData(const std::string& data)
-{
-    if (_socket != -1) {
-        send(_socket, data.c_str(), data.length(), 0);
-    }
-}
-
-std::string NetworkManager::receiveData()
-{
-    if (_socket == -1) {
-        return "";
-    }
-
-    char buffer[1024];
-    ssize_t bytesReceived = recv(_socket, buffer, sizeof(buffer) - 1, 0);
-
-    if (bytesReceived <= 0) {
-        return "";
-    }
-
-    buffer[bytesReceived] = '\0';
-    return std::string(buffer);
-}
-
-void NetworkManager::processReceiveBuffer()
-{
+void NetworkManager::processReceiveBuffer() {
     size_t pos = 0;
     while ((pos = _receiveBuffer.find('\n')) != std::string::npos) {
         std::string message = _receiveBuffer.substr(0, pos);
@@ -276,9 +195,77 @@ void NetworkManager::processReceiveBuffer()
             message.pop_back();
         }
 
-        {
-            std::lock_guard<std::mutex> lock(_receiveQueueMutex);
-            _receiveQueue.push(message);
-        }
+        handleServerMessage(message);
     }
+}
+
+void NetworkManager::handleServerMessage(const std::string& message) {
+    ConnectionState currentState = _connectionState.load();
+    
+    if (currentState == ConnectionState::CONNECTED && message == "WELCOME") {
+        sendAuthenticationMessage();
+    } else if (message.substr(0, 4) == "msz ") {
+        _connectionState.store(ConnectionState::AUTHENTICATED);
+        std::lock_guard<std::mutex> lock(_receiveQueueMutex);
+        _receiveQueue.push(message);
+    } else if (currentState == ConnectionState::AUTHENTICATED) {
+        std::lock_guard<std::mutex> lock(_receiveQueueMutex);
+        _receiveQueue.push(message);
+    }
+}
+
+void NetworkManager::sendAuthenticationMessage() {
+    sendData("GRAPHIC\n");
+}
+
+bool NetworkManager::createSocket() {
+    _socket = socket(AF_INET, SOCK_STREAM, 0);
+    return _socket != INVALID_SOCKET_VALUE;
+}
+
+bool NetworkManager::connectSocket() {
+    struct hostent* hostEntry = gethostbyname(_host.c_str());
+    if (!hostEntry) {
+        std::cerr << "Failed to resolve hostname: " << _host << std::endl;
+        return false;
+    }
+
+    struct sockaddr_in serverAddr;
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(static_cast<uint16_t>(_port));
+    memcpy(&serverAddr.sin_addr, hostEntry->h_addr_list[0], hostEntry->h_length);
+
+    int result = connect(_socket, reinterpret_cast<struct sockaddr*>(&serverAddr), sizeof(serverAddr));
+    if (result != 0) {
+        std::cerr << "Failed to connect: " << zappy::network::NetworkPlatform::getErrorString(getLastError()) << std::endl;
+        return false;
+    }
+    
+    return true;
+}
+
+void NetworkManager::closeSocket() noexcept {
+    if (_socket != INVALID_SOCKET_VALUE) {
+        ::closeSocket(_socket);
+        _socket = INVALID_SOCKET_VALUE;
+    }
+}
+
+void NetworkManager::sendData(const std::string& data) {
+    if (_socket != INVALID_SOCKET_VALUE) {
+        send(_socket, data.c_str(), static_cast<int>(data.length()), 0);
+    }
+}
+
+std::string NetworkManager::receiveData() {
+    if (_socket == INVALID_SOCKET_VALUE) return "";
+
+    char buffer[zappy::constants::NETWORK_BUFFER_SIZE];
+    int bytesReceived = recv(_socket, buffer, sizeof(buffer) - 1, 0);
+
+    if (bytesReceived <= 0) return "";
+
+    buffer[bytesReceived] = '\0';
+    return std::string(buffer);
 }
