@@ -55,6 +55,8 @@ public:
     
     const std::vector<std::unique_ptr<Character>>& getCharacters() const { return _characters; }
 
+    std::vector<Character*> getAllCharacters() const;
+
 private:
     CharacterManager() = default;
 

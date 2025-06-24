@@ -12,7 +12,7 @@
 
 player_t *player_create(client_t *client, int x, int y, const char *team_name)
 {
-    player_t *player = calloc(sizeof(player_t), 1);
+    player_t *player = calloc(1, sizeof *player);
 
     if (!player)
         return NULL;
@@ -29,8 +29,7 @@ player_t *player_create(client_t *client, int x, int y, const char *team_name)
     }
     player->resources[RESOURCE_FOOD] = 10;
     player->last_action_time = get_current_time();
-    player->is_elevating = false;
-    player->elevation_start_time = 0.0;
+    player->is_alive = true;
     return player;
 }
 

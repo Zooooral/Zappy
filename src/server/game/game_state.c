@@ -5,6 +5,7 @@
 ** Game state management with seeding support
 */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
@@ -97,14 +98,35 @@ void game_state_destroy(game_state_t *game)
     free(game);
 }
 
+// unsure if this should be one more tick before death
+static void player_update(player_t *player)
+{
+    if (!player || !player->is_alive)
+        return;
+    player->last_food_inhalation += 1;
+    if (player->last_food_inhalation >= FOOD_INHALATION_TIME) {
+        player->resources[RESOURCE_FOOD]--;
+        player->last_food_inhalation = 0;
+        if (player->resources[RESOURCE_FOOD] <= 0)
+            player->is_alive = false;
+    }
+}
+
 void game_state_update(game_state_t *game, double delta_time)
 {
+    player_t *player;
+
     if (!game)
         return;
     respawn_resources(game->map);
     game->current_time += delta_time;
-    if (game->seeder)
-        seeder_update(game->seeder, game->map, game->current_time);
+    for (size_t i = 0; i < game->player_count; ++i) {
+        player = game->players[i];
+        if (player != NULL && player->is_alive) {
+            continue;
+        }
+        player_update(player);
+    }
 }
 
 void add_player_to_game(game_state_t *game, player_t *player)
@@ -112,6 +134,7 @@ void add_player_to_game(game_state_t *game, player_t *player)
     if (!game || !player)
         return;
     if (game->players != NULL) {
-        game->players[game->player_count++] = player;
+        game->players[game->player_count] = player;
+        ++game->player_count;
     }
 }
