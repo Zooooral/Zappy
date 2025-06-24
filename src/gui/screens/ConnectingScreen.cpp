@@ -66,7 +66,7 @@ void ConnectingScreen::onEnter()
     _connectionStatus = "Connecting to " + _host + ":" + std::to_string(_port);
 
     NetworkManager& network = NetworkManager::getInstance();
-    network.setCommandCallback([](const std::string&) {});
+    network.setMessageCallback([](const std::string&) {});
 
     if (!network.connectToServer(_host, _port)) {
         setConnectionError("Failed to connect to server");
@@ -169,16 +169,16 @@ void ConnectingScreen::update(float dt)
     NetworkManager& network = NetworkManager::getInstance();
     network.update();
 
-    NetworkManager::ConnectionState state = network.getConnectionState();
+    ConnectionState state = network.getConnectionState();
 
     switch (state) {
-        case NetworkManager::ConnectionState::CONNECTING:
+        case ConnectionState::CONNECTING:
             setConnectionStatus("Connecting to server...");
             break;
-        case NetworkManager::ConnectionState::CONNECTED:
+        case ConnectionState::CONNECTED:
             setConnectionStatus("Authenticating...");
             break;
-        case NetworkManager::ConnectionState::AUTHENTICATED:
+        case ConnectionState::AUTHENTICATED:
             if (!_finished) {
                 std::cout << "[GUI] Authentication successful! Starting transition..." << std::endl;
                 setConnectionStatus("Connected successfully!");
@@ -186,10 +186,10 @@ void ConnectingScreen::update(float dt)
                 _isConnected = true;
             }
             break;
-        case NetworkManager::ConnectionState::ERROR:
+        case ConnectionState::ERROR:
             setConnectionError("Connection failed - Server unreachable");
             break;
-        case NetworkManager::ConnectionState::DISCONNECTED:
+        case ConnectionState::DISCONNECTED:
             if (!_showError) {
                 setConnectionStatus("Disconnected");
             }

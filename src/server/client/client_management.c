@@ -140,6 +140,7 @@ static void client_validate(server_t *server, client_t *client, const char *mess
     client->is_authenticated = true;
     if (server->game->player_count < server->game->player_capacity) {
         client->player = player_create(client, pos[0], pos[1], message);
+        printf("[DEBUG] AI client created player: %p\n", (void*)client->player);
         if (client->player) {
             player_set_position(client->player, server->game->map, pos[0], pos[1]);
             add_player_to_game(server->game, client->player);
@@ -156,15 +157,18 @@ static void client_validate(server_t *server, client_t *client, const char *mess
 
 void client_authenticate(server_t *server, client_t *client, const char *message)
 {
-    ssize_t sent;
-
     if (!server || !client || !message)
         return;
     if (strcmp(message, "GRAPHIC") == 0) {
-        client->type = CLIENT_TYPE_GRAPHIC;
+        client->type = CLIENT_TYPE_GRAPHIC; 
         client->is_authenticated = true;
-        sent = send(client->fd, "msz 10 10\n", 10, 0);
-        (void)sent;
+        protocol_send_map_size(server, client);
+        for (size_t i = 0; i < server->client_count; i++) {
+            if (server->clients[i].type == CLIENT_TYPE_AI && 
+                server->clients[i].player != NULL) {
+                protocol_send_player_info(client, server->clients[i].player);
+            }
+        }
     } else {
         printf("AI client authenticated with team: %s\n", message);
         client_validate(server, client, message);
