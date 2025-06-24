@@ -41,7 +41,6 @@ GameScreen::GameScreen() {
 }
 
 GameScreen::~GameScreen() {
-    CharacterManager::getInstance().cleanup();
     NetworkManager::getInstance().disconnect();
 }
 
@@ -71,7 +70,6 @@ void GameScreen::onEnter() {
 }
 
 void GameScreen::onExit() {
-    CharacterManager::getInstance().cleanup();
     SoundManager::getInstance().stopAllSounds();
     NetworkManager::getInstance().disconnect();
 }

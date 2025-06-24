@@ -12,11 +12,21 @@
 
 KeyBindButton::KeyBindButton(const Vector2 &position, const Vector2 &size, const std::string &action, int keyCode)
     : AComponent(position, size), _action(action), _keyCode(keyCode) {
-    getInstanceManager().registerInstance(this);
+    try {
+        getInstanceManager().registerInstance(this);
+    } catch (...) {
+    }
 }
 
 KeyBindButton::~KeyBindButton() {
-    getInstanceManager().unregisterInstance(this);
+    static bool isShuttingDown = false;
+    if (!isShuttingDown) {
+        try {
+            getInstanceManager().unregisterInstance(this);
+        } catch (...) {
+            isShuttingDown = true;
+        }
+    }
 }
 
 void KeyBindButton::update(float dt) {
@@ -54,13 +64,11 @@ void KeyBindButton::draw() const {
 
     Font font = FontManager::getInstance().getFont("medium");
     
-    // Draw action label
     Vector2 labelSize = MeasureTextEx(font, _action.c_str(), zappy::constants::FONT_SIZE_MEDIUM, 1);
     float labelX = _position.x;
     float labelY = _position.y + (_size.y - labelSize.y) / 2;
     DrawTextEx(font, _action.c_str(), {labelX, labelY}, zappy::constants::FONT_SIZE_MEDIUM, 1, RAYWHITE);
 
-    // Draw key binding box
     Color bgColor = Fade(BLACK, 0.5f);
     Color keyColor = _listening ? YELLOW : RAYWHITE;
     
@@ -148,37 +156,56 @@ KeyBindButton::InstanceManager& KeyBindButton::getInstanceManager() {
 }
 
 void KeyBindButton::InstanceManager::registerInstance(KeyBindButton* instance) {
-    std::lock_guard<std::mutex> lock(mutex);
-    instances.push_back(instance);
+    if (!instance) return;
+    
+    try {
+        std::lock_guard<std::mutex> lock(mutex);
+        instances.push_back(instance);
+    } catch (...) {
+    }
 }
 
 void KeyBindButton::InstanceManager::unregisterInstance(KeyBindButton* instance) {
-    std::lock_guard<std::mutex> lock(mutex);
-    auto it = std::find(instances.begin(), instances.end(), instance);
-    if (it != instances.end()) {
-        instances.erase(it);
+    if (!instance) return;
+    
+    try {
+        std::lock_guard<std::mutex> lock(mutex);
+        auto it = std::find(instances.begin(), instances.end(), instance);
+        if (it != instances.end()) {
+            instances.erase(it);
+        }
+    } catch (...) {
     }
 }
 
 void KeyBindButton::InstanceManager::clearAllListening() {
-    std::lock_guard<std::mutex> lock(mutex);
-    for (KeyBindButton* button : instances) {
-        if (button) {
-            button->_listening = false;
+    try {
+        std::lock_guard<std::mutex> lock(mutex);
+        for (KeyBindButton* button : instances) {
+            if (button) {
+                button->_listening = false;
+            }
         }
+    } catch (...) {
     }
 }
 
 KeyBindButton* KeyBindButton::InstanceManager::findByKeyCode(int keyCode, KeyBindButton* except) {
-    std::lock_guard<std::mutex> lock(mutex);
-    for (KeyBindButton* button : instances) {
-        if (button && button != except && button->_keyCode == keyCode) {
-            return button;
+    try {
+        std::lock_guard<std::mutex> lock(mutex);
+        for (KeyBindButton* button : instances) {
+            if (button && button != except && button->_keyCode == keyCode) {
+                return button;
+            }
         }
+    } catch (...) {
     }
     return nullptr;
 }
 
 void KeyBindButton::clearListeningState() {
-    getInstanceManager().clearAllListening();
+    try {
+        getInstanceManager().clearAllListening();
+    } catch (...) {
+    }
 }
