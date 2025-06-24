@@ -117,7 +117,6 @@ void game_state_update(game_state_t *game, double delta_time)
 
     if (!game)
         return;
-    respawn_resources(game->map);
     game->current_time += delta_time;
     for (size_t i = 0; i < game->player_count; ++i) {
         player = game->players[i];
