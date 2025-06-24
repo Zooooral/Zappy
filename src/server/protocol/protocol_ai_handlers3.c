@@ -47,6 +47,7 @@ void handle_set(server_t *server, client_t *client, const char *resource)
         }
     }
     free(pdr);
+    return create_and_queue_action(server, client, resource, AI_ACTION_SET);
 }
 
 void handle_incantation(server_t *server, client_t *client, const char *arg)

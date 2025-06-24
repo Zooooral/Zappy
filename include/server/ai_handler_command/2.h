@@ -36,6 +36,36 @@ static inline void ai_action_take(server_t *server, client_t *client, char *cmd)
 
 static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
 {
+    if (!server || !client || !client->player || !cmd) {
+        send_response(client, "ko\n");
+        return;
+    }
+    int resource_id = atoi(cmd);
+    if (resource_id < 0 || resource_id >= RESOURCE_COUNT) {
+        send_response(client, "ko\n");
+        return;
+    }
+    player_t *p = client->player;
+    tile_t *tile = map_get_tile(server->game->map, p->x, p->y);
+    if (!tile || p->resources[resource_id] <= 0) {
+        send_response(client, "ko\n");
+        return;
+    }
+    p->resources[resource_id]--;
+    tile->resources[resource_id]++;
+    char *buf = NULL;
+    asprintf(&buf, "ok\n");
+    send_response(client, buf);
+    free(buf);
+    char *pdr = NULL;
+    asprintf(&pdr, "pdr #%d %d\n", p->id, resource_id);
+    for (size_t i = 0; i < server->client_count; ++i) {
+        client_t *gui = &server->clients[i];
+        if (gui->type == CLIENT_TYPE_GRAPHIC) {
+            send_response(gui, pdr);
+        }
+    }
+    free(pdr);
 }
 
 static inline void ai_action_incantation(server_t *server, client_t *client, char *cmd)
