@@ -18,6 +18,11 @@ export class GameLogic {
 
     private lastInventory?: InventoryItem;
     private lastVision?: LookResult;
+    private lastInventoryUpdate: number = 0;
+    private lastVisionUpdate: number = 0;
+
+    private readonly INVENTORY_UPDATE_INTERVAL = 2000;
+    private readonly VISION_UPDATE_INTERVAL = 1000;
 
     constructor(client: NetworkClient) {
         this.client = client;
@@ -32,66 +37,61 @@ export class GameLogic {
     }
 
     public async tick(): Promise<void> {
-        this.stateManager.updateTime();
-
         try {
-            await this.updateContext();
-            const context = this.getContext();
+            await this.updateContextSequentially();
 
+            const context = this.getContext();
+            if (!context) return;
+
+            this.stateManager.updateTime();
             this.stateManager.updateState(context);
-            await this.executeStrategy(context);
+
+            await this.executeStrategySequentially(context);
         } catch (error) {
             logger.error("Error in game tick:", error);
         }
     }
 
-    private async updateContext(): Promise<void> {
-        try {
-            const needInventoryUpdate =
-                !this.lastInventory ||
-                this.stateManager.shouldUpdateInventory() ||
-                (this.lastInventory.food < 50 &&
-                    this.stateManager.shouldUpdateInventoryUrgent(this.lastInventory.food));
+    private async updateContextSequentially(): Promise<void> {
+        const now = Date.now();
 
-            if (needInventoryUpdate) {
+        try {
+            if (!this.lastInventory || (now - this.lastInventoryUpdate) > this.INVENTORY_UPDATE_INTERVAL || (this.lastInventory.food < 50 && (now - this.lastInventoryUpdate) > 500)) {
                 this.lastInventory = await this.client.getInventory();
+                this.lastInventoryUpdate = now;
             }
 
-            if (!this.lastVision || this.stateManager.shouldUpdateVision()) {
+            if (!this.lastVision || (now - this.lastVisionUpdate) > this.VISION_UPDATE_INTERVAL) {
                 this.lastVision = await this.client.look();
+                this.lastVisionUpdate = now;
             }
         } catch (error) {
             logger.warn("Failed to update context:", error);
         }
     }
 
-    private getContext(): GameContext {
+    private getContext(): GameContext | null {
+        if (!this.lastInventory || !this.lastVision) {
+            return null;
+        }
+
         return {
-            inventory:
-                this.lastInventory || {
-                    food: 0,
-                    linemate: 0,
-                    deraumere: 0,
-                    sibur: 0,
-                    mendiane: 0,
-                    phiras: 0,
-                    thystame: 0,
-                },
-            vision: this.lastVision || { tiles: [] },
+            inventory: this.lastInventory,
+            vision: this.lastVision,
             gameState: this.client.getGameState(),
             currentState: this.stateManager.getCurrentState(),
             timeInState: this.stateManager.getTimeInState(),
         };
     }
 
-    private async executeStrategy(context: GameContext): Promise<void> {
+    private async executeStrategySequentially(context: GameContext): Promise<void> {
         try {
             switch (context.currentState) {
                 case AIState.SURVIVAL:
                     await this.executeSurvivalStrategy(context);
                     break;
                 case AIState.COORDINATION:
-                    await this.executeCoordinationStrategy(context);
+                    await this.executeElevationStrategy(context);
                     break;
                 case AIState.ELEVATION:
                     await this.executeElevationStrategy(context);
@@ -110,22 +110,18 @@ export class GameLogic {
     }
 
     private async executeSurvivalStrategy(context: GameContext): Promise<void> {
-        if (
-            await this.resourceCollector.collectFoodOnCurrentTile(this.client, context)
-        ) {
+        if (await this.resourceCollector.collectFoodOnCurrentTile(this.client, context)) {
             return;
         }
 
-        if (
-            await this.resourceCollector.moveTowardsFood(this.client, context)
-        ) {
+        if (await this.resourceCollector.moveTowardsFood(this.client, context)) {
             return;
         }
 
         await this.movementController.exploreRandomly(this.client);
     }
 
-    private async executeCoordinationStrategy(context: GameContext): Promise<void> {
+    private async executeReproductionStrategy(context: GameContext): Promise<void> {
         if (this.elevationManager.shouldAttemptReproduction()) {
             const success = await this.elevationManager.attemptReproduction(this.client);
             if (success) {
@@ -152,9 +148,7 @@ export class GameLogic {
 
         const missingResources = this.elevationManager.getMissingResources(context);
         if (missingResources.length > 0) {
-            logger.info(
-                `Missing resources for elevation: ${missingResources.join(", ")}`
-            );
+            logger.info(`Missing resources for elevation: ${missingResources.join(", ")}`);
             this.stateManager.setState(AIState.GATHERING);
         } else if (!this.elevationManager.hasEnoughPlayers(context)) {
             logger.info("Not enough players for elevation");
@@ -163,14 +157,12 @@ export class GameLogic {
     }
 
     private async executeGatheringStrategy(context: GameContext): Promise<void> {
-        if (context.inventory.food < 20) {
+        if (context.inventory.food < 3) {
             this.stateManager.setState(AIState.SURVIVAL);
             return;
         }
 
-        if (
-            await this.resourceCollector.searchAndCollectResources(this.client, context)
-        ) {
+        if (await this.resourceCollector.searchAndCollectResources(this.client, context)) {
             return;
         }
 
@@ -183,18 +175,11 @@ export class GameLogic {
     }
 
     private async executeExplorationStrategy(context: GameContext): Promise<void> {
-        if (
-            await this.resourceCollector.collectFoodOnCurrentTile(this.client, context)
-        ) {
+        if (await this.resourceCollector.collectFoodOnCurrentTile(this.client, context)) {
             return;
         }
 
-        if (
-            await this.resourceCollector.collectAnyResourceOnCurrentTile(
-                this.client,
-                context
-            )
-        ) {
+        if (await this.resourceCollector.collectAnyResourceOnCurrentTile(this.client, context)) {
             return;
         }
 
@@ -204,7 +189,7 @@ export class GameLogic {
         }
 
         const missingResources = this.elevationManager.getMissingResources(context);
-        if (missingResources.length > 0 && context.inventory.food > 30) {
+        if (missingResources.length > 0 && context.inventory.food > 3) {
             this.stateManager.setState(AIState.GATHERING);
             return;
         }
@@ -213,22 +198,14 @@ export class GameLogic {
     }
 
     public handleBroadcast(message: BroadcastMessage): void {
-        logger.debug(
-            `Received broadcast from direction ${message.direction}: ${message.message}`
-        );
+        logger.debug(`Received broadcast from direction ${message.direction}: ${message.message}`);
 
-        if (
-            message.message.includes("ELEVATION") &&
-            message.message.includes("READY")
-        ) {
+        if (message.message.includes("ELEVATION") && message.message.includes("READY")) {
             logger.info("Other player ready for elevation, checking if we can help");
             this.stateManager.setState(AIState.COORDINATION);
         }
 
-        if (
-            message.message.includes("NEED") &&
-            message.message.includes("PLAYERS")
-        ) {
+        if (message.message.includes("NEED") && message.message.includes("PLAYERS")) {
             logger.info("Other player needs help with elevation");
             this.stateManager.setState(AIState.COORDINATION);
         }
@@ -242,6 +219,8 @@ export class GameLogic {
 
     public getDebugInfo(): any {
         const context = this.getContext();
+        if (!context) return { error: "No context available" };
+
         return {
             currentState: this.stateManager.getCurrentState(),
             timeInState: this.stateManager.getTimeInState(),
