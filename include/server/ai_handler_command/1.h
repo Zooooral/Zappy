@@ -1,7 +1,8 @@
 #ifndef AI_ACTIONS_H
 #define AI_ACTIONS_H
 
-static inline void ai_action_forward(server_t *server, client_t *client)
+static inline void ai_action_forward(server_t *server, client_t *client,
+    char *cmd)
 {
     player_t *p = NULL;
     static const int dx[4] = {0, 1, 0, -1};
@@ -22,7 +23,8 @@ static inline void ai_action_forward(server_t *server, client_t *client)
     send_response(client, "ok\n");
 }
 
-static inline void ai_action_right(server_t *server, client_t *client)
+static inline void ai_action_right(server_t *server, client_t *client,
+    char *cmd)
 {
     size_t i;
     player_t *p;
@@ -42,7 +44,8 @@ static inline void ai_action_right(server_t *server, client_t *client)
     send_response(client, "ok\n");
 }
 
-static inline void ai_action_left(server_t *server, client_t *client)
+static inline void ai_action_left(server_t *server, client_t *client, 
+    char *cmd)
 {
     size_t i;
     player_t *p = NULL;
@@ -62,7 +65,8 @@ static inline void ai_action_left(server_t *server, client_t *client)
 }
 
 
-static inline void ai_action_look(server_t *server, client_t *client)
+static inline void ai_action_look(server_t *server, client_t *client, 
+    char *cmd)
 {
     char *result;
 
@@ -77,7 +81,8 @@ static inline void ai_action_look(server_t *server, client_t *client)
     }
 }
 
-static inline void ai_action_inventory(server_t *server, client_t *client)
+static inline void ai_action_inventory(server_t *server, client_t *client, 
+    char *cmd)
 {
     size_t i;
     player_t *p = NULL;

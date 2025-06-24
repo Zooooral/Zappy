@@ -46,6 +46,7 @@ static const double ai_action_duration[] = {
 typedef struct ai_action_data_s {
     ai_action_type_t type;
     server_t *server;
+    char *cmd;
 } ai_action_data_t;
 
 void protocol_handle_ai_command(server_t *server, client_t *client,

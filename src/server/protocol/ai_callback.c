@@ -27,9 +27,9 @@ void ai_callback_handler(client_t *client, void *data)
     if (!action_data || !client)
         return;
     server = action_data->server;
-    if (action_data->type >= 0 && action_data->type <= AI_ACTION_INVENTORY &&
+    if (action_data->type >= 0 && action_data->type <= sizeof action_handlers &&
         action_handlers[action_data->type]) {
-        action_handlers[action_data->type](server, client);
+        action_handlers[action_data->type](server, client, action_data->cmd);
     }
     free(action_data);
 }
