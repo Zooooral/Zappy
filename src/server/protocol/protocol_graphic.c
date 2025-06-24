@@ -157,6 +157,23 @@ static void handle_time_unit_command(server_t *server, client_t *client,
     }
 }
 
+// sst
+static void handle_time_unit_modification(server_t *server, client_t *client,
+    const char *cmd)
+{
+    int new_freq;
+    char *response;
+
+    if (sscanf(cmd, "sst %d", &new_freq) == 1 && new_freq > 0) {
+        server->config.freq = new_freq;
+        asprintf(&response, "sgt %zu\n", server->config.freq);
+        send_response(client, response);
+        free(response);
+    } else {
+        send_response(client, "sbp\n");
+    }
+}
+
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
     size_t i;
