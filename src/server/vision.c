@@ -26,8 +26,7 @@ static char *print_tile(tile_t *tile) {
     }
     for (int i = 0; i < 7; ++i) {
         for (int j = 0; j < tile->resources[i]; ++j) {
-            if (!first)
-                DA_PUSH(str, *" ");
+            str = da_push(str, " ", 1);
             str = da_push(str, ressource_string_table[i], strlen(ressource_string_table[i]));
             first = 0;
         }
@@ -42,8 +41,8 @@ char *vision_look(client_t *client, map_t *map)
     char *tile = NULL;
     int first = 1;
 
-    DA_PUSH(res, *"[");
-    for (int dist = 0; dist <= client->player->level - 1; ++dist) {
+    res = da_push(res, "[", 1);
+    for (int dist = 0; dist <= client->player->level; ++dist) {
         for (int offset = -dist; offset <= dist; ++offset) {
             if (client->player->orientation == 1) { // NORD
                 x = (client->player->x + offset + map->width) % map->width;
@@ -59,13 +58,13 @@ char *vision_look(client_t *client, map_t *map)
                 y = (client->player->y - offset + map->height) % map->height;
             }
             if (!first)
-                DA_PUSH(res, *",");
+                res = da_push(res, ", ", 1);
             tile = print_tile(map_get_tile(map, x, y));
             res = da_push(res, tile, strlen(tile));
             da_destroy(tile);
             first = 0;
         }
     }
-    DA_PUSH(res, "]\n");
+    DA_PUSH(res, " ]\n");
     return res;
 }
