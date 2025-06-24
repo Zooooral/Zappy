@@ -275,6 +275,15 @@ void CharacterManager::endAllElevations() {
     }
 }
 
+std::vector<Character *> CharacterManager::getAllCharacters() const
+{
+    std::vector<Character*> result;
+    for (const auto& c : _characters) {
+        result.push_back(c.get());
+    }
+    return result;
+}
+
 void CharacterManager::loadModel() {
     const char* characterPath = "assets/characters/character.glb";
     if (FileExists(characterPath)) {
