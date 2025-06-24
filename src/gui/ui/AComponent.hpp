@@ -18,7 +18,6 @@ public:
     }
     virtual ~AComponent() = default;
 
-    // Rule of 5
     AComponent(const AComponent&) = delete;
     AComponent& operator=(const AComponent&) = delete;
     AComponent(AComponent&&) = delete;

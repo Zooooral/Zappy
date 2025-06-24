@@ -43,10 +43,9 @@ void GameStateManager::changeState(const std::string& nextState, Transition tran
     }
     
     if (_transitioning) {
-        return; // Already transitioning
+        return;
     }
     
-    // Strong exception safety: prepare the transition before making any changes
     std::string oldState = _currentState;
     
     try {
@@ -55,12 +54,10 @@ void GameStateManager::changeState(const std::string& nextState, Transition tran
         _transitionType = transition;
         _transitionTimer = 0.0f;
         
-        // If transition fails, we can rollback
         if (transition == Transition::NONE) {
             completeTransition();
         }
     } catch (const std::exception& e) {
-        // Rollback on failure
         _transitioning = false;
         _nextState.clear();
         std::cerr << "Failed to change state: " << e.what() << std::endl;
@@ -77,35 +74,28 @@ void GameStateManager::completeTransition() {
     std::string oldState = _currentState;
     
     try {
-        // Exit current state
         if (!_currentState.empty() && _states.find(_currentState) != _states.end()) {
             _states[_currentState]->onExit();
         }
         
-        // Change state
         _currentState = _nextState;
         
-        // Enter new state
         if (_states.find(_currentState) != _states.end()) {
             _states[_currentState]->onEnter();
         }
         
-        // Complete transition
         _transitioning = false;
         _nextState.clear();
         
     } catch (const std::exception& e) {
-        // Critical error handling - try to recover
         std::cerr << "Critical error during state transition: " << e.what() << std::endl;
         
-        // Try to restore old state
         try {
             _currentState = oldState;
             if (!_currentState.empty() && _states.find(_currentState) != _states.end()) {
                 _states[_currentState]->onEnter();
             }
         } catch (...) {
-            // Complete failure - mark as error state
             _currentState.clear();
             _shouldQuit = true;
         }
@@ -133,7 +123,6 @@ void GameStateManager::update(float dt) {
         try {
             _states[_currentState]->update(dt);
             
-            // Auto-transition logic with error handling
             std::string nextState;
             if (_currentState == "splash") {
                 SplashScreen* splash = static_cast<SplashScreen*>(_states[_currentState].get());
@@ -176,7 +165,6 @@ void GameStateManager::draw() {
         }
     } catch (const std::exception& e) {
         std::cerr << "Error drawing state: " << e.what() << std::endl;
-        // Continue execution - don't crash on draw errors
     }
 }
 

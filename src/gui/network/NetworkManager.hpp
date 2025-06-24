@@ -31,7 +31,6 @@ class NetworkManager : public INetworkClient {
 public:
     static NetworkManager& getInstance();
     
-    // Rule of 5 implementation
     ~NetworkManager();
     NetworkManager(const NetworkManager&) = delete;
     NetworkManager& operator=(const NetworkManager&) = delete;

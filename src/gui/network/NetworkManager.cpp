@@ -160,7 +160,7 @@ void NetworkManager::networkThreadLoop() {
         }
 
         if (ready == 0) {
-            // Timeout - check if we should continue
+            // Timeout
             continue;
         }
 

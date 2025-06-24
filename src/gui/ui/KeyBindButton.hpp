@@ -20,7 +20,6 @@ public:
     KeyBindButton(const Vector2 &position, const Vector2 &size, const std::string &action, int keyCode);
     ~KeyBindButton();
 
-    // Rule of 5
     KeyBindButton(const KeyBindButton&) = delete;
     KeyBindButton& operator=(const KeyBindButton&) = delete;
     KeyBindButton(KeyBindButton&&) = delete;
@@ -44,7 +43,6 @@ private:
 
     std::string getKeyName(int keyCode) const;
 
-    // Thread-safe static member management
     struct InstanceManager {
         std::vector<KeyBindButton*> instances;
         std::mutex mutex;

@@ -29,7 +29,6 @@ class CharacterManager {
 public:
     static CharacterManager& getInstance();
     
-    // Rule of 5
     ~CharacterManager();
     CharacterManager(const CharacterManager&) = delete;
     CharacterManager& operator=(const CharacterManager&) = delete;
@@ -45,7 +44,7 @@ public:
     void addCharacter(int id, const Vector3& position, const std::string& team, int level);
     void removeCharacter(int id);
     Character* getCharacter(int id) const;
-    Character* getHoveredCharacter(Camera camera) const; // Now const-correct
+    Character* getHoveredCharacter(Camera camera) const;
     
     void setSelectedCharacter(Character* character);
     Character* getSelectedCharacter() const { return _selectedCharacter; }
@@ -65,7 +64,7 @@ private:
     std::unordered_map<Character*, std::vector<ElevationParticle>> _elevationParticles;
     
     Character* _selectedCharacter = nullptr;
-    mutable Character* _hoveredCharacter = nullptr; // Mutable for lazy evaluation
+    mutable Character* _hoveredCharacter = nullptr;
     
     Model _characterModel;
     ModelAnimation* _animations = nullptr;
@@ -76,7 +75,7 @@ private:
     int _frameCounter = 0;
     float _timeUnit = 1.0f;
     
-    mutable std::mutex _charactersMutex; // For thread safety
+    mutable std::mutex _charactersMutex;
 
     void loadModel();
     void updateTilePositions();

@@ -138,8 +138,6 @@ bool ArgumentValidator::isValidHostname(const std::string& host)
 
 std::unique_ptr<INetworkClient> ArgumentValidator::createTestClient()
 {
-    // Since NetworkManager is a singleton with private constructor,
-    // we can't create a unique_ptr directly. Return nullptr for now.
-    // The validation function should be updated to handle this case.
+    // Singleton can't create unique_ptr. Return nullptr for now.
     return nullptr;
 }
