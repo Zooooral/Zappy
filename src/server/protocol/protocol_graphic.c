@@ -46,12 +46,29 @@ void protocol_send_player_info(client_t *client, const player_t *player)
 {
     char response[128];
 
-    if (!client || !player)
+    if (!client || !player) {
+        printf("[DEBUG] protocol_send_player_info: client=%p player=%p\n", (void*)client, (void*)player);
         return;
+    }
     snprintf(response, sizeof(response), "pnw #%d %d %d %d %d %s\n",
         player->id, player->x, player->y, player->orientation,
         player->level, player->team_name);
     send_response(client, response);
+}
+
+static void send_existing_players_after_map(server_t *server, client_t *client)
+{
+    static bool players_sent[1024] = {false};
+    
+    if (client->fd >= 1024 || players_sent[client->fd])
+        return;
+    for (size_t i = 0; i < server->client_count; i++) {
+        if (server->clients[i].type == CLIENT_TYPE_AI && 
+            server->clients[i].player != NULL) {
+            protocol_send_player_info(client, server->clients[i].player);
+        }
+    }
+    players_sent[client->fd] = true;
 }
 
 static void handle_map_size_command(server_t *server, client_t *client,
@@ -72,6 +89,7 @@ static void handle_map_content_command(server_t *server, client_t *client,
         for (x = 0; x < server->game->map->width; x++)
             protocol_send_tile_content(server, client, x, y);
     }
+    send_existing_players_after_map(server, client);
 }
 
 static void handle_tile_content_command(server_t *server, client_t *client,
@@ -129,8 +147,8 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
     const graphic_cmd_entry_t graphic_commands[] = {
         {"msz", handle_map_size_command},
         {"mct", handle_map_content_command},
-        {"bct ", handle_tile_content_command},
         {"tna", handle_team_names_command},
+        {"bct ", handle_tile_content_command},
         {"pnw", handle_player_info_command},
         {"ppo", handle_position_update},
         {NULL, NULL}
