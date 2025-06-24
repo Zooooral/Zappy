@@ -184,6 +184,8 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {"bct ", handle_tile_content_command},
         {"pnw", handle_player_info_command},
         {"ppo", handle_position_update},
+        {"sgt", handle_time_unit_command},
+        {"sst", handle_time_unit_modification},
         {NULL, NULL}
     };
 
