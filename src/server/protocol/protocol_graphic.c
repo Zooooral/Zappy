@@ -141,6 +141,22 @@ static void handle_position_update(server_t *server, client_t *client,
     }
 }
 
+// sgt
+static void handle_time_unit_command(server_t *server, client_t *client,
+    const char *cmd)
+{
+    char *response;
+
+    (void)cmd;
+    if (server && server->config.freq > 0) {
+        asprintf(&response, "sgt %zu\n", server->config.freq);
+        send_response(client, response);
+        free(response);
+    } else {
+        send_response(client, "sbp\n");
+    }
+}
+
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
     size_t i;
