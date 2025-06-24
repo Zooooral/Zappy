@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2025
-** Zappy
+** B-YEP-400-PAR-4-1-zappy-maxence.bunel
 ** File description:
 ** main
 */
@@ -13,6 +13,8 @@
 #include "core/GameWorld.hpp"
 #include "core/Environment.hpp"
 #include "core/Constants.hpp"
+#include "core/ArgumentValidator.hpp"
+#include "ui/KeyBindButton.hpp"
 #include "screens/SplashScreen.hpp"
 #include "screens/MainMenu.hpp"
 #include "screens/GameScreen.hpp"
@@ -29,9 +31,8 @@
 #include <csignal>
 #include <atomic>
 
-void cleanup_resources() noexcept {
-
-    
+void cleanup_resources() noexcept
+{
     try {
         SoundManager::getInstance().stopMusic();
         SoundManager::getInstance().stopAllSounds();
@@ -44,52 +45,26 @@ void cleanup_resources() noexcept {
     }
 }
 
-void printHelp(const char* programName) {
-    std::cout << "USAGE: " << programName << " -p port -h machine" << std::endl;
-    std::cout << "  option\tdescription" << std::endl;
-    std::cout << "  -p port\tport number" << std::endl;
-    std::cout << "  -h machine\thostname of the server" << std::endl;
-}
-
-bool parseArgs(int argc, char** argv) {
-    ConfigManager& config = ConfigManager::getInstance();
-
-    if (argc == 1) {
-        return true;
-    }
-
-    if (argc == 2 && (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0)) {
-        printHelp(argv[0]);
-        return false;
-    }
-
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
-            config.setPort(std::atoi(argv[i + 1]));
-            i++;
-        } else if (strcmp(argv[i], "-h") == 0 && i + 1 < argc) {
-            config.setHost(argv[i + 1]);
-            i++;
-        } else {
-            std::cerr << "Unknown option: " << argv[i] << std::endl;
-            printHelp(argv[0]);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
+    ArgumentValidator::Arguments args = ArgumentValidator::parseArguments(argc, argv);
     
-    if (!parseArgs(argc, argv)) {
-        return 0;
+    if (!args.valid) {
+        std::cerr << "Error: " << args.errorMessage << std::endl;
+        ArgumentValidator::printHelp(argv[0]);
+        return 84;
     }
 
-    // Initialize network platform
     if (!zappy::network::NetworkPlatform::initialize()) {
-        std::cerr << "Failed to initialize network platform" << std::endl;
-        return 1;
+        std::cerr << "Error: Failed to initialize network platform" << std::endl;
+        return 84;
+    }
+
+    if (!ArgumentValidator::validateConnection(args.host, args.port)) {
+        std::cerr << "Error: Cannot connect to server at " << args.host << ":" << args.port << std::endl;
+        std::cerr << "Please ensure the server is running and accessible." << std::endl;
+        zappy::network::NetworkPlatform::cleanup();
+        return 84;
     }
 
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
@@ -101,7 +76,12 @@ int main(int argc, char** argv) {
     bool shouldQuit = false;
     
     try {
+        ConfigManager& config = ConfigManager::getInstance();
+        config.setHost(args.host);
+        config.setPort(args.port);
+
         GameStateManager& stateManager = GameStateManager::getInstance();
+        
         stateManager.registerState("splash", std::make_unique<SplashScreen>());
         stateManager.registerState("main_menu", std::make_unique<MainMenu>());
         stateManager.registerState("connecting", std::make_unique<ConnectingScreen>());
@@ -126,9 +106,13 @@ int main(int argc, char** argv) {
             }
         }
     } catch (const std::exception& e) {
-        std::cout << "ERROR: Exception in main: " << e.what() << std::endl;
+        std::cerr << "ERROR: Exception in main: " << e.what() << std::endl;
+        cleanup_resources();
+        return 84;
     } catch (...) {
-        std::cout << "ERROR: Unknown exception in main" << std::endl;
+        std::cerr << "ERROR: Unknown exception in main" << std::endl;
+        cleanup_resources();
+        return 84;
     }
 
     cleanup_resources();
