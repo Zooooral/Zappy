@@ -44,16 +44,16 @@ char *vision_look(client_t *client, map_t *map)
     res = da_push(res, "[", 1);
     for (int dist = 0; dist <= client->player->level; ++dist) {
         for (int offset = -dist; offset <= dist; ++offset) {
-            if (client->player->orientation == 1) { // NORD
+            if (client->player->orientation == 1) {
                 x = (client->player->x + offset + map->width) % map->width;
                 y = (client->player->y - dist + map->height) % map->height;
-            } else if (client->player->orientation == 2) { // EST
+            } else if (client->player->orientation == 2) {
                 x = (client->player->x + dist + map->width) % map->width;
                 y = (client->player->y + offset + map->height) % map->height;
-            } else if (client->player->orientation == 3) { // SUD
+            } else if (client->player->orientation == 3) {
                 x = (client->player->x - offset + map->width) % map->width;
                 y = (client->player->y + dist + map->height) % map->height;
-            } else { // OUEST
+            } else {
                 x = (client->player->x - dist + map->width) % map->width;
                 y = (client->player->y - offset + map->height) % map->height;
             }
