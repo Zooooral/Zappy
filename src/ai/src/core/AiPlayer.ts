@@ -9,7 +9,6 @@ export class AIPlayer {
     private gameLogic: GameLogic;
     private config: AIConfig;
     private running: boolean = false;
-    private gameLoopInterval?: NodeJS.Timeout;
 
     constructor(config: AIConfig) {
         this.config = config;
@@ -86,11 +85,6 @@ export class AIPlayer {
         this.running = false;
         logger.info("Stopping AI...");
 
-        if (this.gameLoopInterval) {
-            clearInterval(this.gameLoopInterval);
-            this.gameLoopInterval = undefined;
-        }
-
         this.client.disconnect();
         logger.info("AI stopped");
     }
@@ -117,28 +111,32 @@ export class AIPlayer {
         const gameState = this.client.getGameState();
         logger.info(`Initial state - Level: ${gameState.playerLevel}, Direction: ${gameState.playerDirection}`);
 
-        this.gameLoopInterval = setInterval(async () => {
-            if (!this.running || !this.client.isConnected()) {
-                logger.warn("Game loop stopped - not running or not connected");
-                return;
-            }
+        this.runGameLoopSequentially();
+    }
 
+    private async runGameLoopSequentially(): Promise<void> {
+        while (this.running) {
             try {
-                const stats = this.client.getNetworkStats();
-                if (stats.pendingCommands > 8) {
-                    logger.debug(`Queue nearly full: ${stats.pendingCommands}/10, skipping tick`);
-                    return;
+                if (!this.client.isConnected()) {
+                    logger.warn("Not connected, attempting reconnect...");
+                    await this.reconnect();
+                    if (!this.client.isConnected()) {
+                        logger.error("Failed to reconnect, stopping...");
+                        break;
+                    }
                 }
-
                 await this.gameLogic.tick();
+                await new Promise(resolve => setTimeout(resolve, 50));
             } catch (error) {
                 logger.error("Error in game logic:", error);
 
                 if (error instanceof Error && error.message.includes("Not connected")) {
-                    logger.warn("Connection lost, attempting reconnect...");
-                    this.reconnect();
+                    logger.warn("Connection lost, will retry on next loop");
                 }
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
-        }, 100);
+        }
+
+        logger.info("Game loop ended");
     }
 }
