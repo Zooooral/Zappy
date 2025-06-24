@@ -96,12 +96,13 @@ void GameScreen::requestInitialGameData() {
 
 void GameScreen::requestPlayerUpdates() {
     NetworkManager& network = NetworkManager::getInstance();
-
     network.sendCommand("mct");
-    for (int i = 1; i <= _nextPlayerId; i++) {
-        network.sendCommand("ppo #" + std::to_string(i));
-        network.sendCommand("plv #" + std::to_string(i));
-        network.sendCommand("pin #" + std::to_string(i));
+    const auto  characters = CharacterManager::getInstance().getAllCharacters();
+    for (const auto *character : characters) {
+        int id = character->getId();
+        network.sendCommand("ppo #" + std::to_string(id));
+        network.sendCommand("plv #" + std::to_string(id));
+        network.sendCommand("pin #" + std::to_string(id));
     }
 }
 

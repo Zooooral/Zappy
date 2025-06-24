@@ -46,6 +46,8 @@ public:
     void setTimeUnit(int timeUnit) { _timeUnit = timeUnit; }
     bool isModelLoaded() const { return _modelLoaded; }
 
+    std::vector<Character*> getAllCharacters() const;
+
 private:
     CharacterManager() = default;
     ~CharacterManager();
