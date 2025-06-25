@@ -88,7 +88,7 @@ private:
     void drawCharacter(Character* character, Camera camera, bool isHovered, bool isSelected) const;
     void drawCharacterOutline(Character* character, Color color) const;
     
-    Color getTeamColor() const;
+    Color getTeamColor(const std::string& teamName) const;
     std::string getTileKey(const Vector2& pos) const;
 };
 

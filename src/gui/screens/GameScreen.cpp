@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "GameScreen.hpp"
+#include "../entities/EggManager.hpp"
 #include "EndScreen.hpp"
 #include "../core/GameWorld.hpp"
 #include "../core/CameraController.hpp"
@@ -53,6 +54,7 @@ void GameScreen::onEnter() {
     _activePlayerIds.clear();
 
     CharacterManager::getInstance().initialize();
+    EggManager::getInstance().cleanup();
 
     SoundManager& soundMgr = SoundManager::getInstance();
     ConfigManager& config = ConfigManager::getInstance();
@@ -249,6 +251,18 @@ void GameScreen::handleServerCommand(const std::string& command) {
         if (iss >> x >> y >> level) {
             std::cout << "[DEBUG] Incantation started at (" << x << "," << y << ") level " << level << std::endl;
             ChatSystem::getInstance().addMessage("Incantation", "Started at (" + std::to_string(x) + "," + std::to_string(y) + ") level " + std::to_string(level), PURPLE);
+            
+            std::string playerIdStr;
+            while (iss >> playerIdStr) {
+                if (playerIdStr.front() == '#') {
+                    int playerId = std::stoi(playerIdStr.substr(1));
+                    Character* character = CharacterManager::getInstance().getCharacter(playerId);
+                    if (character) {
+                        character->setElevating(true);
+                        std::cout << "[DEBUG] Player #" << playerId << " started elevating" << std::endl;
+                    }
+                }
+            }
         }
     } else if (cmd == "pie") {
         int x, y;
@@ -257,6 +271,15 @@ void GameScreen::handleServerCommand(const std::string& command) {
             std::cout << "[DEBUG] Incantation ended at (" << x << "," << y << ") result: " << result << std::endl;
             Color color = (result == "ok") ? GREEN : RED;
             ChatSystem::getInstance().addMessage("Incantation", "Ended at (" + std::to_string(x) + "," + std::to_string(y) + ") " + result, color);
+            
+            for (auto character : CharacterManager::getInstance().getAllCharacters()) {
+                if (character->isElevating() && 
+                    (int)character->getTilePosition().x == x && 
+                    (int)character->getTilePosition().y == y) {
+                    character->setElevating(false);
+                    std::cout << "[DEBUG] Player #" << character->getId() << " stopped elevating" << std::endl;
+                }
+            }
         }
     } else if (cmd == "pfk") {
         std::string idStr;
@@ -296,6 +319,7 @@ void GameScreen::handleServerCommand(const std::string& command) {
                 int playerId = std::stoi(playerIdStr.substr(1));
                 std::cout << "[DEBUG] Egg #" << eggId << " laid by player #" << playerId << " at (" << x << "," << y << ")" << std::endl;
                 ChatSystem::getInstance().addMessage("Game", "Egg #" + std::to_string(eggId) + " laid at (" + std::to_string(x) + "," + std::to_string(y) + ")", YELLOW);
+                EggManager::getInstance().addEgg(eggId, x, y, playerId);
             }
         }
     } else if (cmd == "eht") {
@@ -305,6 +329,7 @@ void GameScreen::handleServerCommand(const std::string& command) {
                 int eggId = std::stoi(eggIdStr.substr(1));
                 std::cout << "[DEBUG] Egg #" << eggId << " is hatching" << std::endl;
                 ChatSystem::getInstance().addMessage("Game", "Egg #" + std::to_string(eggId) + " is hatching", ORANGE);
+                EggManager::getInstance().setEggHatching(eggId, true);
             }
         }
     } else if (cmd == "ebo") {
@@ -314,6 +339,7 @@ void GameScreen::handleServerCommand(const std::string& command) {
                 int eggId = std::stoi(eggIdStr.substr(1));
                 std::cout << "[DEBUG] Player connected for egg #" << eggId << std::endl;
                 ChatSystem::getInstance().addMessage("Game", "Player connected for egg #" + std::to_string(eggId), GREEN);
+                EggManager::getInstance().removeEgg(eggId);
             }
         }
     } else if (cmd == "edi") {
@@ -323,6 +349,7 @@ void GameScreen::handleServerCommand(const std::string& command) {
                 int eggId = std::stoi(eggIdStr.substr(1));
                 std::cout << "[DEBUG] Egg #" << eggId << " died" << std::endl;
                 ChatSystem::getInstance().addMessage("Game", "Egg #" + std::to_string(eggId) + " died", RED);
+                EggManager::getInstance().removeEgg(eggId);
             }
         }
     } else if (cmd == "sgt") {
@@ -450,7 +477,8 @@ void GameScreen::draw() {
             break;
     }
 
-    DrawText(stateText, 10, 10, 20, stateColor);
+    int screenHeight = GetScreenHeight();
+    DrawText(stateText, 10, screenHeight - 30, 20, stateColor);
 
     if (_shouldReturn) {
         _finished = true;
