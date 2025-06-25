@@ -22,9 +22,6 @@ export class GameLogic {
     private lastInventoryUpdate: number = 0;
     private lastVisionUpdate: number = 0;
 
-    private readonly INVENTORY_UPDATE_INTERVAL = 2000;
-    private readonly VISION_UPDATE_INTERVAL = 1000;
-
     constructor(client: NetworkClient, config: AIConfig) {
         this.client = client;
         this.config = config;
@@ -40,7 +37,7 @@ export class GameLogic {
 
     public async tick(): Promise<void> {
         try {
-            await this.updateContextSequentially();
+            await this.updateContext();
 
             const context = this.getContext();
             if (!context) return;
@@ -50,7 +47,7 @@ export class GameLogic {
 
             this.checkReproductionTrigger(context);
 
-            await this.executeStrategySequentially(context);
+            await this.executeStrategy(context);
         } catch (error) {
             logger.error("Error in game tick:", error);
         }
@@ -65,16 +62,16 @@ export class GameLogic {
         }
     }
 
-    private async updateContextSequentially(): Promise<void> {
+    private async updateContext(): Promise<void> {
         const now = Date.now();
 
         try {
-            if (!this.lastInventory || (now - this.lastInventoryUpdate) > this.INVENTORY_UPDATE_INTERVAL || (this.lastInventory.food < 50 && (now - this.lastInventoryUpdate) > 500)) {
+            if (!this.lastInventory || (now - this.lastInventoryUpdate) > 2000 || (this.lastInventory.food < 50 && (now - this.lastInventoryUpdate) > 500)) {
                 this.lastInventory = await this.client.getInventory();
                 this.lastInventoryUpdate = now;
             }
 
-            if (!this.lastVision || (now - this.lastVisionUpdate) > this.VISION_UPDATE_INTERVAL) {
+            if (!this.lastVision || (now - this.lastVisionUpdate) > 1000) {
                 this.lastVision = await this.client.look();
                 this.lastVisionUpdate = now;
             }
@@ -97,7 +94,7 @@ export class GameLogic {
         };
     }
 
-    private async executeStrategySequentially(context: GameContext): Promise<void> {
+    private async executeStrategy(context: GameContext): Promise<void> {
         try {
             switch (context.currentState) {
                 case AIState.SURVIVAL:
