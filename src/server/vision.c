@@ -37,6 +37,7 @@ char *vision_look(client_t *client, map_t *map)
     int x, y;
     char *tile = NULL;
     int first = 1;
+
     res = da_push(res, "[", 1);
     for (int dist = 0; dist <= client->player->level; ++dist) {
         for (int offset = -dist; offset <= dist; ++offset) {

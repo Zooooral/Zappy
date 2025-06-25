@@ -11,11 +11,6 @@
 #include "server/server_updates.h"
 #include "server/payloads.h"
 
-void broadcast_message(client_t *sender, const char *msg)
-{
-    // TODO: Propager le message à tous les joueurs avec direction
-}
-
 void broadcast_message_to_guis(server_t *server, player_t *player,
     const char *(*function)(client_t *, const player_t *))
 {
