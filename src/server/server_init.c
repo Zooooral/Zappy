@@ -143,7 +143,7 @@ int server_create(server_t *server, const server_config_t *config)
     }
     setup_initial_poll_state(server);
     initialize_clients(server);
-    server->game = game_state_create(&server->config);
+    server->game = game_state_create(server, &server->config);
     if (!server->game) {
         server_destroy(server);
         return -1;
