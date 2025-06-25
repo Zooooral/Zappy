@@ -25,24 +25,11 @@ interface Position {
   y: number;
 }
 
-interface MovementHistory {
-  readonly moves: string[];
-  readonly positions: Position[];
-  readonly maxHistory: number;
-}
-
-interface MovementStats {
-  readonly successfulMoves: number;
-  readonly failedMoves: number;
-  readonly totalTurns: number;
-}
-
 export class MovementController {
-  private readonly movementHistory: MovementHistory;
+  private readonly movementHistory: string[] = [];
   private stuckCounter: number = 0;
   private currentDirection: Direction = Direction.NORTH;
   private estimatedPosition: Position = { x: 0, y: 0 };
-  private stats: MovementStats = { successfulMoves: 0, failedMoves: 0, totalTurns: 0 };
 
   private static readonly MAX_HISTORY = 10;
   private static readonly STUCK_THRESHOLD = 3;
@@ -56,40 +43,12 @@ export class MovementController {
     [Direction.WEST]: { x: -1, y: 0 }
   };
 
-  constructor() {
-    this.movementHistory = {
-      moves: [],
-      positions: [],
-      maxHistory: MovementController.MAX_HISTORY
-    };
-  }
-
-  public getCurrentDirection(): Direction {
-    return this.currentDirection;
-  }
-
   public getLastDirection(): number {
     return this.currentDirection;
   }
 
   public getStuckCounter(): number {
     return this.stuckCounter;
-  }
-
-  public getEstimatedPosition(): Readonly<Position> {
-    return { ...this.estimatedPosition };
-  }
-
-  public getMovementStats(): Readonly<MovementStats> {
-    return { ...this.stats };
-  }
-
-  public getMovementHistory(): Readonly<MovementHistory> {
-    return {
-      moves: [...this.movementHistory.moves],
-      positions: [...this.movementHistory.positions],
-      maxHistory: this.movementHistory.maxHistory
-    };
   }
 
   public resetStuckCounter(): void {
@@ -196,7 +155,6 @@ export class MovementController {
     this.resetStuckCounter();
     this.currentDirection = Direction.NORTH;
     this.estimatedPosition = { x: 0, y: 0 };
-    this.stats = { successfulMoves: 0, failedMoves: 0, totalTurns: 0 };
   }
 
   private async performTurn(client: NetworkClient, action: MovementAction, directionChange: number): Promise<boolean> {
@@ -207,7 +165,6 @@ export class MovementController {
       if (success) {
         this.updateDirection(directionChange);
         this.addToHistory(action);
-        this.stats = { ...this.stats, totalTurns: this.stats.totalTurns + 1 };
         return true;
       }
       return false;
@@ -221,12 +178,10 @@ export class MovementController {
     this.updateEstimatedPosition();
     this.addToHistory(MovementAction.MOVE_FORWARD);
     this.resetStuckCounter();
-    this.stats = { ...this.stats, successfulMoves: this.stats.successfulMoves + 1 };
   }
 
   private handleFailedMove(): void {
     this.stuckCounter++;
-    this.stats = { ...this.stats, failedMoves: this.stats.failedMoves + 1 };
   }
 
   private updateDirection(change: number): void {
@@ -247,29 +202,22 @@ export class MovementController {
   }
 
   private addToHistory(action: string): void {
-    this.movementHistory.moves.push(action);
-    this.movementHistory.positions.push({ ...this.estimatedPosition });
+    this.movementHistory.push(action);
     this.trimHistory();
   }
 
   private trimHistory(): void {
-    const maxHistory = this.movementHistory.maxHistory;
-
-    if (this.movementHistory.moves.length > maxHistory) {
-      this.movementHistory.moves.shift();
-    }
-    if (this.movementHistory.positions.length > maxHistory) {
-      this.movementHistory.positions.shift();
+    if (this.movementHistory.length > MovementController.MAX_HISTORY) {
+      this.movementHistory.shift();
     }
   }
 
   private clearMovementHistory(): void {
-    this.movementHistory.moves.length = 0;
-    this.movementHistory.positions.length = 0;
+    this.movementHistory.length = 0;
   }
 
   private getRecentMoves(count: number): string[] {
-    return this.movementHistory.moves.slice(-count);
+    return this.movementHistory.slice(-count);
   }
 
   private detectRepeatingPattern(moves: string[]): boolean {
