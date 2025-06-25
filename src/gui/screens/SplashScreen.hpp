@@ -11,10 +11,10 @@
     #include <string>
     #include <vector>
 
-    #include "../core/GameState.hpp"
+    #include "../core/AGameState.hpp"
     #include "raylib.h"
 
-class SplashScreen : public GameState {
+class SplashScreen : public AGameState {
 public:
     SplashScreen();
     ~SplashScreen();

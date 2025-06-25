@@ -6,6 +6,10 @@ export class AIStateManager {
     private timeInState: number = 0;
     private lastTick: number = Date.now();
 
+    private static readonly FOOD_THRESHOLDS = {
+        LOW: 50,
+    } as const;
+
     public updateTime(): void {
         const now = Date.now();
         this.timeInState += now - this.lastTick;
@@ -21,36 +25,80 @@ export class AIStateManager {
     }
 
     public updateState(context: GameContext): void {
-        const food = context.inventory.food;
-        const level = context.gameState.playerLevel;
+        const { food } = context.inventory;
+
+        if (this.currentState === AIState.REPRODUCTION) {
+            return;
+        }
+
+        const newState = this.determineOptimalState(food);
+
+        if (newState !== this.currentState) {
+            this.transitionToState(newState, food);
+        }
+    }
+
+    private determineOptimalState(food: number): AIState {
+        if (this.currentState === AIState.REPRODUCTION) {
+            return AIState.REPRODUCTION;
+        }
+
+        if (food < AIStateManager.FOOD_THRESHOLDS.LOW) {
+            return AIState.SURVIVAL;
+        }
+        return AIState.EXPLORATION;
+    }
+
+    private transitionToState(newState: AIState, food: number): void {
+        const previousState = this.currentState;
 
         if (food < 5) {
-            this.setState(AIState.SURVIVAL);
-            logger.warn(`Critical survival mode - food: ${food}`);
-        } else if (food < 50) {
-            this.setState(AIState.SURVIVAL);
-        } else {
-            this.setState(AIState.EXPLORATION);
+            logger.warn(`Critical Survival Mode - food: ${food}`);
         }
+
+        if (newState === AIState.REPRODUCTION) {
+            logger.info(`Entering REPRODUCTION mode`);
+        } else if (previousState === AIState.REPRODUCTION) {
+            logger.info(`Exiting REPRODUCTION mode -> ${newState}`);
+        } else {
+            logger.info(`State transition: ${previousState} -> ${newState}`);
+        }
+
+        this.currentState = newState;
+        this.timeInState = 0;
     }
 
     public setState(newState: AIState): void {
         if (this.currentState !== newState) {
-            logger.info(`State transition: ${this.currentState} -> ${newState}`);
+            if (newState === AIState.REPRODUCTION) {
+                logger.info(`Force change to REPRODUCTION mode`);
+            } else if (this.currentState === AIState.REPRODUCTION) {
+                logger.info(`Force exit from REPRODUCTION mode -> ${newState}`);
+            } else {
+                logger.info(`State force change: ${this.currentState} -> ${newState}`);
+            }
+
             this.currentState = newState;
             this.timeInState = 0;
         }
     }
 
-    public shouldUpdateInventory(): boolean {
-        return this.timeInState % 2000 < 100;
+    public reset(): void {
+        this.currentState = AIState.SURVIVAL;
+        this.timeInState = 0;
+        this.lastTick = Date.now();
+        logger.info("AIStateManager reinitialized");
     }
 
-    public shouldUpdateVision(): boolean {
-        return this.timeInState % 1000 < 100;
-    }
-
-    public shouldUpdateInventoryUrgent(food: number): boolean {
-        return food < 50 && this.timeInState % 500 < 100;
+    public getDebugInfo(): {
+        currentState: AIState;
+        timeInState: number;
+        lastTick: number;
+    } {
+        return {
+            currentState: this.currentState,
+            timeInState: this.timeInState,
+            lastTick: this.lastTick,
+        };
     }
 }

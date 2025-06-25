@@ -10,13 +10,14 @@
 
     #include <memory>
     #include <string>
+    #include <set>
 
-    #include "../core/GameState.hpp"
+    #include "../core/AGameState.hpp"
     #include "../ui/Button.hpp"
     #include "../ui/InventoryUI.hpp"
     #include "raylib.h"
 
-class GameScreen : public GameState {
+class GameScreen : public AGameState {
 public:
     GameScreen();
     ~GameScreen();
@@ -34,7 +35,10 @@ private:
     bool _shouldReturn = false;
     bool _mapInitialized = false;
     float _updateTimer = 0.0f;
+    float _timeUnitRefreshTimer = 0.0f;
+    static constexpr float TIME_UNIT_REFRESH_INTERVAL = 10.0f;
     int _nextPlayerId = 1;
+    std::set<int> _activePlayerIds;
     std::unique_ptr<Button> _backButton;
     std::unique_ptr<InventoryUI> _inventoryUI;
 
@@ -42,6 +46,7 @@ private:
     void requestInitialGameData();
     void requestPlayerUpdates();
     void handleServerCommand(const std::string& command);
+    void requestTimeUnit();
 };
 
 #endif

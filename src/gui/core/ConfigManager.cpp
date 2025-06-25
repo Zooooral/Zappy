@@ -1,99 +1,85 @@
 /*
 ** EPITECH PROJECT, 2025
-** src/gui/core/ConfigManager.cpp
+** B-YEP-400-PAR-4-1-zappy-maxence.bunel
 ** File description:
 ** ConfigManager
 */
 
+#include "ConfigManager.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
-#include "ConfigManager.hpp"
+#include <algorithm>
 #include "raylib.h"
 
-ConfigManager &ConfigManager::getInstance()
+ConfigManager& ConfigManager::getInstance()
 {
     static ConfigManager instance;
+    static bool initialized = false;
+    if (!initialized) {
+        instance.initializeDefaults();
+        instance.loadConfig();
+        initialized = true;
+    }
     return instance;
-}
-
-ConfigManager::ConfigManager()
-{
-    initializeDefaults();
-    loadConfig();
 }
 
 void ConfigManager::initializeDefaults()
 {
-    _volume = 1.0f;
-    _keyBindings["Move Forward"] = KEY_Z;
+    _volume = 0.7f;
+    
+    _keyBindings["Move Forward"] = KEY_W;
     _keyBindings["Move Backward"] = KEY_S;
-    _keyBindings["Move Left"] = KEY_Q;
+    _keyBindings["Move Left"] = KEY_A;
     _keyBindings["Move Right"] = KEY_D;
     _keyBindings["Toggle View"] = KEY_P;
+    
     _host = "localhost";
     _port = 4242;
 }
 
-float ConfigManager::getVolume() const
-{
-    return _volume;
-}
-
-void ConfigManager::setVolume(float volume)
-{
-    _volume = volume;
-}
-
-int ConfigManager::getKeyBinding(const std::string &action) const
+int ConfigManager::getKeyBinding(const std::string& action) const
 {
     auto it = _keyBindings.find(action);
     if (it != _keyBindings.end()) {
         return it->second;
     }
-    return 0;
+    
+    if (action == "Move Forward") return KEY_W;
+    if (action == "Move Backward") return KEY_S;
+    if (action == "Move Left") return KEY_A;
+    if (action == "Move Right") return KEY_D;
+    if (action == "Toggle View") return KEY_P;
+    
+    return KEY_NULL;
 }
 
-void ConfigManager::setKeyBinding(const std::string &action, int keyCode)
+void ConfigManager::setKeyBinding(const std::string& action, int key)
 {
-    _keyBindings[action] = keyCode;
+    _keyBindings[action] = key;
 }
 
 std::vector<std::string> ConfigManager::getKeyBindingActions() const
 {
-    std::vector<std::string> actions;
-    for (const auto &pair : _keyBindings) {
-        actions.push_back(pair.first);
+    std::vector<std::string> actions = {
+        "Move Forward", "Move Backward", "Move Left", "Move Right", 
+        "Toggle View"
+    };
+    
+    for (const auto& pair : _keyBindings) {
+        if (std::find(actions.begin(), actions.end(), pair.first) == actions.end()) {
+            actions.push_back(pair.first);
+        }
     }
+    
     return actions;
 }
 
-std::string ConfigManager::getHost() const
-{
-    return _host;
-}
-
-void ConfigManager::setHost(const std::string &host)
-{
-    _host = host;
-}
-
-int ConfigManager::getPort() const
-{
-    return _port;
-}
-
-void ConfigManager::setPort(int port)
-{
-    _port = port;
-}
-
-bool ConfigManager::loadConfig(const std::string &filePath)
+bool ConfigManager::loadConfig(const std::string& filePath)
 {
     std::ifstream file(filePath);
     if (!file.is_open()) {
-        std::cerr << "Could not open config file: " << filePath << std::endl;
+        initializeDefaults();
         return false;
     }
 
@@ -101,19 +87,19 @@ bool ConfigManager::loadConfig(const std::string &filePath)
     std::string section;
 
     while (std::getline(file, line)) {
-        if (line.empty() || line[0] == ';' || line[0] == '#') {
+        if (line.empty() || line[0] == '#') {
             continue;
         }
 
-        if (line[0] == '[' && line[line.size() - 1] == ']') {
-            section = line.substr(1, line.size() - 2);
+        if (line[0] == '[' && line.back() == ']') {
+            section = line.substr(1, line.length() - 2);
             continue;
         }
 
-        size_t delimPos = line.find('=');
-        if (delimPos != std::string::npos) {
-            std::string key = line.substr(0, delimPos);
-            std::string value = line.substr(delimPos + 1);
+        size_t pos = line.find('=');
+        if (pos != std::string::npos) {
+            std::string key = line.substr(0, pos);
+            std::string value = line.substr(pos + 1);
 
             if (section == "Game") {
                 if (key == "Volume") {
@@ -135,11 +121,10 @@ bool ConfigManager::loadConfig(const std::string &filePath)
     return true;
 }
 
-bool ConfigManager::saveConfig(const std::string &filePath) const
+bool ConfigManager::saveConfig(const std::string& filePath) const
 {
     std::ofstream file(filePath);
     if (!file.is_open()) {
-        std::cerr << "Could not open config file for writing: " << filePath << std::endl;
         return false;
     }
 
@@ -148,7 +133,7 @@ bool ConfigManager::saveConfig(const std::string &filePath) const
     file << std::endl;
 
     file << "[KeyBindings]" << std::endl;
-    for (const auto &pair : _keyBindings) {
+    for (const auto& pair : _keyBindings) {
         file << pair.first << "=" << pair.second << std::endl;
     }
     file << std::endl;

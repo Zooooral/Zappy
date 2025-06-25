@@ -14,6 +14,7 @@
 #include "server/time.h"
 #include "server/broadcast.h"
 #include "server/protocol_graphic.h"
+#include "server/payloads.h"
 
 static int initialize_client_buffer(client_t *client)
 {
@@ -108,8 +109,14 @@ static void update_poll_fds_after_removal(server_t *server)
 
 void client_remove(server_t *server, size_t index)
 {
+    player_t *player;
+
     if (!server || index >= server->client_count)
         return;
+    player = server->clients[index].player;
+    if (player) {
+        broadcast_message_to_guis(server, player, gui_payload_player_death);
+    }
     cleanup_client_resources(&server->clients[index]);
     shift_clients_array(server, index);
     server->client_count--;
@@ -140,10 +147,11 @@ static void client_validate(server_t *server, client_t *client, const char *mess
     client->is_authenticated = true;
     if (server->game->player_count < server->game->player_capacity) {
         client->player = player_create(client, pos[0], pos[1], message);
+        printf("[DEBUG] AI client created player: %p\n", (void*)client->player);
         if (client->player) {
-            player_set_position(client->player, server->game->map, pos[0], pos[1]);
+            player_set_position(server, client->player, pos[0], pos[1]);
             add_player_to_game(server->game, client->player);
-            broadcast_message_to_guis(server, client, protocol_send_player_info);
+            broadcast_message_to_guis(server, client->player, gui_payload_new_player);
         }
     }
     snprintf(response, sizeof(response), "%ld\n",
@@ -156,15 +164,18 @@ static void client_validate(server_t *server, client_t *client, const char *mess
 
 void client_authenticate(server_t *server, client_t *client, const char *message)
 {
-    ssize_t sent;
-
     if (!server || !client || !message)
         return;
     if (strcmp(message, "GRAPHIC") == 0) {
-        client->type = CLIENT_TYPE_GRAPHIC;
+        client->type = CLIENT_TYPE_GRAPHIC; 
         client->is_authenticated = true;
-        sent = send(client->fd, "msz 10 10\n", 10, 0);
-        (void)sent;
+        protocol_send_map_size(server, client);
+        for (size_t i = 0; i < server->client_count; i++) {
+            if (server->clients[i].type == CLIENT_TYPE_AI && 
+                server->clients[i].player != NULL) {
+                protocol_send_player_info(client, server->clients[i].player);
+            }
+        }
     } else {
         printf("AI client authenticated with team: %s\n", message);
         client_validate(server, client, message);

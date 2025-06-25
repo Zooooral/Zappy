@@ -1,5 +1,5 @@
 ##
-## EPITECH PROJECT, 2024
+## EPITECH PROJECT, 2025
 ## Zappy
 ## File description:
 ## Makefile for Zappy project
@@ -25,9 +25,10 @@ GUI_NAME     =  zappy_gui
 SERVER_NAME  =  zappy_server
 AI_NAME      =  zappy_ai
 
-CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include
+CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include -iquote ./src
 GUI_LIBS     =  -lraylib
 CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar -D_GNU_SOURCE -O2
+LDFLAGS	  =  -lm
 MAKEFLAGS    += -j$(shell expr $(shell nproc) - 2)
 
 BUILD_DIR    =  ./build
@@ -85,7 +86,7 @@ assets:
 
 server: $(SERVER_OBJS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Linking server...$(RESET)\n"
-	@$(CC) -o $(SERVER_NAME) $(SERVER_OBJS)
+	@$(CC) -o $(SERVER_NAME) $(SERVER_OBJS) $(LDFLAGS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Server built successfully$(RESET)\n"
 
 gui: $(GUI_OBJS)

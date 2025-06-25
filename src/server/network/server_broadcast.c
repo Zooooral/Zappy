@@ -9,12 +9,6 @@
 #include "server/server_broadcast.h"
 #include "server/server_updates.h"
 
-static bool has_seeder_player(const server_t *server)
-{
-    return server->config.seed_mode && server->game &&
-        server->game->seeder && server->game->seeder->player;
-}
-
 static bool player_state_changed(const player_t *player,
     const player_state_t *last_state)
 {
@@ -73,20 +67,4 @@ static void update_last_state(player_state_t *last_state,
     last_state->y = player->y;
     last_state->level = player->level;
     last_state->elevating = player->is_elevating;
-}
-
-void broadcast_seeder_updates(server_t *server)
-{
-    static player_state_t last_state = {-1, -1, -1, false};
-    player_t *player;
-    update_flags_t flags;
-
-    if (!has_seeder_player(server))
-        return;
-    player = server->game->seeder->player;
-    if (!player_state_changed(player, &last_state))
-        return;
-    flags = get_update_flags(player, &last_state);
-    broadcast_to_graphic_clients(server, player, &flags);
-    update_last_state(&last_state, player);
 }

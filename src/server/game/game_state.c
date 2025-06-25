@@ -2,9 +2,10 @@
 ** EPITECH PROJECT, 2025
 ** src/server/game/game_state.c
 ** File description:
-** Game state management with seeding support
+** Game state management with
 */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
@@ -39,24 +40,12 @@ static int setup_game_map(game_state_t *game, const server_config_t *config)
     return 0;
 }
 
-static int setup_seeder_if_needed(game_state_t *game,
-    const server_config_t *config)
+game_state_t *game_state_create(server_t *server, const server_config_t *config)
 {
-    if (!config->seed_mode)
-        return 0;
-    game->seeder = seeder_create(game->map);
-    if (!game->seeder)
-        return -1;
-    return 0;
-}
-
-game_state_t *game_state_create(const server_config_t *config)
-{
-    game_state_t *game = malloc(sizeof(game_state_t));
+    game_state_t *game = calloc(sizeof(game_state_t), 1);
 
     if (!game)
         return NULL;
-    memset(game, 0, sizeof(game_state_t));
     if (setup_game_map(game, config) == -1) {
         free(game);
         return NULL;
@@ -67,10 +56,6 @@ game_state_t *game_state_create(const server_config_t *config)
         return NULL;
     }
     game->current_time = get_current_time();
-    if (setup_seeder_if_needed(game, config) == -1) {
-        game_state_destroy(game);
-        return NULL;
-    }
     return game;
 }
 
@@ -92,19 +77,37 @@ void game_state_destroy(game_state_t *game)
     if (game->map)
         map_destroy(game->map);
     cleanup_players(game);
-    if (game->seeder)
-        seeder_destroy(game->seeder);
     free(game);
 }
 
-void game_state_update(game_state_t *game, double delta_time)
+// unsure if this should be one more tick before death
+static void player_update(player_t *player)
 {
-    if (!game)
+    if (!player || !player->is_alive)
         return;
-    respawn_resources(game->map);
-    game->current_time += delta_time;
-    if (game->seeder)
-        seeder_update(game->seeder, game->map, game->current_time);
+    player->last_food_inhalation += 1;
+    if (player->last_food_inhalation >= FOOD_INHALATION_TIME) {
+        player->resources[RESOURCE_FOOD]--;
+        player->last_food_inhalation = 0;
+        if (player->resources[RESOURCE_FOOD] <= 0)
+            player->is_alive = false;
+    }
+}
+
+void game_state_update(server_t *server, double delta_time)
+{
+    player_t *player;
+
+    if (!server || !server->game)
+        return;
+    server->game->current_time += delta_time;
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        player = server->game->players[i];
+        if (player != NULL && player->is_alive) {
+            continue;
+        }
+        player_update(player);
+    }
 }
 
 void add_player_to_game(game_state_t *game, player_t *player)
@@ -112,6 +115,7 @@ void add_player_to_game(game_state_t *game, player_t *player)
     if (!game || !player)
         return;
     if (game->players != NULL) {
-        game->players[game->player_count++] = player;
+        game->players[game->player_count] = player;
+        ++game->player_count;
     }
 }

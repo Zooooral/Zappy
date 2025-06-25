@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** include/server/server.h
 ** File description:
-** Enhanced Zappy server header with seeding support
+** Enhanced Zappy server header
 */
 
 #ifndef SERVER_H_
@@ -22,9 +22,7 @@
     #define MAX_COMMAND_QUEUE 50
     #define MIN_MAP_SIZE 6
     #define MAX_MAP_SIZE 50
-    #define SEEDER_MOVE_INTERVAL 5.0
-    #define SEEDER_ELEVATION_INTERVAL 30.0
-    #define SEEDER_ELEVATION_DURATION 5.0
+    #define FOOD_INHALATION_TIME 126
 
 typedef enum client_type_e {
     CLIENT_TYPE_UNKNOWN,
@@ -78,6 +76,8 @@ typedef struct player_s {
     bool is_elevating;
     double elevation_start_time;
     client_t *client;
+    size_t last_food_inhalation;
+    bool is_alive;
 } player_t;
 
 typedef struct map_s {
@@ -85,14 +85,6 @@ typedef struct map_s {
     int width;
     int height;
 } map_t;
-
-typedef struct seeder_state_s {
-    player_t *player;
-    double last_move_time;
-    double last_elevation_time;
-    int move_step;
-    bool elevation_active;
-} seeder_state_t;
 
 typedef struct server_config_s {
     size_t port;
@@ -102,7 +94,6 @@ typedef struct server_config_s {
     size_t freq;
     char **team_names;
     size_t team_count;
-    bool seed_mode;
 } server_config_t;
 
 typedef struct game_state_s {
@@ -112,7 +103,6 @@ typedef struct game_state_s {
     size_t player_capacity;
     double current_time;
     int next_player_id;
-    seeder_state_t *seeder;
 } game_state_t;
 
 typedef struct server_s {
@@ -135,9 +125,9 @@ void server_destroy(server_t *server);
 int parse_arguments(int argc, const char **argv, server_config_t *config);
 int process_argument(const char **argv, int *i, int argc,
     server_config_t *config);
-game_state_t *game_state_create(const server_config_t *config);
+game_state_t *game_state_create(server_t *server, const server_config_t *config);
 void game_state_destroy(game_state_t *game);
-void game_state_update(game_state_t *game, double delta_time);
+void game_state_update(server_t *server, double delta_time);
 void add_player_to_game(game_state_t *game, player_t *player);
 map_t *map_create(int width, int height);
 int allocate_map_tiles(map_t *map);
@@ -146,12 +136,8 @@ void map_destroy(map_t *map);
 tile_t *map_get_tile(const map_t *map, int x, int y);
 player_t *player_create(client_t *, int x, int y, const char *team_name);
 void player_destroy(player_t *player);
-void player_move(player_t *player, map_t *map);
 player_t *player_find_by_id(server_t *server, int id);
-void player_set_position(player_t *player, map_t *map, int x, int y);
-seeder_state_t *seeder_create(map_t *map);
-void seeder_destroy(seeder_state_t *seeder);
-void seeder_update(seeder_state_t *seeder, map_t *map, double current_time);
+void player_set_position(server_t *server, player_t *player, int x, int y);
 double get_current_time(void);
 int client_add(server_t *server, int client_fd);
 void client_remove(server_t *server, size_t index);

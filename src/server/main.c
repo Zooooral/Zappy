@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** src/server/main.c
 ** File description:
-** Enhanced Zappy server main file with seeding support
+** Enhanced Zappy server main file
 */
 
 #include "server/server.h"
@@ -13,7 +13,7 @@
 static void print_help(const char *program_name)
 {
     printf("USAGE: %s -p port -x width -y height -n name1 name2 "
-        "... -c clientsNb -f freq [--seed]\n", program_name);
+        "... -c clientsNb -f freq\n", program_name);
     printf("  -p port        : port number\n");
     printf("  -x width       : width of the world\n");
     printf("  -y height      : height of the world\n");
@@ -21,21 +21,6 @@ static void print_help(const char *program_name)
     printf("  -c clientsNb   : number of authorized clients per team\n");
     printf("  -f freq        : reciprocal "
         "of time unit for execution of actions\n");
-    printf("  --seed         : enable seeded test mode for GUI development\n");
-}
-
-static void print_seed_info(void)
-{
-    printf("[SEED] Seeded mode enabled for GUI testing\n");
-    printf("[SEED] - Random map size between %dx%d and %dx%d\n",
-        MIN_MAP_SIZE, MIN_MAP_SIZE, MAX_MAP_SIZE, MAX_MAP_SIZE);
-    printf("[SEED] - Random resources placed on map\n");
-    printf("[SEED] - One 'Seeders' team player moving in circle\n");
-    printf("[SEED] - Player moves every %.1f seconds\n",
-        SEEDER_MOVE_INTERVAL);
-    printf("[SEED] - Elevation cycle every %.1f seconds for "
-        "%.1f seconds\n", SEEDER_ELEVATION_INTERVAL,
-        SEEDER_ELEVATION_DURATION);
 }
 
 static int handle_arguments(int argc, const char **argv,
@@ -73,7 +58,5 @@ int main(const int argc, const char **argv)
 
     if (arg_result != -1)
         return arg_result;
-    if (config.seed_mode)
-        print_seed_info();
     return create_and_run_server(&config);
 }

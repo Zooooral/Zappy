@@ -9,10 +9,13 @@
 #include <string.h>
 
 #include "server/server.h"
+#include "server/broadcast.h"
+#include "server/payloads.h"
+#include "server/server_updates.h"
 
 player_t *player_create(client_t *client, int x, int y, const char *team_name)
 {
-    player_t *player = calloc(sizeof(player_t), 1);
+    player_t *player = calloc(1, sizeof *player);
 
     if (!player)
         return NULL;
@@ -29,8 +32,7 @@ player_t *player_create(client_t *client, int x, int y, const char *team_name)
     }
     player->resources[RESOURCE_FOOD] = 10;
     player->last_action_time = get_current_time();
-    player->is_elevating = false;
-    player->elevation_start_time = 0.0;
+    player->is_alive = true;
     return player;
 }
 
@@ -80,47 +82,15 @@ static int add_player_to_tile(player_t *player, map_t *map)
     return 0;
 }
 
-void player_set_position(player_t *player, map_t *map, int x, int y)
+void player_set_position(server_t *server, player_t *player, int x, int y)
 {
-    if (!player || !map)
+    if (!player || !server)
         return;
-    remove_player_from_tile(player, map);
-    player->x = (x + map->width) % map->width;
-    player->y = (y + map->height) % map->height;
-    add_player_to_tile(player, map);
-}
-
-static void calculate_movement_direction(player_t *player, int *dx, int *dy)
-{
-    *dx = 0;
-    *dy = 0;
-    if (player->orientation == 1) {
-        *dy = -1;
-        return;
-    }
-    if (player->orientation == 2) {
-        *dx = 1;
-        return;
-    }
-    if (player->orientation == 3) {
-        *dy = 1;
-        return;
-    }
-    if (player->orientation == 4) {
-        *dx = -1;
-        return;
-    }
-}
-
-void player_move(player_t *player, map_t *map)
-{
-    int dx;
-    int dy;
-
-    if (!player || !map)
-        return;
-    calculate_movement_direction(player, &dx, &dy);
-    player_set_position(player, map, player->x + dx, player->y + dy);
+    remove_player_from_tile(player, server->game->map);
+    player->x = (x + server->game->map->width) % server->game->map->width;
+    player->y = (y + server->game->map->height) % server->game->map->height;
+    add_player_to_tile(player, server->game->map);
+    broadcast_message_to_guis(server, player, gui_payload_position_update);
 }
 
 player_t *player_find_by_id(server_t *server, int id)

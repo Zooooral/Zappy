@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2025
-** Zappy [WSL: Ubuntu]
+** Zappy
 ** File description:
 ** protocol_graphic_helper
 */

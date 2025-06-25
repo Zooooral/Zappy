@@ -16,12 +16,37 @@ typedef enum {
     AI_ACTION_RIGHT,
     AI_ACTION_LEFT,
     AI_ACTION_LOOK,
-    AI_ACTION_INVENTORY
+    AI_ACTION_INVENTORY,
+    AI_ACTION_BROADCAST,
+    AI_ACTION_CONNECT_NBR,
+    AI_ACTION_FORK,
+    AI_ACTION_EJECT,
+    AI_ACTION_TAKE,
+    AI_ACTION_SET,
+    AI_ACTION_INCANTATION,
+    AI_ACTION_COUNT
 } ai_action_type_t;
+
+
+static const double ai_action_duration[] = {
+    [AI_ACTION_FORWARD] = 7.0,
+    [AI_ACTION_RIGHT] = 7.0,
+    [AI_ACTION_LEFT] = 7.0,
+    [AI_ACTION_LOOK] = 7.0,
+    [AI_ACTION_INVENTORY] = 1.0,
+    [AI_ACTION_BROADCAST] = 7.0,
+    [AI_ACTION_CONNECT_NBR] = 0.0,
+    [AI_ACTION_FORK] = 42.0,
+    [AI_ACTION_EJECT] = 7.0,
+    [AI_ACTION_TAKE] = 7.0,
+    [AI_ACTION_SET] = 7.0,
+    [AI_ACTION_INCANTATION] = 300.0
+};
 
 typedef struct ai_action_data_s {
     ai_action_type_t type;
     server_t *server;
+    char *cmd;
 } ai_action_data_t;
 
 void protocol_handle_ai_command(server_t *server, client_t *client,

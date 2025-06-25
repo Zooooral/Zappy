@@ -37,11 +37,11 @@ GameScreen::GameScreen() {
 
     _mapInitialized = false;
     _updateTimer = 0.0f;
+    _timeUnitRefreshTimer = 0.0f;
     _nextPlayerId = 1;
 }
 
 GameScreen::~GameScreen() {
-    CharacterManager::getInstance().cleanup();
     NetworkManager::getInstance().disconnect();
 }
 
@@ -51,7 +51,9 @@ void GameScreen::onEnter() {
     _shouldReturn = false;
     _mapInitialized = false;
     _updateTimer = 0.0f;
+    _timeUnitRefreshTimer = 0.0f;
     _nextPlayerId = 1;
+    _activePlayerIds.clear();
 
     CharacterManager::getInstance().initialize();
 
@@ -70,7 +72,6 @@ void GameScreen::onEnter() {
 }
 
 void GameScreen::onExit() {
-    CharacterManager::getInstance().cleanup();
     SoundManager::getInstance().stopAllSounds();
     NetworkManager::getInstance().disconnect();
 }
@@ -78,7 +79,7 @@ void GameScreen::onExit() {
 void GameScreen::setupNetworkAndRequestData() {
     NetworkManager& network = NetworkManager::getInstance();
 
-    network.setCommandCallback([this](const std::string& command) {
+    network.setMessageCallback([this](const std::string& command) {
         handleServerCommand(command);
     });
 
@@ -92,51 +93,68 @@ void GameScreen::requestInitialGameData() {
     network.sendCommand("msz");
     network.sendCommand("mct");
     network.sendCommand("tna");
+    network.sendCommand("sgt");
 }
 
 void GameScreen::requestPlayerUpdates() {
     NetworkManager& network = NetworkManager::getInstance();
 
-    network.sendCommand("mct");
-    for (int i = 1; i <= _nextPlayerId; i++) {
-        network.sendCommand("ppo #" + std::to_string(i));
-        network.sendCommand("plv #" + std::to_string(i));
-        network.sendCommand("pin #" + std::to_string(i));
+    std::cout << "[DEBUG] Requesting updates for " << _activePlayerIds.size() << " active players" << std::endl;
+    for (int id : _activePlayerIds) {
+        network.sendCommand("ppo #" + std::to_string(id));
+        network.sendCommand("plv #" + std::to_string(id));
+        network.sendCommand("pin #" + std::to_string(id));
     }
 }
 
 void GameScreen::handleServerCommand(const std::string& command) {
+    if (command.empty()) return;
+    
     std::istringstream iss(command);
     std::string cmd;
     iss >> cmd;
-
+    
     std::cout << "[DEBUG] Handling command: " << cmd << " (full: " << command << ")" << std::endl;
-
+    
     if (cmd == "msz") {
         int width, height;
         if (iss >> width >> height) {
             std::cout << "[DEBUG] Map size: " << width << "x" << height << std::endl;
             GameWorld::getInstance().initialize(width, height);
-            _mapInitialized = true;
+        }
+    } else if (cmd == "sgt") {
+        float timeUnit;
+        if (iss >> timeUnit) {
+            std::cout << "[DEBUG] Server time unit received: " << timeUnit << std::endl;
+            CharacterManager::getInstance().setTimeUnit(timeUnit);
+            ChatSystem::getInstance().addMessage("System", 
+                "Time unit set to: " + std::to_string(timeUnit), GREEN);
         }
     } else if (cmd == "bct") {
-        int x, y, food, linemate, deraumere, sibur, mendiane, phiras, thystame;
-        if (iss >> x >> y >> food >> linemate >> deraumere >> sibur >> mendiane >> phiras >> thystame) {
-            GameWorld::TileResources resources;
-            resources.food = food;
-            resources.linemate = linemate;
-            resources.deraumere = deraumere;
-            resources.sibur = sibur;
-            resources.mendiane = mendiane;
-            resources.phiras = phiras;
-            resources.thystame = thystame;
-            GameWorld::getInstance().updateTileResources(x + 1, y + 1, resources);
+        int x, y;
+        std::vector<int> resources(7);
+        if (iss >> x >> y) {
+            for (int i = 0; i < 7; i++) {
+                iss >> resources[i];
+            }
+            GameWorld::TileResources tileRes;
+            tileRes.food = resources[0];
+            tileRes.linemate = resources[1];
+            tileRes.deraumere = resources[2];
+            tileRes.sibur = resources[3];
+            tileRes.mendiane = resources[4];
+            tileRes.phiras = resources[5];
+            tileRes.thystame = resources[6];
+            GameWorld::getInstance().updateTileResources(x + 1, y + 1, tileRes);
+            if (!_mapInitialized && x == 0 && y == 0) {
+                _mapInitialized = true;
+                std::cout << "[DEBUG] Map initialization complete" << std::endl;
+            }
         }
     } else if (cmd == "tna") {
-        std::string teamName;
-        if (iss >> teamName) {
-            std::cout << "[DEBUG] Team found: " << teamName << std::endl;
-            ChatSystem::getInstance().addMessage("System", "Team: " + teamName, BLUE);
+        std::string team;
+        if (iss >> team) {
+            std::cout << "[DEBUG] Team found: " << team << std::endl;
         }
     } else if (cmd == "pnw") {
         std::string idStr;
@@ -146,6 +164,7 @@ void GameScreen::handleServerCommand(const std::string& command) {
             if (idStr.front() == '#') {
                 int id = std::stoi(idStr.substr(1));
                 std::cout << "[DEBUG] New player: ID=" << id << " pos=(" << x << "," << y << ") orient=" << orientation << " team=" << team << std::endl;
+                _activePlayerIds.insert(id);
                 _nextPlayerId = std::max(_nextPlayerId, id + 1);
                 CharacterManager::getInstance().addCharacter(id, Vector3{(float)(x + 1), 1.0f, (float)(y + 1)}, team, level);
                 Character* character = CharacterManager::getInstance().getCharacter(id);
@@ -153,6 +172,13 @@ void GameScreen::handleServerCommand(const std::string& command) {
                     character->setOrientation(orientation);
                 }
             }
+        }
+    } else if (cmd == "pdi") {
+        std::string idStr;
+        if (iss >> idStr && idStr.front() == '#') {
+            int id = std::stoi(idStr.substr(1));
+            _activePlayerIds.erase(id);
+            CharacterManager::getInstance().removeCharacter(id);
         }
     } else if (cmd == "ppo") {
         std::string idStr;
@@ -202,102 +228,11 @@ void GameScreen::handleServerCommand(const std::string& command) {
                 }
             }
         }
-    } else if (cmd == "pbc") {
-        std::string idStr, message;
-        if (iss >> idStr) {
-            std::getline(iss, message);
-            if (idStr.front() == '#') {
-                ChatSystem::getInstance().addMessage("Player " + idStr, message, YELLOW);
-            }
-        }
-    } else if (cmd == "pex") {
-        std::string idStr;
-        if (iss >> idStr) {
-            if (idStr.front() == '#') {
-                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " was expelled", RED);
-            }
-        }
-    } else if (cmd == "pfk") {
-        std::string idStr;
-        if (iss >> idStr) {
-            if (idStr.front() == '#') {
-                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " laid an egg", GREEN);
-            }
-        }
-    } else if (cmd == "pdr") {
-        std::string idStr;
-        int resource;
-        if (iss >> idStr >> resource) {
-            if (idStr.front() == '#') {
-                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " dropped resource", ORANGE);
-            }
-        }
-    } else if (cmd == "pgt") {
-        std::string idStr;
-        int resource;
-        if (iss >> idStr >> resource) {
-            if (idStr.front() == '#') {
-                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " collected resource", LIME);
-            }
-        }
-    } else if (cmd == "pic") {
-        int x, y, level;
-        if (iss >> x >> y >> level) {
-            std::string playerIds;
-            std::getline(iss, playerIds);
-
-            std::istringstream playerStream(playerIds);
-            std::string playerId;
-            while (playerStream >> playerId) {
-                if (playerId.front() == '#') {
-                    int id = std::stoi(playerId.substr(1));
-                    Character* character = CharacterManager::getInstance().getCharacter(id);
-                    if (character) {
-                        character->setElevating(true);
-                    }
-                }
-            }
-        }
-    } else if (cmd == "pie") {
-        int x, y, result;
-        if (iss >> x >> y >> result) {
-            CharacterManager::getInstance().endAllElevations();
-            if (result == 1) {
-                ChatSystem::getInstance().addMessage("System", "Incantation succeeded!", GREEN);
-            } else {
-                ChatSystem::getInstance().addMessage("System", "Incantation failed!", RED);
-            }
-        }
-    } else if (cmd == "pdi") {
-        std::string idStr;
-        if (iss >> idStr) {
-            if (idStr.front() == '#') {
-                int id = std::stoi(idStr.substr(1));
-                CharacterManager::getInstance().removeCharacter(id);
-                ChatSystem::getInstance().addMessage("System", "Player " + idStr + " died", RED);
-            }
-        }
     } else if (cmd == "seg") {
-        std::string teamName;
-        if (iss >> teamName) {
-            triggerGameEnd(teamName);
+        std::string winningTeam;
+        if (iss >> winningTeam) {
+            triggerGameEnd(winningTeam);
         }
-    } else if (cmd == "sgt") {
-        int timeUnit;
-        if (iss >> timeUnit) {
-            std::cout << "[DEBUG] Time unit received: " << timeUnit << std::endl;
-            CharacterManager::getInstance().setTimeUnit(timeUnit);
-        }
-    } else if (cmd == "sst") {
-        int timeUnit;
-        if (iss >> timeUnit) {
-            CharacterManager::getInstance().setTimeUnit(timeUnit);
-            ChatSystem::getInstance().addMessage("System", "Time unit changed to " + std::to_string(timeUnit), BLUE);
-        }
-    } else if (cmd == "smg") {
-        std::string message;
-        std::getline(iss, message);
-        ChatSystem::getInstance().addMessage("Server", message, PURPLE);
     } else if (cmd == "suc") {
         std::cout << "[DEBUG] Server sent unknown command response!" << std::endl;
         ChatSystem::getInstance().addMessage("Error", "Unknown command sent to server", RED);
@@ -325,9 +260,16 @@ void GameScreen::update(float dt) {
 
     _updateTimer += dt;
     if (_updateTimer >= 2.0f && _mapInitialized) {
-        std::cout << "[DEBUG] Requesting player updates for " << _nextPlayerId << " players" << std::endl;
-        requestPlayerUpdates();
+        // NetworkManager& network = NetworkManager::getInstance();
+        // network.sendCommand("mct");
+        // requestPlayerUpdates();
         _updateTimer = 0.0f;
+    }
+
+    _timeUnitRefreshTimer += dt;
+    if (_timeUnitRefreshTimer >= TIME_UNIT_REFRESH_INTERVAL && _mapInitialized) {
+        requestTimeUnit();
+        _timeUnitRefreshTimer = 0.0f;
     }
 
     if (IsKeyPressed(KEY_ESCAPE)) {
@@ -374,41 +316,39 @@ void GameScreen::draw() {
     _backButton->draw();
     _inventoryUI->draw();
 
-    NetworkManager::ConnectionState connectionState = NetworkManager::getInstance().getConnectionState();
+    ConnectionState connectionState = NetworkManager::getInstance().getConnectionState();
     const char* stateText = "Disconnected";
     Color stateColor = RED;
 
     switch (connectionState) {
-        case NetworkManager::ConnectionState::CONNECTING:
+        case ConnectionState::CONNECTING:
             stateText = "Connecting...";
             stateColor = YELLOW;
             break;
-        case NetworkManager::ConnectionState::CONNECTED:
+        case ConnectionState::CONNECTED:
             stateText = "Connected";
             stateColor = ORANGE;
             break;
-        case NetworkManager::ConnectionState::AUTHENTICATED:
+        case ConnectionState::AUTHENTICATED:
             stateText = "Authenticated";
             stateColor = GREEN;
             break;
-        case NetworkManager::ConnectionState::ERROR:
+        case ConnectionState::ERROR:
             stateText = "Connection Error";
             stateColor = RED;
             break;
+        case ConnectionState::DISCONNECTED:
         default:
+            stateText = "Disconnected";
+            stateColor = RED;
             break;
     }
 
-    DrawText(stateText, 10, GetScreenHeight() - 30, 20, stateColor);
+    int screenHeight = GetScreenHeight();
+    DrawText(stateText, 10, screenHeight - 30, 20, stateColor);
 
     if (_shouldReturn) {
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.5f));
-        const char* text = "Press ESCAPE again to return to menu";
-        int textWidth = MeasureText(text, 20);
-        DrawText(text, (GetScreenWidth() - textWidth) / 2, GetScreenHeight() / 2, 20, WHITE);
-        if (IsKeyPressed(KEY_ESCAPE)) {
-            GameStateManager::getInstance().changeState("main_menu", GameStateManager::Transition::FADE);
-        }
+        _finished = true;
     }
 }
 
@@ -423,5 +363,13 @@ void GameScreen::triggerGameEnd(const std::string& winningTeam) {
         endScreen->setWinningTeam(winningTeam);
         GameStateManager::getInstance().changeState("end_screen", 
             GameStateManager::Transition::FADE);
+    }
+}
+
+void GameScreen::requestTimeUnit() {
+    NetworkManager& network = NetworkManager::getInstance();
+    if (network.isConnected()) {
+        std::cout << "[DEBUG] Requesting time unit update" << std::endl;
+        network.sendCommand("sgt");
     }
 }

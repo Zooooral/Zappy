@@ -1,30 +1,50 @@
 import { NetworkClient } from "../network";
 import { logger } from "../logger";
 
+enum Direction {
+    NORTH = 0,
+    EAST = 1,
+    SOUTH = 2,
+    WEST = 3
+}
+
+enum TurnDirection {
+    LEFT = "left",
+    RIGHT = "right",
+    NONE = "none"
+}
+
+enum MovementAction {
+    MOVE_FORWARD = "moveForward",
+    TURN_RIGHT = "turnRight",
+    TURN_LEFT = "turnLeft"
+}
+
 interface Position {
     x: number;
     y: number;
 }
 
-interface MovementHistory {
-    moves: string[];
-    positions: Position[];
-    maxHistory: number;
-}
-
 export class MovementController {
-    private movementHistory: MovementHistory = {
-        moves: [],
-        positions: [],
-        maxHistory: 10
-    };
-
+    private readonly movementHistory: string[] = [];
     private stuckCounter: number = 0;
-    private lastDirection: number = 0; // 0=North, 1=East, 2=South, 3=West
+    private currentDirection: Direction = Direction.NORTH;
     private estimatedPosition: Position = { x: 0, y: 0 };
 
+    private static readonly MAX_HISTORY = 10;
+    private static readonly STUCK_THRESHOLD = 3;
+    private static readonly LOOP_DETECTION_SIZE = 6;
+    private static readonly FORWARD_PROBABILITY = 0.7;
+
+    private static readonly DIRECTION_VECTORS: Record<Direction, Position> = {
+        [Direction.NORTH]: { x: 0, y: -1 },
+        [Direction.EAST]: { x: 1, y: 0 },
+        [Direction.SOUTH]: { x: 0, y: 1 },
+        [Direction.WEST]: { x: -1, y: 0 }
+    };
+
     public getLastDirection(): number {
-        return this.lastDirection;
+        return this.currentDirection;
     }
 
     public getStuckCounter(): number {
@@ -41,183 +61,197 @@ export class MovementController {
 
     public async moveForward(client: NetworkClient): Promise<boolean> {
         try {
-            const moved = await client.moveForward();
-            if (moved) {
-                this.updateEstimatedPosition();
-                this.addToMovementHistory("moveForward");
-                this.resetStuckCounter();
+            const success = await client.moveForward();
+
+            if (success) {
+                this.handleSuccessfulMove();
                 return true;
-            } else {
-                this.incrementStuckCounter();
-                return false;
             }
+            this.handleFailedMove();
+            return false;
         } catch (error) {
             logger.error("Error moving forward:", error);
-            this.incrementStuckCounter();
+            this.handleFailedMove();
             return false;
         }
     }
 
     public async turnRight(client: NetworkClient): Promise<boolean> {
-        try {
-            const turned = await client.turnRight();
-            if (turned) {
-                this.lastDirection = (this.lastDirection + 1) % 4;
-                this.addToMovementHistory("turnRight");
-                return true;
-            }
-            return false;
-        } catch (error) {
-            logger.error("Error turning right:", error);
-            return false;
-        }
+        return this.performTurn(client, MovementAction.TURN_RIGHT, 1);
     }
 
     public async turnLeft(client: NetworkClient): Promise<boolean> {
-        try {
-            const turned = await client.turnLeft();
-            if (turned) {
-                this.lastDirection = (this.lastDirection + 3) % 4;
-                this.addToMovementHistory("turnLeft");
+        return this.performTurn(client, MovementAction.TURN_LEFT, 3);
+    }
+
+    public async turnToDirection(client: NetworkClient, targetDirection: Direction): Promise<boolean> {
+        const turnDirection = this.calculateOptimalTurn(this.currentDirection, targetDirection);
+
+        switch (turnDirection) {
+            case TurnDirection.RIGHT:
+                logger.debug(`Turning right to face ${Direction[targetDirection]}`);
+                return this.turnRight(client);
+            case TurnDirection.LEFT:
+                logger.debug(`Turning left to face ${Direction[targetDirection]}`);
+                return this.turnLeft(client);
+            case TurnDirection.NONE:
                 return true;
-            }
-            return false;
-        } catch (error) {
-            logger.error("Error turning left:", error);
-            return false;
         }
     }
 
-    public async turnToDirection(client: NetworkClient, targetDirection: number): Promise<boolean> {
-        const currentDirection = this.lastDirection;
-        const turnDirection = this.calculateTurnDirection(currentDirection, targetDirection);
+    public async moveTowardsDirection(client: NetworkClient, targetDirection: Direction): Promise<boolean> {
+        const turnSuccess = await this.turnToDirection(client, targetDirection);
+        if (!turnSuccess) return false;
 
-        if (turnDirection === "right") {
-            logger.debug("Turning right to target direction");
-            return await this.turnRight(client);
-        } else if (turnDirection === "left") {
-            logger.debug("Turning left to target direction");
-            return await this.turnLeft(client);
-        }
-
-        return true; // Already facing the right direction
-    }
-
-    public async moveTowardsDirection(
-        client: NetworkClient,
-        targetDirection: number
-    ): Promise<boolean> {
-        await this.turnToDirection(client, targetDirection);
-        return await this.moveForward(client);
+        return this.moveForward(client);
     }
 
     public isStuckInLoop(): boolean {
-        if (this.movementHistory.moves.length < 6) {
+        const recentMoves = this.getRecentMoves(MovementController.LOOP_DETECTION_SIZE);
+        if (recentMoves.length < MovementController.LOOP_DETECTION_SIZE) {
             return false;
         }
 
-        const recentMoves = this.movementHistory.moves.slice(-6);
-        const pattern = recentMoves.slice(0, 3).join(",");
-        const nextPattern = recentMoves.slice(3, 6).join(",");
+        return this.detectRepeatingPattern(recentMoves);
+    }
 
-        return pattern === nextPattern;
+    public isStuck(): boolean {
+        return this.stuckCounter > MovementController.STUCK_THRESHOLD || this.isStuckInLoop();
     }
 
     public async breakOutOfLoop(client: NetworkClient): Promise<void> {
-        logger.info("Breaking out of loop with random actions");
-
-        this.movementHistory.moves = [];
+        logger.info("Breaking out of movement loop with random actions");
+        this.clearMovementHistory();
         this.resetStuckCounter();
 
-        const actions = ["moveForward", "turnRight", "turnLeft"];
-        const randomAction = actions[Math.floor(Math.random() * actions.length)];
-
-        try {
-            switch (randomAction) {
-                case "moveForward":
-                    await this.moveForward(client);
-                    break;
-                case "turnRight":
-                    await this.turnRight(client);
-                    break;
-                case "turnLeft":
-                    await this.turnLeft(client);
-                    break;
-            }
-
-            this.addToMovementHistory(randomAction);
-        } catch (error) {
-            logger.error("Error while breaking out of loop:", error);
-        }
+        const randomAction = this.selectRandomAction();
+        await this.executeAction(client, randomAction);
     }
 
     public async exploreRandomly(client: NetworkClient): Promise<boolean> {
-        if (this.isStuckInLoop() || this.stuckCounter > 3) {
+        if (this.isStuck()) {
             await this.breakOutOfLoop(client);
             return true;
         }
 
-        try {
-            if (Math.random() < 0.7) {
-                logger.debug("Exploring: moving forward");
-                await this.moveForward(client);
-            } else {
-                if (Math.random() < 0.5) {
-                    logger.debug("Exploring: turning right");
-                    await this.turnRight(client);
-                } else {
-                    logger.debug("Exploring: turning left");
-                    await this.turnLeft(client);
-                }
-            }
-        } catch (error) {
-            logger.error("Error during random exploration:", error);
-        }
+        const action = Math.random() < MovementController.FORWARD_PROBABILITY
+            ? MovementAction.MOVE_FORWARD
+            : this.selectRandomTurn();
 
+        logger.debug(`Random exploration: ${action}`);
+        await this.executeAction(client, action);
         return true;
-    }
-
-    private calculateTurnDirection(currentDir: number, targetDir: number): "left" | "right" | "none" {
-        if (currentDir === targetDir) {
-            return "none";
-        }
-
-        const diff = (targetDir - currentDir + 4) % 4;
-        return diff <= 2 ? "right" : "left";
-    }
-
-    private addToMovementHistory(move: string): void {
-        this.movementHistory.moves.push(move);
-        if (this.movementHistory.moves.length > this.movementHistory.maxHistory) {
-            this.movementHistory.moves.shift();
-        }
-
-        this.movementHistory.positions.push({ ...this.estimatedPosition });
-        if (this.movementHistory.positions.length > this.movementHistory.maxHistory) {
-            this.movementHistory.positions.shift();
-        }
-    }
-
-    private updateEstimatedPosition(): void {
-        switch (this.lastDirection) {
-            case 0: // North
-                this.estimatedPosition.y--;
-                break;
-            case 1: // East
-                this.estimatedPosition.x++;
-                break;
-            case 2: // South
-                this.estimatedPosition.y++;
-                break;
-            case 3: // West
-                this.estimatedPosition.x--;
-                break;
-        }
     }
 
     public handleEjection(): void {
         logger.warn("Handling ejection - resetting movement state");
-        this.movementHistory.moves = [];
+        this.clearMovementHistory();
         this.resetStuckCounter();
+        this.estimatedPosition = { x: 0, y: 0 };
+    }
+
+    public reset(): void {
+        this.clearMovementHistory();
+        this.resetStuckCounter();
+        this.currentDirection = Direction.NORTH;
+        this.estimatedPosition = { x: 0, y: 0 };
+    }
+
+    private async performTurn(client: NetworkClient, action: MovementAction, directionChange: number): Promise<boolean> {
+        try {
+            const turnMethod = action === MovementAction.TURN_RIGHT ? client.turnRight : client.turnLeft;
+            const success = await turnMethod.call(client);
+
+            if (success) {
+                this.updateDirection(directionChange);
+                this.addToHistory(action);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            logger.error(`Error during ${action}:`, error);
+            return false;
+        }
+    }
+
+    private handleSuccessfulMove(): void {
+        this.updateEstimatedPosition();
+        this.addToHistory(MovementAction.MOVE_FORWARD);
+        this.resetStuckCounter();
+    }
+
+    private handleFailedMove(): void {
+        this.stuckCounter++;
+    }
+
+    private updateDirection(change: number): void {
+        this.currentDirection = (this.currentDirection + change) % 4 as Direction;
+    }
+
+    private updateEstimatedPosition(): void {
+        const vector = MovementController.DIRECTION_VECTORS[this.currentDirection];
+        this.estimatedPosition.x += vector.x;
+        this.estimatedPosition.y += vector.y;
+    }
+
+    private calculateOptimalTurn(current: Direction, target: Direction): TurnDirection {
+        if (current === target) return TurnDirection.NONE;
+
+        const clockwiseDistance = (target - current + 4) % 4;
+        return clockwiseDistance <= 2 ? TurnDirection.RIGHT : TurnDirection.LEFT;
+    }
+
+    private addToHistory(action: string): void {
+        this.movementHistory.push(action);
+        this.trimHistory();
+    }
+
+    private trimHistory(): void {
+        if (this.movementHistory.length > MovementController.MAX_HISTORY) {
+            this.movementHistory.shift();
+        }
+    }
+
+    private clearMovementHistory(): void {
+        this.movementHistory.length = 0;
+    }
+
+    private getRecentMoves(count: number): string[] {
+        return this.movementHistory.slice(-count);
+    }
+
+    private detectRepeatingPattern(moves: string[]): boolean {
+        const halfLength = moves.length / 2;
+        const firstHalf = moves.slice(0, halfLength).join(",");
+        const secondHalf = moves.slice(halfLength).join(",");
+
+        return firstHalf === secondHalf;
+    }
+
+    private selectRandomAction(): MovementAction {
+        const actions = [MovementAction.MOVE_FORWARD, MovementAction.TURN_RIGHT, MovementAction.TURN_LEFT];
+        return actions[Math.floor(Math.random() * actions.length)];
+    }
+
+    private selectRandomTurn(): MovementAction {
+        return Math.random() < 0.5 ? MovementAction.TURN_RIGHT : MovementAction.TURN_LEFT;
+    }
+
+    private async executeAction(client: NetworkClient, action: MovementAction): Promise<void> {
+        try {
+            switch (action) {
+                case MovementAction.MOVE_FORWARD:
+                    await this.moveForward(client);
+                    break;
+                case MovementAction.TURN_RIGHT:
+                    await this.turnRight(client);
+                    break;
+                case MovementAction.TURN_LEFT:
+                    await this.turnLeft(client);
+                    break;
+            }
+        } catch (error) {
+            logger.error(`Error executing action ${action}:`, error);
+        }
     }
 }

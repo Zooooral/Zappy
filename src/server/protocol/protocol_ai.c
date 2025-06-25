@@ -17,7 +17,6 @@
 #include "server/time.h"
 #include "server/resource.h"
 #include "server/lifecycle.h"
-#include "server/gui_notify.h"
 #include "server/ai_commands.h"
 #include "server/protocol_ai_handlers2.h"
 #include "server/protocol_ai_handlers3.h"
@@ -61,9 +60,9 @@ void create_and_queue_action(server_t *server, client_t *client,
     data->type = type;
     data->server = server;
     action->command = strdup(cmd);
-    action->exec_time = now + 7.0 * get_time_unit(server);
+    data->cmd = action->command;
+    action->exec_time = now + get_time_unit(server) * ai_action_duration[type];
     action->callback = ai_callback_handler;
     action->data = data;
     queue_action(client, action);
 }
-

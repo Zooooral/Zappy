@@ -48,7 +48,7 @@ void Character::setInventory(const CharacterInventory& inventory) {
 
 void Character::updateMovement(float dt, float timeUnit) {
     if (_isMoving) {
-        float moveSpeed = BASE_MOVE_SPEED * (timeUnit / 100.0f);
+        float moveSpeed = BASE_MOVE_SPEED * (timeUnit);
         _moveProgress += dt * moveSpeed;
 
         if (_moveProgress >= 1.0f) {

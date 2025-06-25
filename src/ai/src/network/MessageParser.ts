@@ -100,7 +100,7 @@ export class MessageParser {
 
     private parseCommandResponse(response: string): any {
         if (response === "ko") {
-            throw new Error("Command failed (ko)");
+            return false;
         }
 
         if (response === "ok") {

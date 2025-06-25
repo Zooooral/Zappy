@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2025
-** Zappy [WSL: Ubuntu]
+** Zappy
 ** File description:
 ** map_helper
 */

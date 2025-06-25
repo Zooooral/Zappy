@@ -168,7 +168,7 @@ void CharacterManager::drawElevationParticles(Character* character, Camera) {
     }
 }
 
-void CharacterManager::draw2D(Camera2D camera) {
+void CharacterManager::draw2D(Camera2D camera) const {
     BeginMode2D(camera);
 
     const float TILE_SIZE = 50.0f;
@@ -248,13 +248,13 @@ void CharacterManager::removeCharacter(int id) {
     }
 }
 
-Character* CharacterManager::getCharacter(int id) {
+Character* CharacterManager::getCharacter(int id) const {
     auto it = std::find_if(_characters.begin(), _characters.end(),
         [id](const std::unique_ptr<Character>& c) { return c->getId() == id; });
     return (it != _characters.end()) ? it->get() : nullptr;
 }
 
-Character* CharacterManager::getHoveredCharacter(Camera camera) {
+Character* CharacterManager::getHoveredCharacter(Camera camera) const {
     for (auto& character : _characters) {
         if (character->isMouseOver(camera)) {
             return character.get();
@@ -273,6 +273,15 @@ void CharacterManager::endAllElevations() {
             character->setElevating(false);
         }
     }
+}
+
+std::vector<Character *> CharacterManager::getAllCharacters() const
+{
+    std::vector<Character*> result;
+    for (const auto& c : _characters) {
+        result.push_back(c.get());
+    }
+    return result;
 }
 
 void CharacterManager::loadModel() {
@@ -306,7 +315,7 @@ void CharacterManager::updateTilePositions() {
     }
 }
 
-void CharacterManager::drawCharacter(Character* character, Camera camera, bool isHovered, bool isSelected) {
+void CharacterManager::drawCharacter(Character* character, Camera camera, bool isHovered, bool isSelected) const {
     Vector3 position = character->getDisplayPosition();
     Color tint = WHITE;
     
@@ -328,12 +337,12 @@ void CharacterManager::drawCharacter(Character* character, Camera camera, bool i
              static_cast<int>(screenPos.x - 15), static_cast<int>(screenPos.y), 16, WHITE);
 }
 
-void CharacterManager::drawCharacterOutline(Character* character, Color color) {
+void CharacterManager::drawCharacterOutline(Character* character, Color color) const {
     BoundingBox bbox = character->getBoundingBox();
     DrawBoundingBox(bbox, color);
 }
 
-Color CharacterManager::getTeamColor() {
+Color CharacterManager::getTeamColor() const {
     return Color{79, 122, 232, 255};
 }
 
@@ -341,4 +350,14 @@ std::string CharacterManager::getTileKey(const Vector2& pos) const {
     std::ostringstream oss;
     oss << static_cast<int>(pos.x) << "," << static_cast<int>(pos.y);
     return oss.str();
+}
+
+void CharacterManager::clearAllCharacters() {
+    std::cout << "[CharacterManager] Clearing all characters due to disconnection" << std::endl;
+    _characters.clear();
+    _tileCharacters.clear();
+    _elevationParticles.clear();
+    _selectedCharacter = nullptr;
+    _timeUnit = 1.0f;
+    std::cout << "[CharacterManager] Time unit reset to default: " << _timeUnit << std::endl;
 }
