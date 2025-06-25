@@ -26,7 +26,7 @@ static inline void ai_action_forward(server_t *server, client_t *client)
     }
     if (!p)
         return send_response(client, "ko\n");
-    player_set_position(p, server->game->map,
+    player_set_position(server, p,
             p->x + dx[p->orientation], p->y + dy[p->orientation]);
     send_response(client, "ok\n");
 }
@@ -48,6 +48,7 @@ static inline void ai_action_right(server_t *server, client_t *client)
     if (!p)
         return send_response(client, "ko\n");
     p->orientation = (p->orientation + 1) % 4;
+    player_set_position(server, p, p->x, p->y);
     send_response(client, "ok\n");
 }
 
@@ -67,6 +68,7 @@ static inline void ai_action_left(server_t *server, client_t *client)
     if (!p)
         return send_response(client, "ko\n");
     p->orientation = (p->orientation + 3) % 4;
+    player_set_position(server, p, p->x, p->y);
     send_response(client, "ok\n");
 }
 
@@ -77,13 +79,13 @@ static inline void ai_action_look(server_t *server, client_t *client)
 
     if (!server || !client)
         return;
-    result = vision_look(client, server->game->map);
-    if (result) {
-        send_response(client, result);
-        da_destroy(result);
-    } else {
+    // result = vision_look(client, server->game->map);
+    // if (result) {
+    //     send_response(client, result);
+    //     da_destroy(result);
+    // } else {
         send_response(client, "[]\n");
-    }
+    // }
 }
 
 static inline void ai_action_inventory(server_t *server, client_t *client)
