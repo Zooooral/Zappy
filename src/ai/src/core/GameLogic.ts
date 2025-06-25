@@ -339,6 +339,54 @@ export class GameLogic {
         this.stateManager.setState(AIState.EXPLORATION);
     }
 
+    public getCoordinationManager(): CoordinationManager {
+        return this.coordinationManager;
+    }
+
+    public async requestElevationPartner(context: GameContext): Promise<void> {
+        return this.coordinationManager.requestElevationPartner(this.client, context);
+    }
+
+    public async coordinateElevationMeeting(context: GameContext): Promise<boolean> {
+        return this.coordinationManager.coordinateElevationMeeting(this.client, context);
+    }
+
+    public startElevationMeeting(level: number, isInitiator: boolean, partnerDirection?: number): void {
+        this.coordinationManager.startElevationMeeting(level, isInitiator, partnerDirection);
+    }
+
+    public endElevationMeeting(): void {
+        this.coordinationManager.endElevationMeeting();
+    }
+
+    public isInElevationMeeting(): boolean {
+        return this.coordinationManager.isInElevationMeeting();
+    }
+
+    public getCurrentMeetingLevel(): number | undefined {
+        return this.coordinationManager.getCurrentMeetingLevel();
+    }
+
+    public getMeetingStatus(): string {
+        return this.coordinationManager.getMeetingStatus();
+    }
+
+    public hasActiveCoordinationRequests(): boolean {
+        return this.coordinationManager.hasActiveRequests();
+    }
+
+    public getPendingCoordinationRequestsCount(): number {
+        return this.coordinationManager.getPendingRequestsCount();
+    }
+
+    public cleanupExpiredCoordinationRequests(): void {
+        this.coordinationManager.cleanupExpiredRequests();
+    }
+
+    public resetCoordinationManager(): void {
+        this.coordinationManager.reset();
+    }
+
     public getDebugInfo(): any {
         const context = this.getContext();
         if (!context) return { error: "No context available" };
