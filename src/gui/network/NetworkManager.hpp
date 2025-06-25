@@ -42,6 +42,7 @@ public:
     bool isConnected() const override;
     void sendCommand(const std::string& command) override;
     void setMessageCallback(std::function<void(const std::string&)> callback) override;
+    void requestTimeUnit();
     void update() override;
 
     ConnectionState getConnectionState() const;

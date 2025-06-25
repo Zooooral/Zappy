@@ -37,6 +37,7 @@ GameScreen::GameScreen() {
 
     _mapInitialized = false;
     _updateTimer = 0.0f;
+    _timeUnitRefreshTimer = 0.0f;
     _nextPlayerId = 1;
 }
 
@@ -50,6 +51,7 @@ void GameScreen::onEnter() {
     _shouldReturn = false;
     _mapInitialized = false;
     _updateTimer = 0.0f;
+    _timeUnitRefreshTimer = 0.0f;
     _nextPlayerId = 1;
     _activePlayerIds.clear();
 
@@ -91,6 +93,7 @@ void GameScreen::requestInitialGameData() {
     network.sendCommand("msz");
     network.sendCommand("mct");
     network.sendCommand("tna");
+    network.sendCommand("sgt");
 }
 
 void GameScreen::requestPlayerUpdates() {
@@ -118,6 +121,14 @@ void GameScreen::handleServerCommand(const std::string& command) {
         if (iss >> width >> height) {
             std::cout << "[DEBUG] Map size: " << width << "x" << height << std::endl;
             GameWorld::getInstance().initialize(width, height);
+        }
+    } else if (cmd == "sgt") {
+        float timeUnit;
+        if (iss >> timeUnit) {
+            std::cout << "[DEBUG] Server time unit received: " << timeUnit << std::endl;
+            CharacterManager::getInstance().setTimeUnit(timeUnit);
+            ChatSystem::getInstance().addMessage("System", 
+                "Time unit set to: " + std::to_string(timeUnit), GREEN);
         }
     } else if (cmd == "bct") {
         int x, y;
@@ -253,6 +264,12 @@ void GameScreen::update(float dt) {
         _updateTimer = 0.0f;
     }
 
+    _timeUnitRefreshTimer += dt;
+    if (_timeUnitRefreshTimer >= TIME_UNIT_REFRESH_INTERVAL && _mapInitialized) {
+        requestTimeUnit();
+        _timeUnitRefreshTimer = 0.0f;
+    }
+
     if (IsKeyPressed(KEY_ESCAPE)) {
         if (_inventoryUI->isVisible()) {
             _inventoryUI->setVisible(false);
@@ -325,7 +342,8 @@ void GameScreen::draw() {
             break;
     }
 
-    DrawText(stateText, 10, 10, 20, stateColor);
+    int screenHeight = GetScreenHeight();
+    DrawText(stateText, 10, screenHeight - 30, 20, stateColor);
 
     if (_shouldReturn) {
         _finished = true;
@@ -343,5 +361,13 @@ void GameScreen::triggerGameEnd(const std::string& winningTeam) {
         endScreen->setWinningTeam(winningTeam);
         GameStateManager::getInstance().changeState("end_screen", 
             GameStateManager::Transition::FADE);
+    }
+}
+
+void GameScreen::requestTimeUnit() {
+    NetworkManager& network = NetworkManager::getInstance();
+    if (network.isConnected()) {
+        std::cout << "[DEBUG] Requesting time unit update" << std::endl;
+        network.sendCommand("sgt");
     }
 }
