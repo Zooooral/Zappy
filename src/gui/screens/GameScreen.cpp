@@ -260,7 +260,9 @@ void GameScreen::update(float dt) {
 
     _updateTimer += dt;
     if (_updateTimer >= 2.0f && _mapInitialized) {
-        requestPlayerUpdates();
+        // NetworkManager& network = NetworkManager::getInstance();
+        // network.sendCommand("mct");
+        // requestPlayerUpdates();
         _updateTimer = 0.0f;
     }
 
