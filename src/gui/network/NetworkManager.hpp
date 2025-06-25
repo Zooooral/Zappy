@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2025
-** B-YEP-400-PAR-4-1-zappy-maxence.bunel
+** B-YEP-400-PAR-4-1-zappy-maxence.bunel [WSL: Ubuntu]
 ** File description:
 ** NetworkManager
 */
@@ -40,9 +40,9 @@ public:
     bool connectToServer(const std::string& host, int port) override;
     void disconnect() override;
     bool isConnected() const override;
+    bool isAuthenticated() const;
     void sendCommand(const std::string& command) override;
     void setMessageCallback(std::function<void(const std::string&)> callback) override;
-    void requestTimeUnit();
     void update() override;
 
     ConnectionState getConnectionState() const;
@@ -85,4 +85,4 @@ private:
     void safeShutdown();
 };
 
-#endif /* !NETWORKMANAGER_HPP_ */
+#endif
