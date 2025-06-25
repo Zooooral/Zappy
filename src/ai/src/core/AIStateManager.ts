@@ -7,15 +7,7 @@ export class AIStateManager {
   private lastTick: number = Date.now();
 
   private static readonly FOOD_THRESHOLDS = {
-    CRITICAL: 5,
     LOW: 50,
-  } as const;
-
-  private static readonly UPDATE_INTERVALS = {
-    INVENTORY: 2000,
-    VISION: 1000,
-    INVENTORY_URGENT: 500,
-    TOLERANCE: 100,
   } as const;
 
   public updateTime(): void {
@@ -60,7 +52,7 @@ export class AIStateManager {
   private transitionToState(newState: AIState, food: number): void {
     const previousState = this.currentState;
 
-    if (food < AIStateManager.FOOD_THRESHOLDS.CRITICAL) {
+    if (food < 5) {
       logger.warn(`Critical Survival Mode - food: ${food}`);
     }
 
@@ -89,24 +81,6 @@ export class AIStateManager {
       this.currentState = newState;
       this.timeInState = 0;
     }
-  }
-
-  public shouldUpdateInventory(): boolean {
-    return this.isUpdateDue(AIStateManager.UPDATE_INTERVALS.INVENTORY);
-  }
-
-  public shouldUpdateVision(): boolean {
-    return this.isUpdateDue(AIStateManager.UPDATE_INTERVALS.VISION);
-  }
-
-  public shouldUpdateInventoryUrgent(food: number): boolean {
-    const isLowFood = food < AIStateManager.FOOD_THRESHOLDS.LOW;
-    const shouldUpdate = this.isUpdateDue(AIStateManager.UPDATE_INTERVALS.INVENTORY_URGENT);
-    return isLowFood && shouldUpdate;
-  }
-
-  private isUpdateDue(interval: number): boolean {
-    return this.timeInState % interval < AIStateManager.UPDATE_INTERVALS.TOLERANCE;
   }
 
   public reset(): void {
