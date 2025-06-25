@@ -13,6 +13,8 @@
 const char *gui_payload_new_player(client_t *, const player_t *player);
 const char *gui_payload_position_update(client_t *, const player_t *player);
 const char *gui_payload_level_update(client_t *, const player_t *player);
+const char *gui_payload_player_death(client_t *, const player_t *player);
+
 const char *gui_payload_elevation_start(client_t *, const player_t *player);
 const char *gui_payload_elevation_end(client_t *, const player_t *player);
 
