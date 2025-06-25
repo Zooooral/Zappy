@@ -27,23 +27,42 @@ int take_resource(client_t *client, map_t *map, int resource_id)
     return 0;
 }
 
-static void place_resource_type(server_t *server, int type)
+static int count_resource_on_map(map_t *map, int type)
 {
-    int total_quantity = ressource_quantity(server->game->map, type);
-    int i;
+    int count = 0;
     int x;
     int y;
     tile_t *tile;
 
-    for (i = 0; i < total_quantity; i++) {
+    for (y = 0; y < map->height; ++y) {
+        for (x = 0; x < map->width; ++x) {
+            tile = map_get_tile(map, x, y);
+            if (tile)
+                count += tile->resources[type];
+        }
+    }
+    return count;
+}
+
+static void place_resource_type(server_t *server, int type)
+{
+    int target_quantity = ressource_quantity(server->game->map, type);
+    int current_quantity = count_resource_on_map(server->game->map, type);
+    int to_add = target_quantity - current_quantity;
+    int x;
+    int y;
+    tile_t *tile;
+
+    for (int i = 0; i < to_add; i++) {
         x = rand() % server->game->map->width;
         y = rand() % server->game->map->height;
         tile = map_get_tile(server->game->map, x, y);
         if (tile) {
             tile->resources[type]++;
             broadcast_tile_to_guis(server, x, y);
-        } else
+        } else {
             --i;
+        }
     }
 }
 
