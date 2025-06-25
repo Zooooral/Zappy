@@ -27,17 +27,8 @@ static inline void ai_action_take(server_t *server, client_t *client, char *cmd)
     }
     ++p->resources[resource_id];
     send_response(client, "ok\n");
-    char *pgt = NULL;
-    asprintf(&pgt, "pgt #%d %d\n", p->id, resource_id);
-    for (size_t i = 0; i < server->client_count; ++i) {
-        client_t *gui = &server->clients[i];
-        if (gui->type == CLIENT_TYPE_GRAPHIC) {
-            send_response(gui, pgt);
-        }
-    }
     broadcast_player_resource_update(server, p, resource_id,
         gui_payload_resource_collected);
-    free(pgt);
 }
 
 static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
@@ -59,19 +50,9 @@ static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
     }
     p->resources[resource_id]--;
     tile->resources[resource_id]++;
-    char *buf = NULL;
-    asprintf(&buf, "ok\n");
-    send_response(client, buf);
-    free(buf);
-    char *pdr = NULL;
-    asprintf(&pdr, "pdr #%d %d\n", p->id, resource_id);
-    for (size_t i = 0; i < server->client_count; ++i) {
-        client_t *gui = &server->clients[i];
-        if (gui->type == CLIENT_TYPE_GRAPHIC) {
-            send_response(gui, pdr);
-        }
-    }
-    free(pdr);
+    send_response(client, "ok\n");
+    broadcast_player_resource_update(server, p, resource_id,
+        gui_payload_resource_dropped);
 }
 
 static inline void ai_action_incantation(server_t *server, client_t *client, char *cmd)
