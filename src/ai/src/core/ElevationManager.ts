@@ -1,6 +1,8 @@
 import { NetworkClient } from "../network";
 import { GameContext } from "./types";
 import { logger } from "../logger";
+import { AIPlayer } from "./AiPlayer";
+import { AIConfig } from "./types";
 
 interface ResourceRequirement {
   players: number;
@@ -25,19 +27,19 @@ type ResourceType = keyof ResourceCount;
 
 export class ElevationManager {
   private elevationAttempts: number = 0;
-  private lastReproductionAttempt: number = 0;
+  private hasReproduced: boolean = false;
+  private spawnedAIs: AIPlayer[] = [];
 
   private static readonly ELEVATION_REQUIREMENTS: Record<number, ResourceRequirement> = {
-    1: { players: 0, linemate: 1, deraumere: 0, sibur: 0, mendiane: 0, phiras: 0, thystame: 0 },
-    2: { players: 1, linemate: 1, deraumere: 1, sibur: 1, mendiane: 0, phiras: 0, thystame: 0 },
-    3: { players: 1, linemate: 2, deraumere: 0, sibur: 1, mendiane: 0, phiras: 2, thystame: 0 },
-    4: { players: 3, linemate: 1, deraumere: 1, sibur: 2, mendiane: 0, phiras: 1, thystame: 0 },
-    5: { players: 3, linemate: 1, deraumere: 2, sibur: 1, mendiane: 3, phiras: 0, thystame: 0 },
-    6: { players: 5, linemate: 1, deraumere: 2, sibur: 3, mendiane: 0, phiras: 1, thystame: 0 },
-    7: { players: 5, linemate: 2, deraumere: 2, sibur: 2, mendiane: 2, phiras: 2, thystame: 1 }
+    1: { players: 1, linemate: 1, deraumere: 0, sibur: 0, mendiane: 0, phiras: 0, thystame: 0 },
+    2: { players: 2, linemate: 1, deraumere: 1, sibur: 1, mendiane: 0, phiras: 0, thystame: 0 },
+    3: { players: 2, linemate: 2, deraumere: 0, sibur: 1, mendiane: 0, phiras: 2, thystame: 0 },
+    4: { players: 4, linemate: 1, deraumere: 1, sibur: 2, mendiane: 0, phiras: 1, thystame: 0 },
+    5: { players: 4, linemate: 1, deraumere: 2, sibur: 1, mendiane: 3, phiras: 0, thystame: 0 },
+    6: { players: 6, linemate: 1, deraumere: 2, sibur: 3, mendiane: 0, phiras: 1, thystame: 0 },
+    7: { players: 6, linemate: 2, deraumere: 2, sibur: 2, mendiane: 2, phiras: 2, thystame: 1 }
   } as const;
 
-  private static readonly REPRODUCTION_COOLDOWN = 30000;
   private static readonly RESOURCE_TYPES: readonly ResourceType[] = [
     'linemate', 'deraumere', 'sibur', 'mendiane', 'phiras', 'thystame'
   ] as const;
@@ -118,29 +120,60 @@ export class ElevationManager {
     }
   }
 
-  public async attemptReproduction(client: NetworkClient): Promise<boolean> {
-    logger.info("Attempting reproduction ...");
+  public shouldReproduceAtLevel2(level: number): boolean {
+    return level >= 2 && !this.hasReproduced;
+  }
+
+  public async attemptReproduction(client: NetworkClient, level: number, config: AIConfig): Promise<boolean> {
+    if (!this.shouldReproduceAtLevel2(level)) {
+      return false;
+    }
+
+    logger.info(`Level ${level} reached! Attempting reproduction to increase team size...`);
 
     try {
-      await client.broadcast("REPRODUCTION_READY");
-      const success = await client.fork();
+      await client.broadcast(`REPRODUCING_LVL_${level}`);
+      const forkSuccess = await client.fork();
 
-      if (success) {
-        logger.info("Successfully reproducted! New team member incoming.");
-        this.lastReproductionAttempt = Date.now();
-        return true;
+      if (forkSuccess) {
+        logger.info("Fork successful! Egg created on server. Spawning new AI client...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const newAI = await this.spawnNewAIInProcess(config);
+        if (newAI) {
+          this.hasReproduced = true;
+          this.spawnedAIs.push(newAI);
+          logger.info("Reproduction successful! New AI client connected and running.");
+          return true;
+        } else {
+          logger.warn("Failed to spawn new AI client");
+          return false;
+        }
+      } else {
+        logger.warn("Fork command failed");
+        return false;
       }
-      logger.warn("Reproduction failed");
-      return false;
     } catch (error) {
       logger.error("Error during reproduction:", error);
       return false;
     }
   }
 
-  public shouldAttemptReproduction(): boolean {
-    const timeSinceLastAttempt = Date.now() - this.lastReproductionAttempt;
-    return timeSinceLastAttempt > ElevationManager.REPRODUCTION_COOLDOWN;
+  private async spawnNewAIInProcess(config: AIConfig): Promise<AIPlayer | null> {
+    try {
+      logger.info(`Creating new AI client in same process...`);
+
+      const newAI = new AIPlayer({
+        ...config,
+      });
+      newAI.start().catch(error => {
+        logger.error("New AI failed to start:", error);
+      });
+      logger.info(`New AI client created and starting...`);
+      return newAI;
+    } catch (error) {
+      logger.error("Failed to spawn new AI in process:", error);
+      return null;
+    }
   }
 
   public getMissingResources(context: GameContext): ResourceType[] {
@@ -167,13 +200,19 @@ export class ElevationManager {
     return this.elevationAttempts;
   }
 
-  public getLastReproductionAttempt(): number {
-    return this.lastReproductionAttempt;
+  public hasReproducedAlready(): boolean {
+    return this.hasReproduced;
   }
 
   public reset(): void {
     this.elevationAttempts = 0;
-    this.lastReproductionAttempt = 0;
+    this.hasReproduced = false;
+    this.spawnedAIs.forEach(ai => {
+      ai.stop().catch(error => {
+        logger.error("Error stopping spawned AI:", error);
+      });
+    });
+    this.spawnedAIs = [];
   }
 
   private getRequirementsForLevel(level: number): ResourceRequirement | null {
