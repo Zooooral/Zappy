@@ -4,11 +4,9 @@
 ** File description:
 ** Vision system implementation for Zappy
 */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
 #include "server/vision.h"
 #include "server/dynamic_array.h"
 #include "server/game.h"
@@ -16,7 +14,6 @@
 
 static char *print_tile(tile_t *tile) {
     char *str = da_create();
-
     if (!tile)
         return da_create();
     int first = 1;

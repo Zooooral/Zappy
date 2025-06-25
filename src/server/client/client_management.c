@@ -14,6 +14,7 @@
 #include "server/time.h"
 #include "server/broadcast.h"
 #include "server/protocol_graphic.h"
+#include "server/payloads.h"
 
 static int initialize_client_buffer(client_t *client)
 {
@@ -142,9 +143,9 @@ static void client_validate(server_t *server, client_t *client, const char *mess
         client->player = player_create(client, pos[0], pos[1], message);
         printf("[DEBUG] AI client created player: %p\n", (void*)client->player);
         if (client->player) {
-            player_set_position(client->player, server->game->map, pos[0], pos[1]);
+            player_set_position(server, client->player, pos[0], pos[1]);
             add_player_to_game(server->game, client->player);
-            broadcast_message_to_guis(server, client, protocol_send_player_info);
+            broadcast_message_to_guis(server, client->player, gui_payload_new_player);
         }
     }
     snprintf(response, sizeof(response), "%ld\n",

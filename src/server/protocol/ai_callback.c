@@ -12,6 +12,7 @@
 #include "server/ai_command_handlers.h"
 
 static const void (*action_handlers[])(server_t *, client_t *, char *cmd) = {
+
     [AI_ACTION_FORWARD] = ai_action_forward,
     [AI_ACTION_RIGHT] = ai_action_right,
     [AI_ACTION_LEFT] = ai_action_left,

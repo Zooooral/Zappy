@@ -269,3 +269,12 @@ std::string NetworkManager::receiveData() {
     buffer[bytesReceived] = '\0';
     return std::string(buffer);
 }
+
+void NetworkManager::requestTimeUnit() {
+    if (isConnected()) {
+        std::cout << "[NetworkManager] Requesting time unit from server" << std::endl;
+        sendCommand("sgt");
+    } else {
+        std::cout << "[NetworkManager] Cannot request time unit - not connected" << std::endl;
+    }
+}

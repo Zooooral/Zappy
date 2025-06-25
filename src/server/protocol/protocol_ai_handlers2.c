@@ -14,6 +14,7 @@
 #include "server/resource.h"
 #include "server/lifecycle.h"
 #include "server/gui_notify.h"
+#include "server/payloads.h"
 
 
 void handle_broadcast(server_t *server, client_t *client, const char *msg)

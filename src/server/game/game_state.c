@@ -40,18 +40,18 @@ static int setup_game_map(game_state_t *game, const server_config_t *config)
     return 0;
 }
 
-static int setup_seeder_if_needed(game_state_t *game,
+static int setup_seeder_if_needed(server_t *server,
     const server_config_t *config)
 {
     if (!config->seed_mode)
         return 0;
-    game->seeder = seeder_create(game->map);
-    if (!game->seeder)
+    server->game->seeder = seeder_create(server);
+    if (!server->game->seeder)
         return -1;
     return 0;
 }
 
-game_state_t *game_state_create(const server_config_t *config)
+game_state_t *game_state_create(server_t *server, const server_config_t *config)
 {
     game_state_t *game = calloc(sizeof(game_state_t), 1);
 
@@ -67,7 +67,7 @@ game_state_t *game_state_create(const server_config_t *config)
         return NULL;
     }
     game->current_time = get_current_time();
-    if (setup_seeder_if_needed(game, config) == -1) {
+    if (setup_seeder_if_needed(server, config) == -1) {
         game_state_destroy(game);
         return NULL;
     }
@@ -111,15 +111,15 @@ static void player_update(player_t *player)
     }
 }
 
-void game_state_update(game_state_t *game, double delta_time)
+void game_state_update(server_t *server, double delta_time)
 {
     player_t *player;
 
-    if (!game)
+    if (!server || !server->game)
         return;
-    game->current_time += delta_time;
-    for (size_t i = 0; i < game->player_count; ++i) {
-        player = game->players[i];
+    server->game->current_time += delta_time;
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        player = server->game->players[i];
         if (player != NULL && player->is_alive) {
             continue;
         }
