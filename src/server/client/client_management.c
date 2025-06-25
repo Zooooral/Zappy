@@ -109,8 +109,14 @@ static void update_poll_fds_after_removal(server_t *server)
 
 void client_remove(server_t *server, size_t index)
 {
+    player_t *player;
+
     if (!server || index >= server->client_count)
         return;
+    player = server->clients[index].player;
+    if (player) {
+        broadcast_message_to_guis(server, player, gui_payload_player_death);
+    }
     cleanup_client_resources(&server->clients[index]);
     shift_clients_array(server, index);
     server->client_count--;

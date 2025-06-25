@@ -40,20 +40,10 @@ const char *gui_payload_level_update(client_t *, const player_t *player)
     return strdup(response);
 }
 
-const char *gui_payload_elevation_start(client_t *, const player_t *player)
+const char *gui_payload_player_death(client_t *, const player_t *player)
 {
-    char response[131];
+    char response[128];
 
-    snprintf(response, sizeof(response), "pic %d %d %d #%d\n",
-        player->x, player->y, player->level, player->id);
-    return strdup(response);
-}
-
-const char *gui_payload_elevation_end(client_t *, const player_t *player)
-{
-    char response[131];
-
-    snprintf(response, sizeof(response), "pie %d %d 1\n",
-        player->x, player->y);
+    snprintf(response, sizeof(response), "pdi #%d\n", player->id);
     return strdup(response);
 }
