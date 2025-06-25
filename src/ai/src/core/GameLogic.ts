@@ -7,6 +7,7 @@ import { VisionCalculator } from "./VisionCalculator";
 import { MovementController } from "./MovementController";
 import { ResourceCollector } from "./ResourceCollector";
 import { ElevationManager } from "./ElevationManager";
+import { CoordinationManager } from "./CoordinationManager";
 
 export class GameLogic {
     private client: NetworkClient;
@@ -15,6 +16,7 @@ export class GameLogic {
     private movementController: MovementController;
     private resourceCollector: ResourceCollector;
     private elevationManager: ElevationManager;
+    private coordinationManager: CoordinationManager;
     private config: AIConfig;
 
     private lastInventory?: InventoryItem;
@@ -29,6 +31,10 @@ export class GameLogic {
         this.visionCalculator = new VisionCalculator();
         this.movementController = new MovementController();
         this.elevationManager = new ElevationManager();
+        this.coordinationManager = new CoordinationManager(
+            this.movementController,
+            this.visionCalculator
+        );
         this.resourceCollector = new ResourceCollector(
             this.visionCalculator,
             this.movementController
@@ -179,29 +185,66 @@ export class GameLogic {
     }
 
     private async executeCoordinationStrategy(context: GameContext): Promise<void> {
-        await this.elevationManager.requestElevationHelp(this.client, context);
-        this.stateManager.setState(AIState.GATHERING);
+        this.coordinationManager.cleanupExpiredRequests();
+
+        if (this.coordinationManager.isInElevationMeeting()) {
+            const meetingComplete = await this.coordinationManager.coordinateElevationMeeting(
+                this.client,
+                context
+            );
+            if (meetingComplete) {
+                logger.info("Meeting successful, transitioning to elevation");
+                this.stateManager.setState(AIState.ELEVATION);
+                return;
+            }
+            return;
+        }
+        if (this.elevationManager.hasElevationResources(context) ||
+            this.elevationManager.hasElevationResourcesOnGround(context)) {
+            logger.info("Have elevation resources, requesting partner");
+            await this.coordinationManager.requestElevationPartner(this.client, context);
+            await new Promise(resolve => setTimeout(resolve, 100));
+        } else {
+            logger.info("Missing elevation resources, switching to gathering");
+            this.stateManager.setState(AIState.GATHERING);
+        }
     }
 
     private async executeElevationStrategy(context: GameContext): Promise<void> {
+        if (this.coordinationManager.isInElevationMeeting()) {
+            const currentLevel = this.coordinationManager.getCurrentMeetingLevel();
+            if (currentLevel !== context.gameState.playerLevel) {
+                logger.info("Level changed during meeting, ending meeting");
+                this.coordinationManager.endElevationMeeting();
+                this.stateManager.setState(AIState.EXPLORATION);
+                return;
+            }
+        }
+
         if (this.elevationManager.canElevate(context)) {
+            logger.info("Attempting elevation now");
             const success = await this.elevationManager.attemptElevation(
                 this.client,
                 context
             );
             if (success) {
                 logger.info("Elevation initiated successfully!");
+                this.coordinationManager.endElevationMeeting();
                 return;
+            } else {
+                logger.warn("Elevation failed, returning to coordination");
+                this.stateManager.setState(AIState.COORDINATION);
             }
-        }
-
-        const missingResources = this.elevationManager.getMissingResources(context);
-        if (missingResources.length > 0) {
-            logger.info(`Missing resources for elevation: ${missingResources.join(", ")}`);
-            this.stateManager.setState(AIState.GATHERING);
-        } else if (!this.elevationManager.hasEnoughPlayers(context)) {
-            logger.info("Not enough players for elevation");
-            this.stateManager.setState(AIState.COORDINATION);
+        } else {
+            const missingResources = this.elevationManager.getMissingResources(context);
+            if (missingResources.length > 0) {
+                logger.info(`Missing resources for elevation: ${missingResources.join(", ")}`);
+                this.coordinationManager.endElevationMeeting();
+                this.stateManager.setState(AIState.GATHERING);
+            } else if (!this.elevationManager.hasEnoughPlayers(context)) {
+                logger.info("Not enough players for elevation - starting coordination");
+                this.stateManager.setState(AIState.COORDINATION);
+            }
         }
     }
 
@@ -220,8 +263,10 @@ export class GameLogic {
             return;
         }
 
-        if (this.elevationManager.getElevationProgress(context) > 0.8) {
-            this.stateManager.setState(AIState.ELEVATION);
+        if (this.elevationManager.hasElevationResources(context) ||
+            this.elevationManager.hasElevationResourcesOnGround(context)) {
+            logger.info("Have enough resources for elevation, switching to coordination");
+            this.stateManager.setState(AIState.COORDINATION);
             return;
         }
 
@@ -253,11 +298,24 @@ export class GameLogic {
             return;
         }
 
+        if (this.elevationManager.hasElevationResources(context) && context.inventory.food > 5) {
+            logger.info("Have elevation resources, switching to coordination");
+            this.stateManager.setState(AIState.COORDINATION);
+            return;
+        }
+
         await this.movementController.exploreRandomly(this.client);
     }
 
     public handleBroadcast(message: BroadcastMessage): void {
         logger.debug(`Received broadcast from direction ${message.direction}: ${message.message}`);
+
+        const context = this.getContext();
+        if (context) {
+            this.coordinationManager.handleElevationBroadcast(message, context, this.client).catch(error => {
+                logger.error("Error handling elevation broadcast:", error);
+            });
+        }
 
         if (message.message.includes("ELEVATION") && message.message.includes("READY")) {
             logger.info("Other player ready for elevation, checking if we can help");
@@ -277,6 +335,7 @@ export class GameLogic {
     public handleEjection(direction: number): void {
         logger.warn(`Handling ejection from direction ${direction}`);
         this.movementController.handleEjection();
+        this.coordinationManager.endElevationMeeting();
         this.stateManager.setState(AIState.EXPLORATION);
     }
 
@@ -297,6 +356,8 @@ export class GameLogic {
             missingResources: this.elevationManager.getMissingResources(context),
             inventory: context.inventory,
             networkStats: this.client.getNetworkStats(),
+            coordination: this.coordinationManager.getDebugInfo(),
+            meetingStatus: this.coordinationManager.getMeetingStatus(),
         };
     }
 }
