@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** include/server/server.h
 ** File description:
-** Enhanced Zappy server header with seeding support
+** Enhanced Zappy server header
 */
 
 #ifndef SERVER_H_
@@ -22,9 +22,6 @@
     #define MAX_COMMAND_QUEUE 50
     #define MIN_MAP_SIZE 6
     #define MAX_MAP_SIZE 50
-    #define SEEDER_MOVE_INTERVAL 5.0
-    #define SEEDER_ELEVATION_INTERVAL 30.0
-    #define SEEDER_ELEVATION_DURATION 5.0
     #define FOOD_INHALATION_TIME 126
 
 typedef enum client_type_e {
@@ -89,14 +86,6 @@ typedef struct map_s {
     int height;
 } map_t;
 
-typedef struct seeder_state_s {
-    player_t *player;
-    double last_move_time;
-    double last_elevation_time;
-    int move_step;
-    bool elevation_active;
-} seeder_state_t;
-
 typedef struct server_config_s {
     size_t port;
     size_t width;
@@ -105,7 +94,6 @@ typedef struct server_config_s {
     size_t freq;
     char **team_names;
     size_t team_count;
-    bool seed_mode;
 } server_config_t;
 
 typedef struct game_state_s {
@@ -115,7 +103,6 @@ typedef struct game_state_s {
     size_t player_capacity;
     double current_time;
     int next_player_id;
-    seeder_state_t *seeder;
 } game_state_t;
 
 typedef struct server_s {
@@ -149,12 +136,8 @@ void map_destroy(map_t *map);
 tile_t *map_get_tile(const map_t *map, int x, int y);
 player_t *player_create(client_t *, int x, int y, const char *team_name);
 void player_destroy(player_t *player);
-void player_move(server_t *server, player_t *player);
 player_t *player_find_by_id(server_t *server, int id);
 void player_set_position(server_t *server, player_t *player, int x, int y);
-seeder_state_t *seeder_create(server_t *server);
-void seeder_destroy(seeder_state_t *seeder);
-void seeder_update(server_t *server, seeder_state_t *seeder, double current_time);
 double get_current_time(void);
 int client_add(server_t *server, int client_fd);
 void client_remove(server_t *server, size_t index);

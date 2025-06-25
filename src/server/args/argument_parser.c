@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** src/server/args/argument_parser.c
 ** File description:
-** Enhanced command line argument parsing with seed support
+** Enhanced command line argument parsing
 */
 
 #include <string.h>
