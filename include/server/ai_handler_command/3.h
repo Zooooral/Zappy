@@ -7,6 +7,7 @@ static inline void ai_action_connect_nbr(server_t *server, client_t *client, cha
 {
     if (!server || !client || !client->team_name) {
         send_response(client, "ko\n");
+        (void)cmd;
         return;
     }
     int available = (int)server->config.max_clients_per_team;

@@ -1,5 +1,7 @@
 #ifndef AI_ACTIONS_H
-#define AI_ACTIONS_H
+    #define AI_ACTIONS_H
+    #include <stdint.h>
+    #include "server/server.h"
 
 static inline void ai_action_forward(server_t *server, client_t *client,
     char *cmd)
@@ -8,6 +10,7 @@ static inline void ai_action_forward(server_t *server, client_t *client,
     static const int dx[4] = {0, 1, 0, -1};
     static const int dy[4] = {-1, 0, 1, 0};
 
+    (void)cmd;
     if (!server || !client)
         return;
     for (size_t i = 0; i < server->game->player_count; ++i) {
@@ -18,7 +21,7 @@ static inline void ai_action_forward(server_t *server, client_t *client,
     }
     if (!p)
         return send_response(client, "ko\n");
-    player_set_position(p, server->game->map,
+    player_set_position(server, p,
             p->x + dx[p->orientation], p->y + dy[p->orientation]);
     send_response(client, "ok\n");
 }
@@ -29,6 +32,7 @@ static inline void ai_action_right(server_t *server, client_t *client,
     size_t i;
     player_t *p;
 
+    (void)cmd;
     if (!server || !client)
         return;
     p = NULL;
@@ -50,6 +54,7 @@ static inline void ai_action_left(server_t *server, client_t *client,
     size_t i;
     player_t *p = NULL;
 
+    (void)cmd;
     if (!server || !client)
         return;
     for (i = 0; i < server->game->player_count; ++i) {
@@ -70,6 +75,7 @@ static inline void ai_action_look(server_t *server, client_t *client,
 {
     char *result;
 
+    (void)cmd;
     if (!server || !client)
         return;
     result = vision_look(client, server->game->map);
@@ -88,6 +94,7 @@ static inline void ai_action_inventory(server_t *server, client_t *client,
     player_t *p = NULL;
     char *buf;
 
+    (void)cmd;
     if (!server || !client)
         return;
     for (i = 0; i < server->game->player_count; ++i)

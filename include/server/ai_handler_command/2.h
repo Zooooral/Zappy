@@ -1,8 +1,12 @@
 #ifndef AI_ACTIONS2_H
     #define AI_ACTIONS2_H
 
+    #include "server/broadcast.h"
+    #include "server/payloads.h"
     #include "server/server.h"
+    #include "server/payloads.h"
     #include "server/resource.h"
+    #include "server/broadcast.h"
     #include <stdlib.h>
 
 static inline void ai_action_take(server_t *server, client_t *client, char *cmd)
@@ -31,6 +35,8 @@ static inline void ai_action_take(server_t *server, client_t *client, char *cmd)
             send_response(gui, pgt);
         }
     }
+    broadcast_player_resource_update(server, p, resource_id,
+        gui_payload_resource_collected);
     free(pgt);
 }
 

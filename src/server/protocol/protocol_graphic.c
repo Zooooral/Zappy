@@ -141,7 +141,7 @@ static void handle_position_update(server_t *server, client_t *client,
     }
 }
 
-/*static void handle_player_inventory(server_t *server, client_t *client, const char *cmd)
+static void handle_player_inventory(server_t *server, client_t *client, const char *cmd)
 {
     int player_id;
     player_t *player;
@@ -167,7 +167,7 @@ static void handle_position_update(server_t *server, client_t *client,
         player->resources[RESOURCE_PHIRAS],
         player->resources[RESOURCE_THYSTAME]);
     send_response(client, response);
-*/
+}
 
 // sgt
 static void handle_time_unit_command(server_t *server, client_t *client,
