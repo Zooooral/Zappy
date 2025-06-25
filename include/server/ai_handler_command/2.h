@@ -7,6 +7,7 @@
     #include "server/payloads.h"
     #include "server/resource.h"
     #include "server/broadcast.h"
+    #include "server/incantation.h"
     #include <stdlib.h>
 
 static inline void ai_action_take(server_t *server, client_t *client, char *cmd)
@@ -59,6 +60,18 @@ static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
 
 static inline void ai_action_incantation(server_t *server, client_t *client, char *cmd)
 {
+    int result;
+
+    (void)cmd;
+    if (!server || !client || !client->player) {
+        send_response(client, "ko\n");
+        return;
+    }
+    result = try_incantation(server, client);
+    if (result)
+        send_response(client, "ok\n");
+    else
+        send_response(client, "ko\n");
 }
 
 static inline void ai_action_eject(server_t *server, client_t *client, char *cmd)
