@@ -17,7 +17,6 @@
 #include "server/time.h"
 #include "server/resource.h"
 #include "server/lifecycle.h"
-#include "server/gui_notify.h"
 #include "server/ai_commands.h"
 #include "server/protocol_ai_handlers2.h"
 #include "server/protocol_ai_handlers3.h"

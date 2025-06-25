@@ -13,7 +13,6 @@
 #include "server/time.h"
 #include "server/resource.h"
 #include "server/lifecycle.h"
-#include "server/gui_notify.h"
 
 void handle_set(server_t *server, client_t *client, const char *resource)
 {
