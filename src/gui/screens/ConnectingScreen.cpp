@@ -181,6 +181,7 @@ void ConnectingScreen::update(float dt)
         case ConnectionState::AUTHENTICATED:
             if (!_finished) {
                 std::cout << "[GUI] Authentication successful! Starting transition..." << std::endl;
+                NetworkManager::getInstance().sendCommand("sgt");
                 setConnectionStatus("Connected successfully!");
                 _finished = true;
                 _isConnected = true;

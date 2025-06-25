@@ -50,6 +50,8 @@ public:
     Character* getSelectedCharacter() const { return _selectedCharacter; }
     
     void endAllElevations();
+    void clearAllCharacters();
+    float getTimeUnit() const { return _timeUnit; }
     void setTimeUnit(float timeUnit) { _timeUnit = timeUnit; }
     
     const std::vector<std::unique_ptr<Character>>& getCharacters() const { return _characters; }
