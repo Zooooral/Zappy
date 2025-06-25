@@ -10,6 +10,8 @@
 
 #include "server/resource.h"
 #include "server/game.h"
+#include "server/broadcast.h"
+#include "server/server_updates.h"
 
 int take_resource(client_t *client, map_t *map, int resource_id)
 {
@@ -25,31 +27,32 @@ int take_resource(client_t *client, map_t *map, int resource_id)
     return 0;
 }
 
-static void place_resource_type(map_t *map, int type)
+static void place_resource_type(server_t *server, int type)
 {
-    int total_quantity = ressource_quantity(map, type);
+    int total_quantity = ressource_quantity(server->game->map, type);
     int i;
     int x;
     int y;
     tile_t *tile;
 
     for (i = 0; i < total_quantity; i++) {
-        x = rand() % map->width;
-        y = rand() % map->height;
-        tile = map_get_tile(map, x, y);
-        if (tile)
+        x = rand() % server->game->map->width;
+        y = rand() % server->game->map->height;
+        tile = map_get_tile(server->game->map, x, y);
+        if (tile) {
             tile->resources[type]++;
-        else
+            broadcast_tile_to_guis(server, x, y);
+        } else
             --i;
     }
 }
 
-void respawn_resources(map_t *map)
+void respawn_resources(server_t *server)
 {
     int type;
 
-    if (!map)
+    if (!server)
         return;
     for (type = 0; type < RESOURCE_COUNT; type++)
-        place_resource_type(map, type);
+        place_resource_type(server, type);
 }

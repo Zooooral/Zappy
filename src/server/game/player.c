@@ -9,6 +9,9 @@
 #include <string.h>
 
 #include "server/server.h"
+#include "server/broadcast.h"
+#include "server/payloads.h"
+#include "server/server_updates.h"
 
 player_t *player_create(client_t *client, int x, int y, const char *team_name)
 {
@@ -79,14 +82,15 @@ static int add_player_to_tile(player_t *player, map_t *map)
     return 0;
 }
 
-void player_set_position(player_t *player, map_t *map, int x, int y)
+void player_set_position(server_t *server, player_t *player, int x, int y)
 {
-    if (!player || !map)
+    if (!player || !server)
         return;
-    remove_player_from_tile(player, map);
-    player->x = (x + map->width) % map->width;
-    player->y = (y + map->height) % map->height;
-    add_player_to_tile(player, map);
+    remove_player_from_tile(player, server->game->map);
+    player->x = (x + server->game->map->width) % server->game->map->width;
+    player->y = (y + server->game->map->height) % server->game->map->height;
+    add_player_to_tile(player, server->game->map);
+    broadcast_message_to_guis(server, player, gui_payload_position_update);
 }
 
 static void calculate_movement_direction(player_t *player, int *dx, int *dy)
@@ -111,15 +115,15 @@ static void calculate_movement_direction(player_t *player, int *dx, int *dy)
     }
 }
 
-void player_move(player_t *player, map_t *map)
+void player_move(server_t *server, player_t *player)
 {
     int dx;
     int dy;
 
-    if (!player || !map)
+    if (!server || !player)
         return;
     calculate_movement_direction(player, &dx, &dy);
-    player_set_position(player, map, player->x + dx, player->y + dy);
+    player_set_position(server, player, player->x + dx, player->y + dy);
 }
 
 player_t *player_find_by_id(server_t *server, int id)

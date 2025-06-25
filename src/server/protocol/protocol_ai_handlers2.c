@@ -14,6 +14,7 @@
 #include "server/resource.h"
 #include "server/lifecycle.h"
 #include "server/gui_notify.h"
+#include "server/payloads.h"
 
 void handle_broadcast(server_t *server, client_t *client, const char *msg)
 {
@@ -53,5 +54,7 @@ void handle_take(server_t *server, client_t *client, const char *resource)
     }
     ++p->resources[resource_id];
     send_response(client, "ok\n");
+    broadcast_player_resource_update(server, p, resource_id,
+        gui_payload_resource_collected);
     return;
 }
