@@ -42,8 +42,9 @@ const char *gui_payload_inventory(client_t *, const player_t *player)
     if (!player) {
         return NULL;
     }
-    snprintf(response, sizeof(response), "pin #%d %d %d %d %d %d %d %d %d\n",
-        player->id,
+    snprintf(response, sizeof(response),
+        "pin #%d %d %d %d %d %d %d %d %d %d\n",
+        player->id, player->x, player->y,
         player->resources[RESOURCE_FOOD],
         player->resources[RESOURCE_LINEMATE],
         player->resources[RESOURCE_DERAUMERE],
