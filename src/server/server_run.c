@@ -35,8 +35,6 @@ static void print_server_info(const server_t *server)
         server->config.height);
     print_server_teams(server);
     printf("[SERVER] Time frequency: %zu\n", server->config.freq);
-    if (server->config.seed_mode)
-        printf("[SERVER] Running in SEED mode\n");
     printf("[SERVER] Listening for connections...\n\n");
 }
 
