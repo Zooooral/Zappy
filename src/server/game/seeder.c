@@ -16,7 +16,7 @@ static const int circle_moves[][2] = {
 
 static const int circle_moves_count = 5;
 
-seeder_state_t *seeder_create(map_t *map)
+seeder_state_t *seeder_create(server_t *server)
 {
     seeder_state_t *seeder = malloc(sizeof(seeder_state_t));
 
@@ -28,7 +28,7 @@ seeder_state_t *seeder_create(map_t *map)
         free(seeder);
         return NULL;
     }
-    player_set_position(seeder->player, map, 0, 0);
+    player_set_position(server, seeder->player, 0, 0);
     seeder->last_move_time = get_current_time();
     seeder->last_elevation_time = get_current_time();
     seeder->move_step = 0;
@@ -46,12 +46,12 @@ void seeder_destroy(seeder_state_t *seeder)
     free(seeder);
 }
 
-static void seeder_move_player(seeder_state_t *seeder, map_t *map)
+static void seeder_move_player(server_t *server, seeder_state_t *seeder)
 {
     int target_x = circle_moves[seeder->move_step][0];
     int target_y = circle_moves[seeder->move_step][1];
 
-    player_set_position(seeder->player, map, target_x, target_y);
+    player_set_position(server, seeder->player, target_x, target_y);
     seeder->move_step = (seeder->move_step + 1) % circle_moves_count;
     printf("[SEED] Moved player to (%d,%d)\n", target_x, target_y);
 }
@@ -98,15 +98,15 @@ static void seeder_handle_elevation(seeder_state_t *seeder,
     }
 }
 
-void seeder_update(seeder_state_t *seeder, map_t *map, double current_time)
+void seeder_update(server_t *server, seeder_state_t *seeder, double current_time)
 {
     double time_since_move;
 
-    if (!seeder || !map)
+    if (!seeder)
         return;
     time_since_move = current_time - seeder->last_move_time;
     if (time_since_move >= SEEDER_MOVE_INTERVAL) {
-        seeder_move_player(seeder, map);
+        seeder_move_player(server, seeder);
         seeder->last_move_time = current_time;
     }
     seeder_handle_elevation(seeder, current_time);
