@@ -35,6 +35,8 @@ private:
     bool _shouldReturn = false;
     bool _mapInitialized = false;
     float _updateTimer = 0.0f;
+    float _timeUnitRefreshTimer = 0.0f;
+    static constexpr float TIME_UNIT_REFRESH_INTERVAL = 10.0f;
     int _nextPlayerId = 1;
     std::set<int> _activePlayerIds;
     std::unique_ptr<Button> _backButton;
@@ -44,6 +46,7 @@ private:
     void requestInitialGameData();
     void requestPlayerUpdates();
     void handleServerCommand(const std::string& command);
+    void requestTimeUnit();
 };
 
 #endif

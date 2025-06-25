@@ -351,3 +351,13 @@ std::string CharacterManager::getTileKey(const Vector2& pos) const {
     oss << static_cast<int>(pos.x) << "," << static_cast<int>(pos.y);
     return oss.str();
 }
+
+void CharacterManager::clearAllCharacters() {
+    std::cout << "[CharacterManager] Clearing all characters due to disconnection" << std::endl;
+    _characters.clear();
+    _tileCharacters.clear();
+    _elevationParticles.clear();
+    _selectedCharacter = nullptr;
+    _timeUnit = 1.0f;
+    std::cout << "[CharacterManager] Time unit reset to default: " << _timeUnit << std::endl;
+}
