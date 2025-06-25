@@ -12,5 +12,6 @@
 
 int incantation_start(client_t *client, map_t *map);
 int incantation_end(client_t *client, map_t *map);
+int try_incantation(server_t *server, client_t *client);
 
 #endif // INCANTATION_H
