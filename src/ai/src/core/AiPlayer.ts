@@ -13,7 +13,7 @@ export class AIPlayer {
     constructor(config: AIConfig) {
         this.config = config;
         this.client = new NetworkClient(config.host, config.port);
-        this.gameLogic = new GameLogic(this.client);
+        this.gameLogic = new GameLogic(this.client, config);
         this.setupEventHandlers();
     }
 

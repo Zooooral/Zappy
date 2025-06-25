@@ -34,6 +34,11 @@ export class AIStateManager {
 
   public updateState(context: GameContext): void {
     const { food } = context.inventory;
+
+    if (this.currentState === AIState.REPRODUCTION) {
+      return;
+    }
+
     const newState = this.determineOptimalState(food);
 
     if (newState !== this.currentState) {
@@ -42,6 +47,10 @@ export class AIStateManager {
   }
 
   private determineOptimalState(food: number): AIState {
+    if (this.currentState === AIState.REPRODUCTION) {
+      return AIState.REPRODUCTION;
+    }
+
     if (food < AIStateManager.FOOD_THRESHOLDS.LOW) {
       return AIState.SURVIVAL;
     }
@@ -54,14 +63,29 @@ export class AIStateManager {
     if (food < AIStateManager.FOOD_THRESHOLDS.CRITICAL) {
       logger.warn(`Critical Survival Mode - food: ${food}`);
     }
-    logger.info(`State transition: ${previousState} -> ${newState}`);
+
+    if (newState === AIState.REPRODUCTION) {
+      logger.info(`Entering REPRODUCTION mode`);
+    } else if (previousState === AIState.REPRODUCTION) {
+      logger.info(`Exiting REPRODUCTION mode -> ${newState}`);
+    } else {
+      logger.info(`State transition: ${previousState} -> ${newState}`);
+    }
+
     this.currentState = newState;
     this.timeInState = 0;
   }
 
   public setState(newState: AIState): void {
     if (this.currentState !== newState) {
-      logger.info(`State force change: ${this.currentState} -> ${newState}`);
+      if (newState === AIState.REPRODUCTION) {
+        logger.info(`Force change to REPRODUCTION mode`);
+      } else if (this.currentState === AIState.REPRODUCTION) {
+        logger.info(`Force exit from REPRODUCTION mode -> ${newState}`);
+      } else {
+        logger.info(`State force change: ${this.currentState} -> ${newState}`);
+      }
+
       this.currentState = newState;
       this.timeInState = 0;
     }

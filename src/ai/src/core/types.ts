@@ -12,6 +12,7 @@ export enum AIState {
     SURVIVAL = "survival",
     EXPLORATION = "exploration",
     GATHERING = "gathering",
+    REPRODUCTION = "reproduction",
     ELEVATION = "elevation",
     COORDINATION = "coordination",
 }
