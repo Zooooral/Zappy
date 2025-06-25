@@ -123,9 +123,6 @@ static void handle_player_info_command(server_t *server, client_t *client,
     const char *cmd)
 {
     (void)cmd;
-    if (server->game->seeder && server->game->seeder->player) {
-        protocol_send_player_info(client, server->game->seeder->player);
-    }
 }
 
 static void handle_position_update(server_t *server, client_t *client,
