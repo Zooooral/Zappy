@@ -30,8 +30,9 @@ void InventoryUI::update(float dt) {
 void InventoryUI::draw() const {
     if (!_visible || !_character) return;
     
-    DrawRectangleRounded(_bounds, 0.1f, 5, Fade(BLACK, 0.7f));
-    DrawRectangleRoundedLines(_bounds, 0.1f, 5, BLACK);
+    Rectangle bounds = getBounds();
+    DrawRectangleRounded(bounds, 0.1f, 5, Fade(BLACK, 0.7f));
+    DrawRectangleRoundedLines(bounds, 0.1f, 5, BLACK);
     
     drawCharacterInfo();
     drawInventoryGrid();

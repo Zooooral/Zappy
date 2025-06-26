@@ -57,6 +57,7 @@ public:
     const std::vector<std::unique_ptr<Character>>& getCharacters() const { return _characters; }
 
     std::vector<Character*> getAllCharacters() const;
+    Color getTeamColor(const std::string& teamName) const;
 
 private:
     CharacterManager() = default;
@@ -88,7 +89,6 @@ private:
     void drawCharacter(Character* character, Camera camera, bool isHovered, bool isSelected) const;
     void drawCharacterOutline(Character* character, Color color) const;
     
-    Color getTeamColor(const std::string& teamName) const;
     std::string getTileKey(const Vector2& pos) const;
 };
 

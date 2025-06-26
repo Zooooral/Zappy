@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "GameScreen.hpp"
+#include "../ui/Dashboard.hpp"
 #include "../entities/EggManager.hpp"
 #include "EndScreen.hpp"
 #include "../core/GameWorld.hpp"
@@ -35,6 +36,8 @@ GameScreen::GameScreen() {
         Vector2{(float)GetScreenWidth() - 320, 330},
         Vector2{300, 400}
     );
+
+    _dashboard = std::make_unique<Dashboard>();
 
     _mapInitialized = false;
     _updateTimer = 0.0f;
@@ -398,6 +401,7 @@ void GameScreen::update(float dt) {
     CharacterManager::getInstance().update(dt);
     _backButton->update(dt);
     _inventoryUI->update(dt);
+    _dashboard->update(dt);
 
     _updateTimer += dt;
     if (_updateTimer >= 2.0f && _mapInitialized) {
@@ -406,11 +410,15 @@ void GameScreen::update(float dt) {
     }
 
     if (IsKeyPressed(KEY_ESCAPE)) {
-        if (_inventoryUI->isVisible()) {
+        if (_dashboard->isVisible()) {
+            _dashboard->toggle();
+        } else if (_inventoryUI->isVisible()) {
             _inventoryUI->setVisible(false);
-        } else {
-            _shouldReturn = true;
         }
+    }
+
+    if (IsKeyPressed(KEY_F7)) {
+        _dashboard->toggle();
     }
 
     if (_mapInitialized) {
@@ -448,6 +456,7 @@ void GameScreen::draw() {
 
     _backButton->draw();
     _inventoryUI->draw();
+    _dashboard->draw();
 
     ConnectionState connectionState = NetworkManager::getInstance().getConnectionState();
     const char* stateText = "Disconnected";

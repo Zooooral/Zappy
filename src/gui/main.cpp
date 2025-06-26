@@ -100,6 +100,7 @@ int main(int argc, char** argv)
     InitWindow(zappy::constants::DEFAULT_SCREEN_WIDTH, 
                zappy::constants::DEFAULT_SCREEN_HEIGHT, 
                "Zappy - A Tribute to Zaphod Beeblebrox");
+    SetExitKey(KEY_NULL); // Disable ESC from closing the window
     SetTargetFPS(zappy::constants::TARGET_FPS);
 
     bool shouldQuit = false;
