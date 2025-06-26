@@ -57,7 +57,7 @@ void MainMenu::initializeButtons()
         "Play"
     );
     playButton->setCallback([]() {
-        GameStateManager::getInstance().changeState("connecting", GameStateManager::Transition::FADE);
+        GameStateManager::getInstance().changeState("game", GameStateManager::Transition::FADE);
     });
     _buttons.push_back(std::move(playButton));
 

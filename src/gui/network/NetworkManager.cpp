@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2025
-** B-YEP-400-PAR-4-1-zappy-maxence.bunel
+** B-YEP-400-PAR-4-1-zappy-maxence.bunel [WSL: Ubuntu]
 ** File description:
 ** NetworkManager
 */
@@ -11,6 +11,7 @@
 #include <cstring>
 #include <memory>
 #include <chrono>
+#include <thread>
 
 NetworkManager& NetworkManager::getInstance() {
     static NetworkManager instance;
@@ -22,6 +23,11 @@ NetworkManager::~NetworkManager() {
 }
 
 bool NetworkManager::connectToServer(const std::string& host, int port) {
+    if (_connectionState.load() == ConnectionState::AUTHENTICATED) {
+        std::cout << "Already authenticated, reusing connection" << std::endl;
+        return true;
+    }
+
     if (_connectionState.load() != ConnectionState::DISCONNECTED) {
         disconnect();
     }
@@ -77,6 +83,10 @@ bool NetworkManager::isConnected() const {
     ConnectionState state = _connectionState.load();
     return state == ConnectionState::CONNECTED || 
            state == ConnectionState::AUTHENTICATED;
+}
+
+bool NetworkManager::isAuthenticated() const {
+    return _connectionState.load() == ConnectionState::AUTHENTICATED;
 }
 
 void NetworkManager::sendCommand(const std::string& command) {
@@ -160,7 +170,6 @@ void NetworkManager::networkThreadLoop() {
         }
 
         if (ready == 0) {
-            // Timeout
             continue;
         }
 
@@ -206,6 +215,7 @@ void NetworkManager::handleServerMessage(const std::string& message) {
         sendAuthenticationMessage();
     } else if (message.substr(0, 4) == "msz ") {
         _connectionState.store(ConnectionState::AUTHENTICATED);
+        std::cout << "Authentication successful - connection ready for game" << std::endl;
         std::lock_guard<std::mutex> lock(_receiveQueueMutex);
         _receiveQueue.push(message);
     } else if (currentState == ConnectionState::AUTHENTICATED) {
@@ -268,13 +278,4 @@ std::string NetworkManager::receiveData() {
 
     buffer[bytesReceived] = '\0';
     return std::string(buffer);
-}
-
-void NetworkManager::requestTimeUnit() {
-    if (isConnected()) {
-        std::cout << "[NetworkManager] Requesting time unit from server" << std::endl;
-        sendCommand("sgt");
-    } else {
-        std::cout << "[NetworkManager] Cannot request time unit - not connected" << std::endl;
-    }
 }

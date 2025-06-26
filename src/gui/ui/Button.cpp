@@ -41,8 +41,9 @@ void Button::draw() const
         borderColor = _hoverColor;
     }
     borderColor = Fade(borderColor, 0.75f);
-    DrawRectangleRounded(_bounds, 0.3f, 10, bgColor);
-    DrawRectangleRoundedLines(_bounds, 0.3f, 10, borderColor);
+    Rectangle bounds = getBounds();
+    DrawRectangleRounded(bounds, 0.3f, 10, bgColor);
+    DrawRectangleRoundedLines(bounds, 0.3f, 10, borderColor);
 
     Font font = FontManager::getInstance().getFont("medium");
     Vector2 textSize = MeasureTextEx(font, _text.c_str(), 24, 1);
