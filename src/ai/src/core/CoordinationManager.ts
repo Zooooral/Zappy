@@ -5,13 +5,6 @@ import { GameContext } from "./types";
 import { MovementController } from "./MovementController";
 import { VisionCalculator } from "./VisionCalculator";
 
-interface ElevationRequest {
-    level: number;
-    direction: number;
-    timestamp: number;
-    responded: boolean;
-}
-
 interface ElevationMeeting {
     level: number;
     isInitiator: boolean;
@@ -23,17 +16,14 @@ interface ElevationMeeting {
 }
 
 export class CoordinationManager {
-    private elevationRequests: Map<number, ElevationRequest> = new Map();
     private currentMeeting?: ElevationMeeting;
     private movementController: MovementController;
     private visionCalculator: VisionCalculator;
     private lastBroadcastTime: number = 0;
 
-    private static readonly BROADCAST_COOLDOWN = 2000;
-    private static readonly MEETING_TIMEOUT = 45000;
-    private static readonly MOVEMENT_INTERVAL = 1000;
-    private static readonly REQUEST_EXPIRY = 20000;
-    private static readonly RESPONSE_COOLDOWN = 1000;
+    private static readonly BROADCAST_INTERVAL = 3000;
+    private static readonly MEETING_TIMEOUT = 60000;
+    private static readonly MOVEMENT_INTERVAL = 1500;
 
     constructor(movementController: MovementController, visionCalculator: VisionCalculator) {
         this.movementController = movementController;
@@ -41,10 +31,10 @@ export class CoordinationManager {
     }
 
     public async handleElevationBroadcast(message: BroadcastMessage, context: GameContext, client: NetworkClient): Promise<void> {
-        if (this.shouldIgnoreBroadcast(message, context)) {
+        if (message.direction === 0) {
             return;
         }
-
+        logger.info(`[COORDINATION] Processing broadcast: "${message.message}" from direction ${message.direction}`);
         if (this.isElevationRequestMessage(message)) {
             await this.handleElevationRequestMessage(message, context, client);
         } else if (this.isElevationResponseMessage(message)) {
@@ -56,42 +46,19 @@ export class CoordinationManager {
 
     public async requestElevationPartner(client: NetworkClient, context: GameContext): Promise<void> {
         const now = Date.now();
-        if (now - this.lastBroadcastTime < CoordinationManager.BROADCAST_COOLDOWN) {
+        if (now - this.lastBroadcastTime < CoordinationManager.BROADCAST_INTERVAL) {
             return;
         }
-        const level = context.gameState.playerLevel;
-        if (this.elevationRequests.has(level)) {
-            logger.debug(`Already have pending request for level ${level}`);
-            return;
-        }
-        const message = `ELEVATION_REQUEST_LVL_${level}`;
-        try {
-            await client.broadcast(message);
-            this.lastBroadcastTime = now;
-            logger.info(`Broadcasting elevation request for level ${level}`);
-            this.elevationRequests.set(level, {
-                level,
-                direction: 0,
-                timestamp: now,
-                responded: false
-            });
-        } catch (error) {
-            logger.error("Failed to broadcast elevation request:", error);
-        }
-    }
 
-    public async respondToElevationRequest(client: NetworkClient, requestDirection: number, level: number): Promise<void> {
-        const now = Date.now();
-        if (now - this.lastBroadcastTime < CoordinationManager.RESPONSE_COOLDOWN) {
-            return;
-        }
-        const message = `ELEVATION_RESPONSE_LVL_${level}_FROM_${requestDirection}`;
+        const level = context.gameState.playerLevel;
+        const message = `ELEVATION_REQUEST_LVL_${level}`;
+
         try {
             await client.broadcast(message);
             this.lastBroadcastTime = now;
-            logger.info(`Responding to elevation request for level ${level} from direction ${requestDirection}`);
+            logger.info(`[COORDINATION] 📢 Broadcasting elevation request for level ${level}: "${message}"`);
         } catch (error) {
-            logger.error("Failed to respond to elevation request:", error);
+            logger.error("[COORDINATION] Failed to broadcast elevation request:", error);
         }
     }
 
@@ -99,16 +66,24 @@ export class CoordinationManager {
         if (!this.currentMeeting) {
             return false;
         }
+
         const now = Date.now();
-        if (now - this.currentMeeting.waitingStartTime > CoordinationManager.MEETING_TIMEOUT) {
-            logger.warn("Elevation meeting timed out, ending meeting");
+        const timeInMeeting = now - this.currentMeeting.waitingStartTime;
+
+        if (timeInMeeting > CoordinationManager.MEETING_TIMEOUT) {
             this.endElevationMeeting();
             return false;
         }
+
         const currentTile = this.getCurrentTile(context);
-        if (currentTile && this.hasEnoughPlayersForElevation(currentTile, this.currentMeeting.level)) {
-            logger.info(`Found ${this.countPlayersOnTile(currentTile)} players on current tile for level ${this.currentMeeting.level} elevation!`);
-            return true;
+        if (currentTile) {
+            const playerCount = this.countPlayersOnTile(currentTile);
+            const requiredPlayers = this.getRequiredPlayersForLevel(this.currentMeeting.level);
+
+            if (playerCount >= requiredPlayers) {
+                logger.info(`[COORDINATION] 🎉 SUCCESS! Found ${playerCount} players for level ${this.currentMeeting.level} elevation!`);
+                return true;
+            }
         }
         if (this.currentMeeting.isInitiator) {
             await this.handleInitiatorBehavior(client, context, now);
@@ -120,10 +95,9 @@ export class CoordinationManager {
 
     public startElevationMeeting(level: number, isInitiator: boolean, partnerDirection?: number): void {
         if (this.currentMeeting?.meetingInProgress) {
-            logger.debug("Already in a meeting, ignoring new meeting request");
+            logger.debug(`[COORDINATION] Already in meeting for level ${this.currentMeeting.level}, ignoring new request`);
             return;
         }
-
         this.currentMeeting = {
             level,
             isInitiator,
@@ -133,8 +107,9 @@ export class CoordinationManager {
             lastMovementTime: 0,
             lastBroadcastTime: 0
         };
-
-        logger.info(`Started elevation meeting for level ${level} as ${isInitiator ? 'initiator' : 'responder'}${partnerDirection ? ` (partner from direction ${partnerDirection})` : ''}`);
+        const role = isInitiator ? "INITIATOR" : "RESPONDER";
+        const directionInfo = partnerDirection ? ` (partner from direction ${partnerDirection})` : "";
+        logger.info(`[COORDINATION] Started elevation meeting for level ${level} as ${role}${directionInfo}`);
     }
 
     public isInElevationMeeting(): boolean {
@@ -147,35 +122,18 @@ export class CoordinationManager {
 
     public endElevationMeeting(): void {
         if (this.currentMeeting) {
-            logger.info(`Ending elevation meeting for level ${this.currentMeeting.level}`);
+            const duration = Date.now() - this.currentMeeting.waitingStartTime;
+            logger.info(`[COORDINATION] 🔚 Ending elevation meeting for level ${this.currentMeeting.level} (lasted ${Math.round(duration/1000)}s)`);
             this.currentMeeting = undefined;
         }
-        this.elevationRequests.clear();
     }
 
-    public cleanupExpiredRequests(): void {
-        const now = Date.now();
-        for (const [key, request] of this.elevationRequests.entries()) {
-            if (now - request.timestamp > CoordinationManager.REQUEST_EXPIRY) {
-                this.elevationRequests.delete(key);
-                logger.debug(`Cleaned up expired elevation request for level ${request.level}`);
-            }
-        }
-    }
+    public cleanupExpiredRequests(): void {}
 
     public reset(): void {
         this.currentMeeting = undefined;
-        this.elevationRequests.clear();
         this.lastBroadcastTime = 0;
-        logger.info("CoordinationManager reset");
-    }
-
-    public hasActiveRequests(): boolean {
-        return this.elevationRequests.size > 0;
-    }
-
-    public getPendingRequestsCount(): number {
-        return this.elevationRequests.size;
+        logger.info("[COORDINATION] 🔄 CoordinationManager reset");
     }
 
     public getMeetingStatus(): string {
@@ -183,14 +141,8 @@ export class CoordinationManager {
             return "No active meeting";
         }
         const duration = Date.now() - this.currentMeeting.waitingStartTime;
-        return `${this.currentMeeting.isInitiator ? 'Initiator' : 'Responder'} meeting for level ${this.currentMeeting.level} (${Math.round(duration/1000)}s)`;
-    }
-
-    private shouldIgnoreBroadcast(message: BroadcastMessage, context: GameContext): boolean {
-        if (message.direction === 0) {
-            return true;
-        }
-        return false;
+        const role = this.currentMeeting.isInitiator ? 'Initiator' : 'Responder';
+        return `${role} meeting for level ${this.currentMeeting.level} (${Math.round(duration/1000)}s)`;
     }
 
     private isElevationRequestMessage(message: BroadcastMessage): boolean {
@@ -211,32 +163,39 @@ export class CoordinationManager {
         const requestedLevel = parseInt(levelMatch[1]);
         const myLevel = context.gameState.playerLevel;
         if (requestedLevel !== myLevel) {
-            logger.debug(`Ignoring elevation request for level ${requestedLevel} (I'm level ${myLevel})`);
+            logger.info(`[COORDINATION] Ignoring request - level mismatch (${requestedLevel} vs ${myLevel})`);
             return;
         }
         if (this.currentMeeting?.meetingInProgress) {
-            logger.debug("Already in a meeting, ignoring elevation request");
+            logger.info(`[COORDINATION] Ignoring request - already in meeting for level ${this.currentMeeting.level}`);
             return;
         }
-        logger.info(`Received elevation request for level ${requestedLevel} from direction ${message.direction}`);
-        await this.respondToElevationRequest(client, message.direction, requestedLevel);
-        this.startElevationMeeting(requestedLevel, false, message.direction);
+        if (!this.hasElevationResourcesForLevel(context, requestedLevel)) {
+            logger.info(`[COORDINATION] Ignoring request - don't have elevation resources for level ${requestedLevel}`);
+            return;
+        }
+        const responseMessage = `ELEVATION_RESPONSE_LVL_${requestedLevel}`;
+        try {
+            await client.broadcast(responseMessage);
+            this.startElevationMeeting(requestedLevel, false, message.direction);
+        } catch (error) {
+            logger.error("[COORDINATION] Failed to respond to elevation request:", error);
+        }
     }
 
     private handleElevationResponseMessage(message: BroadcastMessage, context: GameContext): void {
-        const match = message.message.match(/ELEVATION_RESPONSE_LVL_(\d+)_FROM_(\d+)/);
+        const match = message.message.match(/ELEVATION_RESPONSE_LVL_(\d+)/);
         if (!match) return;
-
         const level = parseInt(match[1]);
-        const fromDirection = parseInt(match[2]);
         if (level !== context.gameState.playerLevel) {
+            logger.info(`[COORDINATION] Ignoring response - level mismatch (${level} vs ${context.gameState.playerLevel})`);
             return;
         }
-        if (!this.elevationRequests.has(level) && !this.currentMeeting?.isInitiator) {
-            logger.debug("Received response but not expecting one");
+        if (this.currentMeeting?.meetingInProgress) {
+            logger.info(`[COORDINATION] Ignoring response - already in meeting`);
             return;
         }
-        logger.info(`Received positive response for level ${level} elevation from direction ${message.direction}`);
+        logger.info(`[COORDINATION] Starting meeting as initiator with responder from direction ${message.direction}`);
         this.startElevationMeeting(level, true, message.direction);
     }
 
@@ -246,21 +205,24 @@ export class CoordinationManager {
 
         const level = parseInt(levelMatch[1]);
         if (level === context.gameState.playerLevel && !this.currentMeeting?.meetingInProgress) {
-            logger.info(`Found waiting player for level ${level} at direction ${message.direction}`);
-            this.startElevationMeeting(level, false, message.direction);
+            if (this.hasElevationResourcesForLevel(context, level)) {
+                this.startElevationMeeting(level, false, message.direction);
+            } else {
+                logger.info(`[COORDINATION] Can't join - missing elevation resources for level ${level}`);
+            }
         }
     }
 
     private async handleInitiatorBehavior(client: NetworkClient, context: GameContext, now: number): Promise<void> {
         if (!this.currentMeeting) return;
 
-        if (now - this.currentMeeting.lastBroadcastTime > CoordinationManager.BROADCAST_COOLDOWN) {
+        if (now - this.currentMeeting.lastBroadcastTime > CoordinationManager.BROADCAST_INTERVAL) {
             try {
-                await client.broadcast(`ELEVATION_WAITING_LVL_${this.currentMeeting.level}`);
+                const waitingMessage = `ELEVATION_WAITING_LVL_${this.currentMeeting.level}`;
+                await client.broadcast(waitingMessage);
                 this.currentMeeting.lastBroadcastTime = now;
-                logger.debug(`Broadcasting waiting message for level ${this.currentMeeting.level}`);
             } catch (error) {
-                logger.error("Failed to broadcast waiting message:", error);
+                logger.error("[COORDINATION] Failed to broadcast waiting message:", error);
             }
         }
     }
@@ -271,27 +233,44 @@ export class CoordinationManager {
         if (now - this.currentMeeting.lastMovementTime > CoordinationManager.MOVEMENT_INTERVAL) {
             try {
                 const targetDirection = this.calculateMovementDirection(this.currentMeeting.partnerDirection);
-                logger.debug(`Moving towards elevation partner (broadcast dir: ${this.currentMeeting.partnerDirection}, target dir: ${targetDirection})`);
                 const moved = await this.movementController.moveTowardsDirection(client, targetDirection);
                 this.currentMeeting.lastMovementTime = now;
                 if (!moved) {
                     await this.movementController.exploreRandomly(client);
-                    logger.debug("Direct movement failed, exploring randomly");
                 }
             } catch (error) {
-                logger.error("Error moving towards elevation partner:", error);
+                logger.error("[COORDINATION] Error moving towards elevation partner:", error);
             }
         }
     }
 
-    private getCurrentTile(context: GameContext): string[] | null {
-        return context.vision.tiles?.[0] || null;
+    private hasElevationResourcesForLevel(context: GameContext, level: number): boolean {
+        const requirements = this.getElevationRequirements(level);
+        if (!requirements) return false;
+        const hasResources = Object.entries(requirements).every(([resource, required]) => {
+            if (resource === 'players') return true;
+            const available = (context.inventory as any)[resource] || 0;
+            return available >= required;
+        });
+        logger.debug(`[COORDINATION] Elevation resources check for level ${level}: ${hasResources ? 'PASS' : 'FAIL'}`);
+        return hasResources;
     }
 
-    private hasEnoughPlayersForElevation(tile: string[], level: number): boolean {
-        const playerCount = this.countPlayersOnTile(tile);
-        const required = this.getRequiredPlayersForLevel(level);
-        return playerCount >= required;
+    private getElevationRequirements(level: number): Record<string, number> | null {
+        const requirements: Record<number, Record<string, number>> = {
+            1: { players: 1, linemate: 1, deraumere: 0, sibur: 0, mendiane: 0, phiras: 0, thystame: 0 },
+            2: { players: 2, linemate: 1, deraumere: 1, sibur: 1, mendiane: 0, phiras: 0, thystame: 0 },
+            3: { players: 2, linemate: 2, deraumere: 0, sibur: 1, mendiane: 0, phiras: 2, thystame: 0 },
+            4: { players: 4, linemate: 1, deraumere: 1, sibur: 2, mendiane: 0, phiras: 1, thystame: 0 },
+            5: { players: 4, linemate: 1, deraumere: 2, sibur: 1, mendiane: 3, phiras: 0, thystame: 0 },
+            6: { players: 6, linemate: 1, deraumere: 2, sibur: 3, mendiane: 0, phiras: 1, thystame: 0 },
+            7: { players: 6, linemate: 2, deraumere: 2, sibur: 2, mendiane: 2, phiras: 2, thystame: 1 }
+        };
+        return requirements[level] || null;
+    }
+
+    private getCurrentTile(context: GameContext): string[] | null {
+        return context.vision.tiles?.[0] || null;
     }
 
     private countPlayersOnTile(tile: string[]): number {
@@ -307,27 +286,21 @@ export class CoordinationManager {
 
     private calculateMovementDirection(broadcastDirection: number): number {
         switch (broadcastDirection) {
-            case 1: return 0;
-            case 2: return 1;
-            case 3: return 1;
-            case 4: return 2;
-            case 5: return 2;
-            case 6: return 3;
-            case 7: return 3;
-            case 8: return 0;
+            case 1: return 0; // Nord
+            case 2: case 3: return 1; // Est
+            case 4: case 5: return 2; // Sud
+            case 6: case 7: return 3; // Ouest
+            case 8: return 0; // Nord
             default: return 0;
         }
     }
 
     public getDebugInfo(): any {
         return {
-            elevationRequests: Array.from(this.elevationRequests.entries()),
             currentMeeting: this.currentMeeting,
             lastBroadcastTime: this.lastBroadcastTime,
             isInMeeting: this.isInElevationMeeting(),
             meetingStatus: this.getMeetingStatus(),
-            activeRequests: this.hasActiveRequests(),
-            pendingRequestsCount: this.getPendingRequestsCount()
         };
     }
 }
