@@ -52,5 +52,10 @@ void handle_set(server_t *server, client_t *client, const char *resource)
 
 void handle_incantation(server_t *server, client_t *client, const char *arg)
 {
-    return;
+    if (!server || !client || !client->player ||
+        !incantation_requirements_met(server, client->player)) {
+        send_response(client, "ko\n");
+        return;
+    }
+    return create_and_queue_action(server, client, arg, AI_ACTION_INCANTATION);
 }
