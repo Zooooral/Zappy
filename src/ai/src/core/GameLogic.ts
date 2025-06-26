@@ -371,14 +371,6 @@ export class GameLogic {
         return this.coordinationManager.getMeetingStatus();
     }
 
-    public hasActiveCoordinationRequests(): boolean {
-        return this.coordinationManager.hasActiveRequests();
-    }
-
-    public getPendingCoordinationRequestsCount(): number {
-        return this.coordinationManager.getPendingRequestsCount();
-    }
-
     public cleanupExpiredCoordinationRequests(): void {
         this.coordinationManager.cleanupExpiredRequests();
     }
