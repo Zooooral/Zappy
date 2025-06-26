@@ -52,6 +52,8 @@ public:
     bool isMouseOver(Camera camera) const;
     BoundingBox getBoundingBox() const;
 
+    static constexpr float CHARACTER_HEIGHT = 1.0f;
+
 private:
     int _id;
     Vector3 _position;
@@ -68,7 +70,6 @@ private:
     Vector3 _moveStartPos;
 
     static constexpr float CHARACTER_SIZE = 0.5f;
-    static constexpr float CHARACTER_HEIGHT = 1.0f;
     static constexpr float BASE_MOVE_SPEED = 2.0f;
 };
 

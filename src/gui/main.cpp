@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2025
-** B-YEP-400-PAR-4-1-zappy-maxence.bunel
+** B-YEP-400-PAR-4-1-zappy-maxence.bunel [WSL: Ubuntu]
 ** File description:
 ** main
 */
@@ -20,8 +20,8 @@
 #include "screens/GameScreen.hpp"
 #include "screens/SettingsMenu.hpp"
 #include "screens/EndScreen.hpp"
-#include "screens/ConnectingScreen.hpp"
 #include "network/NetworkPlatform.hpp"
+#include "network/NetworkManager.hpp"
 
 #include <iostream>
 #include <memory>
@@ -34,6 +34,7 @@
 void cleanup_resources() noexcept
 {
     try {
+        NetworkManager::getInstance().disconnect();
         SoundManager::getInstance().stopMusic();
         SoundManager::getInstance().stopAllSounds();
         FontManager::getInstance().unloadFonts();
@@ -43,6 +44,41 @@ void cleanup_resources() noexcept
         }
     } catch (...) {
     }
+}
+
+bool authenticate_at_startup(const std::string& host, int port)
+{
+    NetworkManager& network = NetworkManager::getInstance();
+    
+    if (!network.connectToServer(host, port)) {
+        std::cerr << "Error: Failed to connect to server" << std::endl;
+        return false;
+    }
+
+    auto start_time = std::chrono::steady_clock::now();
+    const auto timeout = std::chrono::seconds(10);
+    
+    while (network.getConnectionState() != ConnectionState::AUTHENTICATED) {
+        auto current_time = std::chrono::steady_clock::now();
+        if (current_time - start_time > timeout) {
+            std::cerr << "Error: Authentication timeout" << std::endl;
+            network.disconnect();
+            return false;
+        }
+        
+        network.update();
+        
+        if (network.getConnectionState() == ConnectionState::ERROR) {
+            std::cerr << "Error: Authentication failed" << std::endl;
+            network.disconnect();
+            return false;
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    
+    std::cout << "Authentication successful!" << std::endl;
+    return true;
 }
 
 int main(int argc, char** argv)
@@ -60,17 +96,11 @@ int main(int argc, char** argv)
         return 84;
     }
 
-    if (!ArgumentValidator::validateConnection(args.host, args.port)) {
-        std::cerr << "Error: Cannot connect to server at " << args.host << ":" << args.port << std::endl;
-        std::cerr << "Please ensure the server is running and accessible." << std::endl;
-        zappy::network::NetworkPlatform::cleanup();
-        return 84;
-    }
-
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(zappy::constants::DEFAULT_SCREEN_WIDTH, 
                zappy::constants::DEFAULT_SCREEN_HEIGHT, 
                "Zappy - A Tribute to Zaphod Beeblebrox");
+    SetExitKey(KEY_NULL); // Disable ESC from closing the window
     SetTargetFPS(zappy::constants::TARGET_FPS);
 
     bool shouldQuit = false;
@@ -80,11 +110,15 @@ int main(int argc, char** argv)
         config.setHost(args.host);
         config.setPort(args.port);
 
+        if (!authenticate_at_startup(args.host, args.port)) {
+            cleanup_resources();
+            return 84;
+        }
+
         GameStateManager& stateManager = GameStateManager::getInstance();
         
         stateManager.registerState("splash", std::make_unique<SplashScreen>());
         stateManager.registerState("main_menu", std::make_unique<MainMenu>());
-        stateManager.registerState("connecting", std::make_unique<ConnectingScreen>());
         stateManager.registerState("game", std::make_unique<GameScreen>());
         stateManager.registerState("settings", std::make_unique<SettingsMenu>());
         stateManager.registerState("end_screen", std::make_unique<EndScreen>());
