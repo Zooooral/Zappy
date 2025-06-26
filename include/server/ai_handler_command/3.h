@@ -1,31 +1,40 @@
+/*
+** EPITECH PROJECT, 2025
+** ./include/server/ai_handler_command/3
+** File description:
+** 3.h
+*/
+
 #ifndef AI_ACTIONS3_H
     #define AI_ACTIONS3_H
     #include <math.h>
     #include <string.h>
 
-static inline void ai_action_connect_nbr(server_t *server, client_t *client, char *cmd)
+static inline void ai_action_connect_nbr(server_t *server,
+    client_t *client, char *cmd)
 {
+    size_t available = server->config.max_clients_per_team;
+    int current = 0;
+    char *buf = NULL;
+    player_t *p = NULL;
+
     if (!server || !client || !client->team_name) {
         send_response(client, "ko\n");
-        (void)cmd;
-        return;
+        return (void)cmd;
     }
-    int available = (int)server->config.max_clients_per_team;
-    int current = 0;
     for (size_t i = 0; i < server->game->player_count; ++i) {
-        player_t *p = server->game->players[i];
+        p = server->game->players[i];
         if (p && p->team_name && strcmp(p->team_name, client->team_name) == 0)
             current++;
     }
-    available -= current;
-    if (available < 0) available = 0;
-    char *buf = NULL;
+    available = (current > available) ? 0 : available - current;
     asprintf(&buf, "%d\n", available);
     send_response(client, buf);
     free(buf);
 }
 
-static inline void ai_action_broadcast(server_t *server, client_t *client, char *msg)
+static inline void ai_action_broadcast(server_t *server,
+    client_t *client, char *msg)
 {
     if (!server || !client || !msg) {
         send_response(client, "ko\n");

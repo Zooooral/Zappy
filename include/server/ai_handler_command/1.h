@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2025
+** ./include/server/ai_handler_command/1
+** File description:
+** 1.h
+*/
+
 #ifndef AI_ACTIONS_H
     #define AI_ACTIONS_H
     #include <stdint.h>
@@ -49,7 +56,7 @@ static inline void ai_action_right(server_t *server, client_t *client,
     send_response(client, "ok\n");
 }
 
-static inline void ai_action_left(server_t *server, client_t *client, 
+static inline void ai_action_left(server_t *server, client_t *client,
     char *cmd)
 {
     size_t i;
@@ -72,7 +79,7 @@ static inline void ai_action_left(server_t *server, client_t *client,
 }
 
 
-static inline void ai_action_look(server_t *server, client_t *client, 
+static inline void ai_action_look(server_t *server, client_t *client,
     char *cmd)
 {
     char *result;
@@ -89,16 +96,15 @@ static inline void ai_action_look(server_t *server, client_t *client,
     }
 }
 
-static inline void ai_action_inventory(server_t *server, client_t *client, 
+static inline void ai_action_inventory(server_t *server, client_t *client,
     char *cmd)
 {
     size_t i;
     player_t *p = NULL;
     char *buf;
 
-    (void)cmd;
     if (!server || !client)
-        return;
+        return (void)cmd;
     for (i = 0; i < server->game->player_count; ++i)
         if (server->game->players[i]->id == client->fd) {
             p = server->game->players[i];
