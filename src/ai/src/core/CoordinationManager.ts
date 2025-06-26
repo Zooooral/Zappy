@@ -56,7 +56,6 @@ export class CoordinationManager {
         try {
             await client.broadcast(message);
             this.lastBroadcastTime = now;
-            logger.info(`[COORDINATION] 📢 Broadcasting elevation request for level ${level}: "${message}"`);
         } catch (error) {
             logger.error("[COORDINATION] Failed to broadcast elevation request:", error);
         }
@@ -81,7 +80,6 @@ export class CoordinationManager {
             const requiredPlayers = this.getRequiredPlayersForLevel(this.currentMeeting.level);
 
             if (playerCount >= requiredPlayers) {
-                logger.info(`[COORDINATION] 🎉 SUCCESS! Found ${playerCount} players for level ${this.currentMeeting.level} elevation!`);
                 return true;
             }
         }
@@ -123,7 +121,6 @@ export class CoordinationManager {
     public endElevationMeeting(): void {
         if (this.currentMeeting) {
             const duration = Date.now() - this.currentMeeting.waitingStartTime;
-            logger.info(`[COORDINATION] 🔚 Ending elevation meeting for level ${this.currentMeeting.level} (lasted ${Math.round(duration/1000)}s)`);
             this.currentMeeting = undefined;
         }
     }
@@ -133,7 +130,6 @@ export class CoordinationManager {
     public reset(): void {
         this.currentMeeting = undefined;
         this.lastBroadcastTime = 0;
-        logger.info("[COORDINATION] 🔄 CoordinationManager reset");
     }
 
     public getMeetingStatus(): string {
