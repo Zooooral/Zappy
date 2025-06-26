@@ -13,7 +13,6 @@
 #include "server/time.h"
 #include "server/resource.h"
 #include "server/lifecycle.h"
-#include "server/gui_notify.h"
 #include <string.h>
 #include <stdio.h>
 

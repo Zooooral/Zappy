@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** src/server/game/game_state.c
 ** File description:
-** Game state management with seeding support
+** Game state management with
 */
 
 #include <assert.h>
@@ -40,17 +40,6 @@ static int setup_game_map(game_state_t *game, const server_config_t *config)
     return 0;
 }
 
-static int setup_seeder_if_needed(server_t *server,
-    const server_config_t *config)
-{
-    if (!config->seed_mode)
-        return 0;
-    server->game->seeder = seeder_create(server);
-    if (!server->game->seeder)
-        return -1;
-    return 0;
-}
-
 game_state_t *game_state_create(server_t *server, const server_config_t *config)
 {
     game_state_t *game = calloc(sizeof(game_state_t), 1);
@@ -67,10 +56,6 @@ game_state_t *game_state_create(server_t *server, const server_config_t *config)
         return NULL;
     }
     game->current_time = get_current_time();
-    if (setup_seeder_if_needed(server, config) == -1) {
-        game_state_destroy(game);
-        return NULL;
-    }
     return game;
 }
 
@@ -92,8 +77,6 @@ void game_state_destroy(game_state_t *game)
     if (game->map)
         map_destroy(game->map);
     cleanup_players(game);
-    if (game->seeder)
-        seeder_destroy(game->seeder);
     free(game);
 }
 

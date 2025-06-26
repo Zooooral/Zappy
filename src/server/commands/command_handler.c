@@ -29,7 +29,7 @@ static void send_tile_content(server_t *server, client_t *client, int x, int y)
     send(client->fd, response, strlen(response), 0);
 }
 
-static void send_all_tiles(server_t *server, client_t *client)
+void send_all_tiles(server_t *server, client_t *client)
 {
     for (size_t y = 0; y < server->config.height; y++) {
         for (size_t x = 0; x < server->config.width; x++) {

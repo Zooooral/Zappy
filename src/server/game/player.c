@@ -93,39 +93,6 @@ void player_set_position(server_t *server, player_t *player, int x, int y)
     broadcast_message_to_guis(server, player, gui_payload_position_update);
 }
 
-static void calculate_movement_direction(player_t *player, int *dx, int *dy)
-{
-    *dx = 0;
-    *dy = 0;
-    if (player->orientation == 1) {
-        *dy = -1;
-        return;
-    }
-    if (player->orientation == 2) {
-        *dx = 1;
-        return;
-    }
-    if (player->orientation == 3) {
-        *dy = 1;
-        return;
-    }
-    if (player->orientation == 4) {
-        *dx = -1;
-        return;
-    }
-}
-
-void player_move(server_t *server, player_t *player)
-{
-    int dx;
-    int dy;
-
-    if (!server || !player)
-        return;
-    calculate_movement_direction(player, &dx, &dy);
-    player_set_position(server, player, player->x + dx, player->y + dy);
-}
-
 player_t *player_find_by_id(server_t *server, int id)
 {
     if (!server || !server->game || !server->game->players)

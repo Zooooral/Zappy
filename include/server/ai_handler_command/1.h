@@ -7,8 +7,8 @@ static inline void ai_action_forward(server_t *server, client_t *client,
     char *cmd)
 {
     player_t *p = NULL;
-    static const int dx[4] = {0, 1, 0, -1};
-    static const int dy[4] = {-1, 0, 1, 0};
+    static const int dx[5] = {0, 0, 1, 0, -1};
+    static const int dy[5] = {0, -1, 0, 1, 0};
 
     (void)cmd;
     if (!server || !client)
@@ -44,7 +44,8 @@ static inline void ai_action_right(server_t *server, client_t *client,
     }
     if (!p)
         return send_response(client, "ko\n");
-    p->orientation = (p->orientation + 1) % 4;
+    p->orientation = (p->orientation % 4) + 1;
+    player_set_position(server, p, p->x, p->y);
     send_response(client, "ok\n");
 }
 
@@ -65,7 +66,8 @@ static inline void ai_action_left(server_t *server, client_t *client,
     }
     if (!p)
         return send_response(client, "ko\n");
-    p->orientation = (p->orientation + 3) % 4;
+    p->orientation = (p->orientation == 1) ? 4 : p->orientation - 1;
+    player_set_position(server, p, p->x, p->y);
     send_response(client, "ok\n");
 }
 

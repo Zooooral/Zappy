@@ -15,6 +15,7 @@
 #include "server/broadcast.h"
 #include "server/protocol_graphic.h"
 #include "server/payloads.h"
+#include "server/command_handler.h"
 
 static int initialize_client_buffer(client_t *client)
 {
@@ -109,8 +110,14 @@ static void update_poll_fds_after_removal(server_t *server)
 
 void client_remove(server_t *server, size_t index)
 {
+    player_t *player;
+
     if (!server || index >= server->client_count)
         return;
+    player = server->clients[index].player;
+    if (player) {
+        broadcast_message_to_guis(server, player, gui_payload_player_death);
+    }
     cleanup_client_resources(&server->clients[index]);
     shift_clients_array(server, index);
     server->client_count--;
@@ -164,6 +171,7 @@ void client_authenticate(server_t *server, client_t *client, const char *message
         client->type = CLIENT_TYPE_GRAPHIC; 
         client->is_authenticated = true;
         protocol_send_map_size(server, client);
+        send_all_tiles(server, client);
         for (size_t i = 0; i < server->client_count; i++) {
             if (server->clients[i].type == CLIENT_TYPE_AI && 
                 server->clients[i].player != NULL) {

@@ -17,6 +17,4 @@ typedef struct {
     bool elevating;
 } player_state_t;
 
-void broadcast_seeder_updates(server_t *server);
-
 #endif /* !SERVER_BROADCAST_H_ */
