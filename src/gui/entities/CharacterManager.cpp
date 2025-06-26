@@ -265,11 +265,16 @@ void CharacterManager::removeCharacter(int id) {
         [id](const std::unique_ptr<Character>& c) { return c->getId() == id; });
 
     if (it != _characters.end()) {
-        if (it->get() == _selectedCharacter) {
+        Character* characterToRemove = it->get();
+        
+        if (characterToRemove == _selectedCharacter) {
             _selectedCharacter = nullptr;
         }
-        _elevationParticles.erase(it->get());
+        
+        _elevationParticles.erase(characterToRemove);
         _characters.erase(it);
+        
+        std::cout << "[CharacterManager] Character #" << id << " removed successfully" << std::endl;
     }
 }
 
