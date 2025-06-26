@@ -1,12 +1,18 @@
+/*
+** EPITECH PROJECT, 2025
+** /home/vj/coding/zappy/include/server/ai_handler_command/handler4
+** File description:
+** broadcast header
+*/
+
 #ifndef AI_ACTIONS4_H
     #define AI_ACTIONS4_H
     #include <math.h>
     #include <stdio.h>
     #include "server/server.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+    #ifndef M_PI
+    #define M_PI 3.14159265358979323846
+    #endif
 
 static inline void helper_send_pbc(server_t *server, client_t *client,
     player_t *sender, const char *msg)
@@ -24,11 +30,12 @@ static inline void helper_send_pbc(server_t *server, client_t *client,
     free(buf);
 }
 
-static inline int compute_direction(int dx, int dy, int width, int height, int orient)
+static inline int compute_direction(int dx, int dy,
+    int width, int height, int orient)
 {
     int direction = 0;
     double angle;
-    // Toroidal adjustment
+
     if (dx > width / 2) dx -= width;
     if (dx < -width / 2) dx += width;
     if (dy > height / 2) dy -= height;

@@ -79,39 +79,47 @@ static inline void ai_action_incantation(server_t *server,
         send_response(client, "ko\n");
 }
 
-static inline void ai_action_eject(server_t *server, client_t *client,
-    char *cmd)
+// self->orientation      dx  dy
+// 1                      0   -1
+// 2                      1   0
+// 3                      0   1
+// 4                      -1  0
+static inline size_t eject_other_players(server_t *server,
+    client_t *self_client, int dx, int dy)
 {
-    player_t *self = client ? client->player : NULL;
-    int ejected = 0;
-    int dx = self ? ((self->orientation == 2) * -(self->orientation == 1)) : 0;
-    int dy = self ? (self->orientation == 3) : 0;
-    int width;
-    int height;
+    player_t *self = self_client ? self_client->player : NULL;
+    int width = server ? server->game->map->width : 0;
+    int height = server ? server->game->map->height : 0;
+    size_t ejected = 0;
     client_t *other;
 
-    if (!server || !self)
-        return send_response(client, "ko\n");
-    dy = self->orientation == 1 ? -1 : dy;
-    dx = self->orientation == 4 ? -1 : dx;
-    width = server->game->map->width;
-    height = server->game->map->height;
     for (size_t i = 0; i < server->client_count; ++i) {
         other = &server->clients[i];
-        if (other != client && other->type == CLIENT_TYPE_AI &&
-            other->player &&
-            other->player->x == self->x && other->player->y == self->y) {
+        if (other != self_client && other->type == CLIENT_TYPE_AI
+            && other->player
+            && other->player->x == self->x && other->player->y == self->y) {
             other->player->x = (other->player->x + dx + width) % width;
             other->player->y = (other->player->y + dy + height) % height;
             ejected++;
         }
     }
-    send_response(client, ejected > 0 ? "ok\n" : "ko\n");
+    return ejected;
 }
 
-static inline void ai_action_fork(server_t *server, client_t *client,
-    char *cmd)
+static inline void ai_action_eject(server_t *server,
+    client_t *client, char *cmd)
 {
+    player_t *self = client ? client->player : NULL;
+    int dx = self ? (self->orientation == 2) : 0;
+    int dy = self ? (self->orientation == 3) : 0;
+    size_t ejected;
+
+    if (!server || !self)
+        return send_response(client, "ko\n");
+    dy = self->orientation == 1 ? -1 : dy;
+    dx = self->orientation == 4 ? -1 : dx;
+    ejected = eject_other_players(server, client, dx, dy);
+    send_response(client, ejected > 0 ? "ok\n" : "ko\n");
 }
 
 #endif

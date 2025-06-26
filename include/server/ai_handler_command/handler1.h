@@ -78,7 +78,6 @@ static inline void ai_action_left(server_t *server, client_t *client,
     send_response(client, "ok\n");
 }
 
-
 static inline void ai_action_look(server_t *server, client_t *client,
     char *cmd)
 {
