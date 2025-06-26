@@ -12,11 +12,13 @@
 #include "server/game.h"
 #include "server/server.h"
 
-static char *print_tile(tile_t *tile) {
+static char *print_tile(tile_t *tile)
+{
     char *str = da_create();
+    int first = 1;
+
     if (!tile)
         return da_create();
-    int first = 1;
     if (tile->player_count) {
         str = da_push(str, "player", 6);
         first = 0;
@@ -24,17 +26,27 @@ static char *print_tile(tile_t *tile) {
     for (int i = 0; i < 7; ++i) {
         for (int j = 0; j < tile->resources[i]; ++j) {
             str = da_push(str, " ", 1);
-            str = da_push(str, ressource_string_table[i], strlen(ressource_string_table[i]));
+            str = da_push(str, ressource_string_table[i],
+                strlen(ressource_string_table[i]));
             first = 0;
         }
     }
     return str;
 }
 
+static void vision_look_single_row_x()
+{
+}
+
+static void vision_look_single_row_y()
+{
+}
+
 char *vision_look(client_t *client, map_t *map)
 {
     char *res = da_create();
-    int x, y;
+    int x;
+    int y;
     char *tile = NULL;
     int first = 1;
 

@@ -85,7 +85,6 @@ static void check_for_death(server_t *server)
     }
 }
 
-
 static void update_game_and_broadcast(server_t *server, double delta_time)
 {
     if (server->tick_count % 20 == 0)
@@ -104,8 +103,8 @@ static void wait_for_next_tick(server_t *server, double delta_time)
     accumulated_time += delta_time;
     if (accumulated_time < time_unit)
         return;
-    // printf("[SERVER] Tick %zu: Delta time: %.3f seconds\n",
-    //         server->tick_count, delta_time);
+    0 && printf("[SERVER] Tick %zu: Delta time: %.3f seconds\n",
+            server->tick_count, delta_time);
     accumulated_time -= time_unit;
     server->tick_count++;
     update_game_and_broadcast(server, delta_time);
