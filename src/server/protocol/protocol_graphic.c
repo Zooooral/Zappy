@@ -40,7 +40,8 @@ void protocol_send_player_info(client_t *client, const player_t *player)
     char response[128];
 
     if (!client || !player) {
-        printf("[DEBUG] protocol_send_player_info: client=%p player=%p\n", (void*)client, (void*)player);
+        printf("[DEBUG] protocol_send_player_info: client=%p player=%p\n",
+            (void*)client, (void*)player);
         return;
     }
     snprintf(response, sizeof(response), "pnw #%d %d %d %d %d %s\n",
@@ -74,12 +75,9 @@ static void handle_map_size_command(server_t *server, client_t *client,
 static void handle_map_content_command(server_t *server, client_t *client,
     const char *cmd)
 {
-    int y;
-    int x;
-
     (void)cmd;
-    for (y = 0; y < server->game->map->height; y++) {
-        for (x = 0; x < server->game->map->width; x++)
+    for (int y = 0; y < server->game->map->height; ++y) {
+        for (int x = 0; x < server->game->map->width; ++x)
             protocol_send_tile_content(server, client, x, y);
     }
     send_existing_players_after_map(server, client);
@@ -101,11 +99,10 @@ static void handle_tile_content_command(server_t *server, client_t *client,
 static void handle_team_names_command(server_t *server, client_t *client,
     const char *cmd)
 {
-    size_t i;
     char response[64];
 
     (void)cmd;
-    for (i = 0; i < server->config.team_count; i++) {
+    for (size_t i = 0; i < server->config.team_count; ++i) {
         snprintf(response, sizeof(response), "tna %s\n",
             server->config.team_names[i]);
         send_response(client, response);
@@ -131,7 +128,8 @@ static void handle_position_update(server_t *server, client_t *client,
     }
 }
 
-static void handle_player_inventory(server_t *server, client_t *client, const char *cmd)
+static void handle_player_inventory(server_t *server, client_t *client,
+    const char *cmd)
 {
     int player_id;
     player_t *player;
@@ -189,7 +187,6 @@ static void handle_time_unit_modification(server_t *server, client_t *client,
 
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
-    size_t i;
     const graphic_cmd_entry_t graphic_commands[] = {
         {"msz", handle_map_size_command},
         {"mct", handle_map_content_command},
@@ -203,7 +200,7 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {NULL, NULL}
     };
 
-    for (i = 0; graphic_commands[i].cmd != NULL; i++) {
+    for (size_t i = 0; graphic_commands[i].cmd != NULL; ++i) {
         if (strncmp(cmd, graphic_commands[i].cmd,
             strlen(graphic_commands[i].cmd)) == 0)
             return graphic_commands[i].handler;
