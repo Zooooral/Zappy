@@ -129,6 +129,6 @@ re: fclean
 
 debug: CFLAGS += -g3 -DDEBUG
 debug: CPPFLAGS += -g3 -DDEBUG
-debug: re
+debug: all
 
 .PHONY: all server gui ai assets clean fclean re debug

@@ -91,19 +91,19 @@ static inline void send_broadcast_to_ai(server_t *server,
     char *ai_msg = NULL;
     int orient;
     client_t *other;
-    int ret;
 
+    send_response(sender_client, "ok\n");
     for (size_t i = 0; i < server->client_count; ++i) {
         other = &server->clients[i];
-        if (other->type != CLIENT_TYPE_AI || other->fd == sender_client->fd
-            || !other->player)
+        if (other->type != CLIENT_TYPE_AI || !other->player ||
+            other->fd == sender_client->fd)
             continue;
         orient = other->player->orientation;
-        ret = asprintf(&ai_msg, "message %d, %s\n", compute_direction((int[2])
+        (void)asprintf(&ai_msg, "message %d, %s\n", compute_direction((int[2])
             {(sender->x - other->player->x),
             (sender->y - other->player->y)}, server->game->map->width,
             server->game->map->height, orient), msg);
-        if (ret < 0 || !ai_msg)
+        if (!ai_msg)
             continue;
         send_response(other, ai_msg);
         free(ai_msg);
@@ -115,12 +115,14 @@ static inline void ai_action_broadcast(server_t *server, client_t *client,
 {
     player_t *sender = client ? client->player : NULL;
 
+    printf("Broadcasting message: %s\n", msg);
     if (!server || !client || !msg || !sender) {
         send_response(client, "ko\n");
         return;
     }
     send_broadcast_to_ai(server, client, sender, msg);
     helper_send_pbc(server, client, sender, msg);
+    printf("Broadcasting message done: %s\n", msg);
 }
 
 #endif
