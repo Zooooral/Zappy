@@ -8,6 +8,8 @@
 #ifndef AI_ACTIONS2_H
     #define AI_ACTIONS2_H
 
+    #include <stdlib.h>
+
     #include "server/broadcast.h"
     #include "server/payloads.h"
     #include "server/server.h"
@@ -15,7 +17,6 @@
     #include "server/resource.h"
     #include "server/broadcast.h"
     #include "server/incantation.h"
-    #include <stdlib.h>
 
 static inline void ai_action_take(server_t *server,
     client_t *client, char *cmd)

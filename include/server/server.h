@@ -15,6 +15,7 @@
     #include <sys/poll.h>
     #include <time.h>
     #include <stdbool.h>
+
     #include "shared/utils.h"
 
     #define MAX_CLIENTS 100

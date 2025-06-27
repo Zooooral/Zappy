@@ -7,11 +7,14 @@
 
 #ifndef AI_ACTIONS4_H
     #define AI_ACTIONS4_H
+
     #include <math.h>
     #include <stdio.h>
+
     #include "server/server.h"
+
     #ifndef M_PI
-    #define M_PI 3.14159265358979323846
+        #define M_PI 3.14159265358979323846
     #endif
 
 static inline void helper_send_pbc(server_t *server, client_t *client,

@@ -7,6 +7,7 @@
 
 #ifndef AI_ACTIONS3_H
     #define AI_ACTIONS3_H
+
     #include <string.h>
 
 static inline void ai_action_connect_nbr(server_t *server,

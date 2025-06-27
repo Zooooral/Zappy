@@ -7,7 +7,9 @@
 
 #ifndef AI_ACTIONS_H
     #define AI_ACTIONS_H
+
     #include <stdint.h>
+
     #include "server/server.h"
 
 static inline void ai_action_forward(server_t *server, client_t *client,

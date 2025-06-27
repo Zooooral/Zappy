@@ -10,6 +10,7 @@
 
     #include <stdint.h>
     #include <assert.h>
+
     #include "server/server.h"
 
 typedef enum {

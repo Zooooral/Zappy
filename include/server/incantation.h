@@ -8,8 +8,9 @@
 #ifndef INCANTATION_H
     #define INCANTATION_H
 
-    #include "server/server.h"
     #include <stdbool.h>
+
+    #include "server/server.h"
 
 typedef struct {
     server_t *server;
