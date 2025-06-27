@@ -77,6 +77,5 @@ char *vision_look(client_t *client, map_t *map)
             first = 0;
         }
     }
-    res = da_push(res, "]", 1);
-    return res;
+    return da_push(res, "]\n", 3);
 }
