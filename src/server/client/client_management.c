@@ -144,7 +144,6 @@ static void client_validate(server_t *server, client_t *client, const char *mess
     client->is_authenticated = true;
     if (server->game->player_count < server->game->player_capacity) {
         client->player = player_create(client, pos[0], pos[1], message);
-        printf("[DEBUG] AI client created player: %p\n", (void*)client->player);
         if (client->player) {
             player_set_position(server, client->player, pos[0], pos[1]);
             add_player_to_game(server->game, client->player);
@@ -159,7 +158,8 @@ static void client_validate(server_t *server, client_t *client, const char *mess
     send_response(client, response);
 }
 
-void client_authenticate(server_t *server, client_t *client, const char *message)
+void client_authenticate(server_t *server, client_t *client,
+    const char *message)
 {
     if (!server || !client || !message)
         return;
