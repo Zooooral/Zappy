@@ -12,7 +12,7 @@
 #include "server/server.h"
 #include "server/server_updates.h"
 
-const char *gui_payload_elevation_start(client_t *, const player_t *player)
+const char *gui_payload_pic(client_t *, const player_t *player)
 {
     char response[131];
 
