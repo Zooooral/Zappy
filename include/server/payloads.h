@@ -10,18 +10,19 @@
 
     #include "server.h"
 
-const char *gui_payload_new_player(client_t *, const player_t *player);
-const char *gui_payload_position_update(client_t *, const player_t *player);
-const char *gui_payload_level_update(client_t *, const player_t *player);
-const char *gui_payload_player_death(client_t *, const player_t *player);
+char *gui_payload_pnw(client_t *, const player_t *player);
+char *gui_payload_ppo(client_t *, const player_t *player);
+char *gui_payload_plv(client_t *, const player_t *player);
+char *gui_payload_pdi(client_t *, const player_t *player);
 
-const char *gui_payload_elevation_start(client_t *, const player_t *player);
-const char *gui_payload_elevation_end(client_t *, const player_t *player);
+char *gui_payload_pic(tile_t *tile, int level, player_t **players, int count);
+char *gui_payload_pie_success(client_t *, const player_t *player);
+char *gui_payload_pie_failed(client_t *, const player_t *player);
 
 char *gui_payload_tile(server_t *server, int x, int y);
 
-char *gui_payload_resource_collected(const player_t *player, int resource_id);
-const char *gui_payload_resource_dropped(const player_t *player, int resource_id);
-const char *gui_payload_inventory(client_t *, const player_t *player);
+char *gui_payload_pgt(const player_t *player, int resource_id);
+char *gui_payload_pdr(const player_t *player, int resource_id);
+char *gui_payload_pin(client_t *, const player_t *player);
 
 #endif /* !NETWORK_PAYLOADS_H_ */

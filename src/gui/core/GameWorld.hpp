@@ -55,6 +55,9 @@ public:
     int getTotalHeight() const { return _totalHeight; }
     int getPlayableWidth() const { return _playableWidth; }
     int getPlayableHeight() const { return _playableHeight; }
+    bool isInitialized() const { return _playableWidth > 0 && _playableHeight > 0; }
+    int getWidth() const { return _playableWidth; }
+    int getHeight() const { return _playableHeight; }
     void updateTileResources(int x, int y, const TileResources& resources);
 
 private:

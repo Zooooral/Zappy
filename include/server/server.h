@@ -15,6 +15,7 @@
     #include <sys/poll.h>
     #include <time.h>
     #include <stdbool.h>
+
     #include "shared/utils.h"
 
     #define MAX_CLIENTS 100
@@ -62,6 +63,8 @@ typedef struct tile_s {
     struct player_s **players;
     size_t player_count;
     size_t player_capacity;
+    int x;
+    int y;
 } tile_t;
 
 typedef struct player_s {
@@ -125,7 +128,8 @@ void server_destroy(server_t *server);
 int parse_arguments(int argc, const char **argv, server_config_t *config);
 int process_argument(const char **argv, int *i, int argc,
     server_config_t *config);
-game_state_t *game_state_create(server_t *server, const server_config_t *config);
+game_state_t *game_state_create(server_t *server,
+    const server_config_t *config);
 void game_state_destroy(game_state_t *game);
 void game_state_update(server_t *server, double delta_time);
 void add_player_to_game(game_state_t *game, player_t *player);
@@ -142,7 +146,8 @@ double get_current_time(void);
 int client_add(server_t *server, int client_fd);
 void client_remove(server_t *server, size_t index);
 client_t *client_find_by_fd(server_t *server, int fd);
-void client_authenticate(server_t *server, client_t *client, const char *message);
+void client_authenticate(server_t *server, client_t *client,
+    const char *message);
 void protocol_handle_graphic_command(server_t *server, client_t *client,
     const char *cmd);
 void protocol_handle_ai_command(server_t *server, client_t *client,

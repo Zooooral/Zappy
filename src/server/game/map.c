@@ -41,6 +41,8 @@ static int initialize_tile_row(map_t *map, int y)
         tile_init(&map->tiles[y][x]);
         if (!map->tiles[y][x].players)
             return -1;
+        map->tiles[y][x].x = x;
+        map->tiles[y][x].y = y;
     }
     return 0;
 }

@@ -37,8 +37,7 @@ static int count_resource_on_map(map_t *map, int type)
     for (y = 0; y < map->height; ++y) {
         for (x = 0; x < map->width; ++x) {
             tile = map_get_tile(map, x, y);
-            if (tile)
-                count += tile->resources[type];
+            count += tile ? tile->resources[type] : 0;
         }
     }
     return count;

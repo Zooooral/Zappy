@@ -7,6 +7,7 @@
 
 #include "InventoryUI.hpp"
 #include "../core/FontManager.hpp"
+#include "../entities/CharacterManager.hpp"
 #include <algorithm>
 
 InventoryUI::InventoryUI(const Vector2& position, const Vector2& size)
@@ -16,22 +17,28 @@ InventoryUI::InventoryUI(const Vector2& position, const Vector2& size)
 void InventoryUI::update(float dt) {
     (void)dt;
     
+    if (!isCharacterValid()) {
+        closeInventory();
+        return;
+    }
+    
     if (_visible && IsKeyPressed(KEY_ESCAPE)) {
-        _visible = false;
+        closeInventory();
     }
     
     if (_visible && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (!isHovered()) {
-            _visible = false;
+            closeInventory();
         }
     }
 }
 
 void InventoryUI::draw() const {
-    if (!_visible || !_character) return;
+    if (!_visible || !isCharacterValid()) return;
     
-    DrawRectangleRounded(_bounds, 0.1f, 5, Fade(BLACK, 0.7f));
-    DrawRectangleRoundedLines(_bounds, 0.1f, 5, BLACK);
+    Rectangle bounds = getBounds();
+    DrawRectangleRounded(bounds, 0.1f, 5, Fade(BLACK, 0.7f));
+    DrawRectangleRoundedLines(bounds, 0.1f, 5, BLACK);
     
     drawCharacterInfo();
     drawInventoryGrid();
@@ -46,11 +53,23 @@ void InventoryUI::draw() const {
 
 void InventoryUI::setCharacter(Character* character) {
     _character = character;
-    _visible = (character != nullptr);
+    _visible = (character != nullptr && isCharacterValid());
+}
+
+void InventoryUI::closeInventory() {
+    _character = nullptr;
+    _visible = false;
+}
+
+bool InventoryUI::isCharacterValid() const {
+    if (!_character) return false;
+    
+    Character* validCharacter = CharacterManager::getInstance().getCharacter(_character->getId());
+    return validCharacter == _character;
 }
 
 std::vector<InventoryUI::InventoryItem> InventoryUI::getInventoryItems() const {
-    if (!_character) return {};
+    if (!isCharacterValid()) return {};
     
     const CharacterInventory& inv = _character->getInventory();
     return {
@@ -65,7 +84,7 @@ std::vector<InventoryUI::InventoryItem> InventoryUI::getInventoryItems() const {
 }
 
 void InventoryUI::drawInventoryGrid() const {
-    if (!_character) return;
+    if (!isCharacterValid()) return;
     
     Font font = FontManager::getInstance().getFont("medium");
     auto items = getInventoryItems();
@@ -93,7 +112,7 @@ void InventoryUI::drawInventoryGrid() const {
 }
 
 void InventoryUI::drawCharacterInfo() const {
-    if (!_character) return;
+    if (!isCharacterValid()) return;
     
     Font font = FontManager::getInstance().getFont("medium");
     

@@ -35,6 +35,7 @@ void queue_action(client_t *client, action_t *action)
 static void execute_action_callback(client_t *client,
     action_t *action, double now)
 {
+    (void)now;
     if (action->callback) {
         action->callback(client, action->data);
     }

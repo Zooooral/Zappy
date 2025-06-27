@@ -17,8 +17,5 @@ typedef struct {
 } update_flags_t;
 
 void send_position_update(client_t *client, const player_t *player);
-void send_level_update(client_t *client, const player_t *player);
-void send_elevation_start(client_t *client, const player_t *player);
-void send_elevation_end(client_t *client, const player_t *player);
 
 #endif /* !SERVER_UPDATES_H_ */

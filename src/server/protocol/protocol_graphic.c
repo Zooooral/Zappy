@@ -5,30 +5,20 @@
 ** Protocol handling for graphic clients
 */
 
-#include "server/server.h"
-#include "server/protocol_graphic.h"
-#include "server/server_updates.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
 
-static void format_tile_response(char *response, int x, int y,
-    const tile_t *tile)
-{
-    snprintf(response, 128, "bct %d %d %d %d %d %d %d %d %d\n",
-        x, y, tile->resources[RESOURCE_FOOD],
-        tile->resources[RESOURCE_LINEMATE],
-        tile->resources[RESOURCE_DERAUMERE],
-        tile->resources[RESOURCE_SIBUR],
-        tile->resources[RESOURCE_MENDIANE],
-        tile->resources[RESOURCE_PHIRAS],
-        tile->resources[RESOURCE_THYSTAME]);
-}
+#include "server/server.h"
+#include "server/protocol_graphic.h"
+#include "server/server_updates.h"
+#include "server/payloads.h"
+#include "protocol_graphic_garbage.h"
 
 void protocol_send_tile_content(server_t *server, client_t *client,
     int x, int y)
 {
-    char response[128];
+    char *response;
     tile_t *tile;
 
     if (!server || !client || !server->game || !server->game->map)
@@ -38,7 +28,11 @@ void protocol_send_tile_content(server_t *server, client_t *client,
         send_response(client, "sbp\n");
         return;
     }
-    format_tile_response(response, x, y, tile);
+    response = gui_payload_tile(server, x, y);
+    if (!response) {
+        send_response(client, "sbp\n");
+        return;
+    }
     send_response(client, response);
 }
 
@@ -47,7 +41,8 @@ void protocol_send_player_info(client_t *client, const player_t *player)
     char response[128];
 
     if (!client || !player) {
-        printf("[DEBUG] protocol_send_player_info: client=%p player=%p\n", (void*)client, (void*)player);
+        printf("[DEBUG] protocol_send_player_info: client=%p player=%p\n",
+            (void *)client, (void *)player);
         return;
     }
     snprintf(response, sizeof(response), "pnw #%d %d %d %d %d %s\n",
@@ -59,11 +54,11 @@ void protocol_send_player_info(client_t *client, const player_t *player)
 static void send_existing_players_after_map(server_t *server, client_t *client)
 {
     static bool players_sent[1024] = {false};
-    
+
     if (client->fd >= 1024 || players_sent[client->fd])
         return;
     for (size_t i = 0; i < server->client_count; i++) {
-        if (server->clients[i].type == CLIENT_TYPE_AI && 
+        if (server->clients[i].type == CLIENT_TYPE_AI &&
             server->clients[i].player != NULL) {
             protocol_send_player_info(client, server->clients[i].player);
         }
@@ -81,12 +76,9 @@ static void handle_map_size_command(server_t *server, client_t *client,
 static void handle_map_content_command(server_t *server, client_t *client,
     const char *cmd)
 {
-    int y;
-    int x;
-
     (void)cmd;
-    for (y = 0; y < server->game->map->height; y++) {
-        for (x = 0; x < server->game->map->width; x++)
+    for (int y = 0; y < server->game->map->height; ++y) {
+        for (int x = 0; x < server->game->map->width; ++x)
             protocol_send_tile_content(server, client, x, y);
     }
     send_existing_players_after_map(server, client);
@@ -108,43 +100,24 @@ static void handle_tile_content_command(server_t *server, client_t *client,
 static void handle_team_names_command(server_t *server, client_t *client,
     const char *cmd)
 {
-    size_t i;
     char response[64];
 
     (void)cmd;
-    for (i = 0; i < server->config.team_count; i++) {
+    for (size_t i = 0; i < server->config.team_count; ++i) {
         snprintf(response, sizeof(response), "tna %s\n",
             server->config.team_names[i]);
         send_response(client, response);
     }
 }
 
-static void handle_player_info_command(server_t *server, client_t *client,
-    const char *cmd)
-{
-    (void)cmd;
-}
-
-static void handle_position_update(server_t *server, client_t *client,
+static void handle_player_level_command(server_t *server, client_t *client,
     const char *cmd)
 {
     int player_id;
     player_t *player;
+    char *response;
 
-    sscanf(cmd, "ppo #%d", &player_id);
-    player = player_find_by_id(server, player_id);
-    if (player) {
-        send_position_update(client, player);
-    }
-}
-
-static void handle_player_inventory(server_t *server, client_t *client, const char *cmd)
-{
-    int player_id;
-    player_t *player;
-    char response[128];
-
-    if (sscanf(cmd, "pin #%d", &player_id) != 1) {
+    if (sscanf(cmd, "plv #%d", &player_id) != 1) {
         send_response(client, "sbp\n");
         return;
     }
@@ -153,69 +126,31 @@ static void handle_player_inventory(server_t *server, client_t *client, const ch
         send_response(client, "sbp\n");
         return;
     }
-    snprintf(response, sizeof(response),
-        "pin #%d %d %d %d %d %d %d %d %d %d\n",
-        player->id, player->x, player->y,
-        player->resources[RESOURCE_FOOD],
-        player->resources[RESOURCE_LINEMATE],
-        player->resources[RESOURCE_DERAUMERE],
-        player->resources[RESOURCE_SIBUR],
-        player->resources[RESOURCE_MENDIANE],
-        player->resources[RESOURCE_PHIRAS],
-        player->resources[RESOURCE_THYSTAME]);
+    response = gui_payload_pin(client, player);
+    if (!response) {
+        send_response(client, "sbp\n");
+        return;
+    }
     send_response(client, response);
-}
-
-// sgt
-static void handle_time_unit_command(server_t *server, client_t *client,
-    const char *cmd)
-{
-    char *response;
-
-    (void)cmd;
-    if (server && server->config.freq > 0) {
-        asprintf(&response, "sgt %zu\n", server->config.freq);
-        send_response(client, response);
-        free(response);
-    } else {
-        send_response(client, "sbp\n");
-    }
-}
-
-// sst
-static void handle_time_unit_modification(server_t *server, client_t *client,
-    const char *cmd)
-{
-    int new_freq;
-    char *response;
-
-    if (sscanf(cmd, "sst %d", &new_freq) == 1 && new_freq > 0) {
-        server->config.freq = new_freq;
-        asprintf(&response, "sgt %zu\n", server->config.freq);
-        send_response(client, response);
-        free(response);
-    } else {
-        send_response(client, "sbp\n");
-    }
+    free(response);
 }
 
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
-    size_t i;
     const graphic_cmd_entry_t graphic_commands[] = {
         {"msz", handle_map_size_command},
         {"mct", handle_map_content_command},
         {"tna", handle_team_names_command},
         {"bct ", handle_tile_content_command},
-        {"pnw", handle_player_info_command},
         {"ppo", handle_position_update},
         {"pin", handle_player_inventory},
         {"sgt", handle_time_unit_command},
         {"sst", handle_time_unit_modification},
+        {"plv", handle_player_level_command},
         {NULL, NULL}
     };
 
-    for (i = 0; graphic_commands[i].cmd != NULL; i++) {
+    for (size_t i = 0; graphic_commands[i].cmd != NULL; ++i) {
         if (strncmp(cmd, graphic_commands[i].cmd,
             strlen(graphic_commands[i].cmd)) == 0)
             return graphic_commands[i].handler;

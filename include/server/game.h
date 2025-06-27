@@ -10,19 +10,21 @@
 
     #include <stdint.h>
     #include <assert.h>
+
     #include "server/server.h"
 
 typedef enum {
+    RESSOURCE_FOOD,
     RESSOURCE_LINEMATE,
     RESSOURCE_DERAUMERE,
     RESSOURCE_SIBUR,
     RESSOURCE_MENDIANE,
     RESSOURCE_PHIRAS,
     RESSOURCE_THYSTAME,
-    RESSOURCE_FOOD,
     RESSOURCE_COUNT,
 } ressource_t;
 
+__attribute__((unused))
 static const char *ressource_string_table[] = {
     [RESSOURCE_FOOD] = "food",
     [RESSOURCE_LINEMATE] = "linemate",

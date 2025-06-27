@@ -177,10 +177,10 @@ void CharacterManager::draw2D(Camera2D camera) const {
         if (charactersOnTile.empty()) continue;
 
         Vector2 baseTilePos = charactersOnTile[0]->getTilePosition();
-            Vector2 screenPos = {
-                (baseTilePos.x - 1) * TILE_SIZE + TILE_SIZE * 0.5f,
-                (baseTilePos.y - 1) * TILE_SIZE + TILE_SIZE * 0.5f
-            };
+        Vector2 screenPos = {
+            (baseTilePos.x - 1) * TILE_SIZE + TILE_SIZE * 0.5f,
+            (baseTilePos.y - 1) * TILE_SIZE + TILE_SIZE * 0.5f
+        };
 
         int playerCount = charactersOnTile.size();
 
@@ -196,11 +196,11 @@ void CharacterManager::draw2D(Camera2D camera) const {
                 playerPos.y += sinf(angle) * radius;
             }
 
-            Color playerColor = BLUE;
+            Color playerColor = getTeamColor(character->getTeam());
 
             if (character->isElevating()) {
                 float pulse = (sinf(_animationTimer * 8.0f) + 1.0f) * 0.5f;
-                playerColor = ColorLerp(BLUE, GOLD, pulse * 0.6f);
+                playerColor = ColorLerp(playerColor, GOLD, pulse * 0.6f);
 
                 for (int j = 0; j < 6; j++) {
                     float sparkleAngle = (_animationTimer * 3.0f + j * 60.0f) * DEG2RAD;
@@ -224,6 +224,25 @@ void CharacterManager::draw2D(Camera2D camera) const {
 
             DrawPoly(playerPos, 6, 10.0f, _animationTimer * 10.0f, playerColor);
             DrawPolyLines(playerPos, 6, 10.0f, _animationTimer * 10.0f, Fade(WHITE, 0.8f));
+
+            float dirAngle = character->getRotationAngle() * DEG2RAD;
+            Vector2 arrowStart = playerPos;
+            Vector2 arrowEnd = {
+                playerPos.x + cosf(dirAngle) * 15.0f,
+                playerPos.y + sinf(dirAngle) * 15.0f
+            };
+            Vector2 arrowTip1 = {
+                arrowEnd.x - cosf(dirAngle - 0.5f) * 5.0f,
+                arrowEnd.y - sinf(dirAngle - 0.5f) * 5.0f
+            };
+            Vector2 arrowTip2 = {
+                arrowEnd.x - cosf(dirAngle + 0.5f) * 5.0f,
+                arrowEnd.y - sinf(dirAngle + 0.5f) * 5.0f
+            };
+            
+            DrawLineEx(arrowStart, arrowEnd, 2.0f, WHITE);
+            DrawLineEx(arrowEnd, arrowTip1, 2.0f, WHITE);
+            DrawLineEx(arrowEnd, arrowTip2, 2.0f, WHITE);
         }
     }
 
@@ -231,6 +250,12 @@ void CharacterManager::draw2D(Camera2D camera) const {
 }
 
 void CharacterManager::addCharacter(int id, const Vector3& position, const std::string& team, int level) {
+    Character* existing = getCharacter(id);
+    if (existing) {
+        std::cout << "[DEBUG] Character #" << id << " already exists, updating position" << std::endl;
+        existing->setTargetPosition(position);
+        return;
+    }
     auto character = std::make_unique<Character>(id, position, team, level);
     _characters.push_back(std::move(character));
 }
@@ -240,11 +265,16 @@ void CharacterManager::removeCharacter(int id) {
         [id](const std::unique_ptr<Character>& c) { return c->getId() == id; });
 
     if (it != _characters.end()) {
-        if (it->get() == _selectedCharacter) {
+        Character* characterToRemove = it->get();
+        
+        if (characterToRemove == _selectedCharacter) {
             _selectedCharacter = nullptr;
         }
-        _elevationParticles.erase(it->get());
+        
+        _elevationParticles.erase(characterToRemove);
         _characters.erase(it);
+        
+        std::cout << "[CharacterManager] Character #" << id << " removed successfully" << std::endl;
     }
 }
 
@@ -322,8 +352,9 @@ void CharacterManager::drawCharacter(Character* character, Camera camera, bool i
     float scale = 0.000025f;
     position.y -= 0.16f;
     Vector3 rotationAxis = { 0.0f, 1.0f, 0.0f };
-        float rotationAngle = character->getRotationAngle();
-        DrawModelEx(_characterModel, position, rotationAxis, rotationAngle, Vector3{scale, scale, scale}, tint);
+    float rotationAngle = character->getRotationAngle();
+    DrawModelEx(_characterModel, position, rotationAxis, rotationAngle, Vector3{scale, scale, scale}, tint);
+    
     if (isHovered) {
         drawCharacterOutline(character, YELLOW);
     }
@@ -335,6 +366,10 @@ void CharacterManager::drawCharacter(Character* character, Camera camera, bool i
     Vector2 screenPos = GetWorldToScreen(levelPos, camera);
     DrawText(("Lv." + std::to_string(character->getLevel())).c_str(),
              static_cast<int>(screenPos.x - 15), static_cast<int>(screenPos.y), 16, WHITE);
+    Vector3 originalPos = character->getDisplayPosition();
+    Vector3 teamDotPos = {originalPos.x, originalPos.y + Character::CHARACTER_HEIGHT + 0.1f, originalPos.z};
+    Color teamColor = getTeamColor(character->getTeam());
+    DrawSphere(teamDotPos, 0.08f, teamColor);
 }
 
 void CharacterManager::drawCharacterOutline(Character* character, Color color) const {
@@ -342,8 +377,22 @@ void CharacterManager::drawCharacterOutline(Character* character, Color color) c
     DrawBoundingBox(bbox, color);
 }
 
-Color CharacterManager::getTeamColor() const {
-    return Color{79, 122, 232, 255};
+Color CharacterManager::getTeamColor(const std::string& teamName) const {
+    std::hash<std::string> hasher;
+    size_t hash = hasher(teamName);
+    
+    Color teamColors[] = {
+        {255, 100, 100, 255},
+        {100, 255, 100, 255},
+        {100, 100, 255, 255},
+        {255, 255, 100, 255},
+        {255, 100, 255, 255},
+        {100, 255, 255, 255},
+        {255, 150, 100, 255},
+        {150, 255, 100, 255}
+    };
+    
+    return teamColors[hash % 8];
 }
 
 std::string CharacterManager::getTileKey(const Vector2& pos) const {

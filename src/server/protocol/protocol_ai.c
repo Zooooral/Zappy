@@ -21,7 +21,8 @@
 #include "server/protocol_ai_handlers2.h"
 #include "server/protocol_ai_handlers3.h"
 
-void protocol_handle_ai_command(server_t *server, client_t *client, const char *cmd)
+void protocol_handle_ai_command(server_t *server,
+    client_t *client, const char *cmd)
 {
     printf("AI command: %s\n", cmd);
     if (!server || !client || !cmd) {
@@ -59,7 +60,7 @@ void create_and_queue_action(server_t *server, client_t *client,
     }
     data->type = type;
     data->server = server;
-    action->command = strdup(cmd);
+    action->command = cmd ? strdup(cmd) : NULL;
     data->cmd = action->command;
     action->exec_time = now + get_time_unit(server) * ai_action_duration[type];
     action->callback = ai_callback_handler;
