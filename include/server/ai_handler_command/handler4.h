@@ -20,11 +20,11 @@
 static inline void helper_send_pbc(server_t *server, client_t *client,
     player_t *sender, const char *msg)
 {
-    (void)client;
     char *buf = NULL;
     client_t *other;
     int ret;
 
+    (void)client;
     ret = asprintf(&buf, "pbc #%d %s\n", sender->id, msg);
     if (ret < 0 || !buf)
         return;
@@ -89,7 +89,6 @@ static inline void send_broadcast_to_ai(server_t *server,
     client_t *sender_client, player_t *sender, const char *msg)
 {
     char *ai_msg = NULL;
-    int direction;
     int orient;
     client_t *other;
     int ret;
@@ -100,11 +99,10 @@ static inline void send_broadcast_to_ai(server_t *server,
             || !other->player)
             continue;
         orient = other->player->orientation;
-        direction = compute_direction((int[2]) {
-            (sender->x - other->player->x), (sender->y - other->player->y)
-            }, server->game->map->width,
-            server->game->map->height, orient);
-        ret = asprintf(&ai_msg, "message %d, %s\n", direction, msg);
+        ret = asprintf(&ai_msg, "message %d, %s\n", compute_direction((int[2])
+            {(sender->x - other->player->x),
+            (sender->y - other->player->y)}, server->game->map->width,
+            server->game->map->height, orient), msg);
         if (ret < 0 || !ai_msg)
             continue;
         send_response(other, ai_msg);

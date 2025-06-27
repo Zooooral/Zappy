@@ -117,12 +117,15 @@ static inline size_t eject_other_players(server_t *server,
 static inline void ai_action_eject(server_t *server,
     client_t *client, char *cmd)
 {
-    (void)cmd;
-    player_t *self = client ? client->player : NULL;
-    int dx = self ? (self->orientation == 2) : 0;
-    int dy = self ? (self->orientation == 3) : 0;
+    player_t *self;
+    int dx;
+    int dy;
     size_t ejected;
 
+    (void)cmd;
+    self = client ? client->player : NULL;
+    dx = self ? (self->orientation == 2) : 0;
+    dy = self ? (self->orientation == 3) : 0;
     if (!server || !self)
         return send_response(client, "ko\n");
     dy = self->orientation == 1 ? -1 : dy;

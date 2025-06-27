@@ -36,7 +36,10 @@ char *gui_payload_pic(tile_t *tile, int level, player_t **players, int count)
     char *tmp2 = NULL;
     int ret;
 
-    ret = asprintf(&buf, "pic %d %d %d", tile->players[0]->x, tile->players[0]->y, level);
+    ret = asprintf(&buf, "pic %d %d %d",
+        tile->players[0]->x,
+        tile->players[0]->y,
+        level);
     if (ret == -1)
         return NULL;
     if (append_players_to_buf(&buf, players, count) == -1)

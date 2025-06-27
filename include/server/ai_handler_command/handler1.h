@@ -99,31 +99,51 @@ static inline void ai_action_look(server_t *server, client_t *client,
     }
 }
 
-static inline void ai_action_inventory(server_t *server, client_t *client,
-    char *cmd)
+static inline player_t *find_player_by_fd(server_t *server, int fd)
 {
     size_t i;
-    player_t *p = NULL;
-    char *buf;
-    int ret;
 
-    if (!server || !client)
-        return (void)cmd;
-    for (i = 0; i < server->game->player_count; ++i)
-        if (server->game->players[i]->id == client->fd) {
-            p = server->game->players[i];
-            break;
-        }
+    if (!server)
+        return NULL;
+    for (i = 0; i < server->game->player_count; ++i) {
+        if (server->game->players[i]->id == fd)
+            return server->game->players[i];
+    }
+    return NULL;
+}
+
+static inline int format_inventory_string(char **buf, player_t *p)
+{
     if (!p)
-        return send_response(client, "ko\n");
-    ret = asprintf(&buf, "[food %d, linemate %d, "
-        "deraumere %d, sibur %d, mendiane %d, phiras %d, thystame %d]\n",
+        return -1;
+    return asprintf(buf, "[food %d, linemate %d, deraumere %d, sibur %d, "
+        "mendiane %d, phiras %d, thystame %d]\n",
         p->resources[RESOURCE_FOOD], p->resources[RESOURCE_LINEMATE],
         p->resources[RESOURCE_DERAUMERE], p->resources[RESOURCE_SIBUR],
         p->resources[RESOURCE_MENDIANE], p->resources[RESOURCE_PHIRAS],
         p->resources[RESOURCE_THYSTAME]);
-    if (ret < 0 || !buf)
-        return send_response(client, "ko\n");
+}
+
+static inline void ai_action_inventory(server_t *server, client_t *client,
+    char *cmd)
+{
+    player_t *p;
+    char *buf;
+    int ret;
+
+    (void)cmd;
+    if (!server || !client)
+        return;
+    p = find_player_by_fd(server, client->fd);
+    if (!p) {
+        send_response(client, "ko\n");
+        return;
+    }
+    ret = format_inventory_string(&buf, p);
+    if (ret < 0 || !buf) {
+        send_response(client, "ko\n");
+        return;
+    }
     send_response(client, buf);
     free(buf);
 }
