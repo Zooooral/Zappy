@@ -11,7 +11,7 @@
     #include "server.h"
 
 const char *gui_payload_new_player(client_t *, const player_t *player);
-const char *gui_payload_position_update(client_t *, const player_t *player);
+const char *gui_payload_ppo(client_t *, const player_t *player);
 const char *gui_payload_plv(client_t *, const player_t *player);
 const char *gui_payload_player_death(client_t *, const player_t *player);
 

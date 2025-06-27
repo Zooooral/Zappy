@@ -90,7 +90,7 @@ void player_set_position(server_t *server, player_t *player, int x, int y)
     player->x = (x + server->game->map->width) % server->game->map->width;
     player->y = (y + server->game->map->height) % server->game->map->height;
     add_player_to_tile(player, server->game->map);
-    broadcast_message_to_guis(server, player, gui_payload_position_update);
+    broadcast_message_to_guis(server, player, gui_payload_ppo);
 }
 
 player_t *player_find_by_id(server_t *server, int id)
