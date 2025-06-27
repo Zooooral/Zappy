@@ -12,7 +12,7 @@
 #include "server/payloads.h"
 
 void broadcast_message_to_guis(server_t *server, player_t *player,
-    const char *(*function)(client_t *, const player_t *))
+    char *(*function)(client_t *, const player_t *))
 {
     client_t *client = NULL;
     const char *payload = function(client, player);

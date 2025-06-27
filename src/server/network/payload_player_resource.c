@@ -37,14 +37,14 @@ const char *gui_payload_pdr(const player_t *player, int resource_id)
     return strdup(response);
 }
 
-const char *gui_payload_pin(client_t *, const player_t *player)
+char *gui_payload_pin(client_t *, const player_t *player)
 {
-    char response[256];
+    char *res;
 
     if (!player) {
         return NULL;
     }
-    snprintf(response, sizeof(response),
+    asprintf(&res,
         "pin #%d %d %d %d %d %d %d %d %d %d\n",
         player->id, player->x, player->y,
         player->resources[RESOURCE_FOOD],
@@ -54,5 +54,5 @@ const char *gui_payload_pin(client_t *, const player_t *player)
         player->resources[RESOURCE_MENDIANE],
         player->resources[RESOURCE_PHIRAS],
         player->resources[RESOURCE_THYSTAME]);
-    return strdup(response);
+    return res;
 }

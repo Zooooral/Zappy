@@ -60,7 +60,7 @@ void create_and_queue_action(server_t *server, client_t *client,
     }
     data->type = type;
     data->server = server;
-    action->command = strdup(cmd);
+    action->command = cmd ? strdup(cmd) : NULL;
     data->cmd = action->command;
     action->exec_time = now + get_time_unit(server) * ai_action_duration[type];
     action->callback = ai_callback_handler;

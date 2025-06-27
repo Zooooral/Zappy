@@ -97,10 +97,7 @@ export class NetworkClient extends EventEmitter {
         }
     }
 
-    private async sendCommand(
-        command: string,
-        timeoutMs: number = 15000
-    ): Promise<any> {
+    private async sendCommand(command: string): Promise<any> {
         return new Promise(async (resolve, reject) => {
             if (!this.connectionManager.isConnected()) {
                 reject(new Error("Not connected or authenticated"));
@@ -111,7 +108,7 @@ export class NetworkClient extends EventEmitter {
                 await this.commandQueue.waitForSlot();
             }
 
-            this.commandQueue.addCommand(command, resolve, reject, timeoutMs);
+            this.commandQueue.addCommand(command, resolve, reject);
 
             const dataToSend = command + "\n";
             this.connectionManager.writeToSocket(dataToSend);

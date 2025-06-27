@@ -26,5 +26,6 @@ void handle_incantation(server_t *server, client_t *client, const char *arg)
         send_response(client, "ko\n");
         return;
     }
+    send_response(client, "Elevation underway\n");
     return create_and_queue_action(server, client, arg, AI_ACTION_INCANTATION);
 }

@@ -116,6 +116,31 @@ static void handle_player_info_command(server_t *server, client_t *client,
     (void)cmd;
 }
 
+static void handle_player_level_command(server_t *server, client_t *client,
+    const char *cmd)
+{
+    int player_id;
+    player_t *player;
+    char *response;
+
+    if (sscanf(cmd, "plv #%d", &player_id) != 1) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    player = player_find_by_id(server, player_id);
+    if (!player) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    response = gui_payload_pin(client, player);
+    if (!response) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    send_response(client, response);
+    free(response);
+}
+
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
     const graphic_cmd_entry_t graphic_commands[] = {
@@ -128,6 +153,7 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {"pin", handle_player_inventory},
         {"sgt", handle_time_unit_command},
         {"sst", handle_time_unit_modification},
+        {"plv", handle_player_level_command},
         {NULL, NULL}
     };
 
