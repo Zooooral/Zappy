@@ -39,7 +39,7 @@ static inline void ai_action_take(server_t *server,
     send_response(client, "ok\n");
     broadcast_player_resource_update(server, p, resource_id,
         gui_payload_pgt);
-    broadcast_message_to_guis(server, p, gui_payload_inventory);
+    broadcast_message_to_guis(server, p, gui_payload_pdr);
 }
 
 static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
@@ -60,7 +60,7 @@ static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
     send_response(client, "ok\n");
     broadcast_player_resource_update(server, p, resource_id,
         gui_payload_pdr);
-    broadcast_message_to_guis(server, p, gui_payload_inventory);
+    broadcast_message_to_guis(server, p, gui_payload_pdr);
 }
 
 static inline void ai_action_incantation(server_t *server,

@@ -35,7 +35,7 @@ const char *gui_payload_pdr(const player_t *player, int resource_id)
     return strdup(response);
 }
 
-const char *gui_payload_inventory(client_t *, const player_t *player)
+const char *gui_payload_pdr(client_t *, const player_t *player)
 {
     char response[256];
 
