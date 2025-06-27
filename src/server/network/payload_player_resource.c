@@ -13,7 +13,7 @@
 #include "server/server_updates.h"
 
 
-const char *gui_payload_resource_collected(const player_t *player, int resource_id)
+const char *gui_payload_pgt(const player_t *player, int resource_id)
 {
     char response[128];
 

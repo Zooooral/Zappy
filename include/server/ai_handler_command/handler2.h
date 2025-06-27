@@ -38,7 +38,7 @@ static inline void ai_action_take(server_t *server,
     ++p->resources[resource_id];
     send_response(client, "ok\n");
     broadcast_player_resource_update(server, p, resource_id,
-        gui_payload_resource_collected);
+        gui_payload_pgt);
     broadcast_message_to_guis(server, p, gui_payload_inventory);
 }
 
