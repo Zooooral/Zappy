@@ -70,16 +70,18 @@ int client_add(server_t *server, int client_fd)
 
 static void cleanup_client_resources(client_t *client)
 {
+    action_t *action;
+    action_t *next;
+
     if (client->fd != -1)
         close(client->fd);
     if (client->buffer)
         free(client->buffer);
     if (client->team_name)
         free(client->team_name);
-    // Free all actions in the action queue
-    action_t *action = client->action_queue_head;
+    action = client->action_queue_head;
     while (action) {
-        action_t *next = action->next;
+        next = action->next;
         free(action->command);
         free(action);
         action = next;
@@ -91,17 +93,13 @@ static void cleanup_client_resources(client_t *client)
 
 static void shift_clients_array(server_t *server, size_t index)
 {
-    size_t i;
-
-    for (i = index; i < server->client_count - 1; i++)
+    for (size_t i = index; i < server->client_count - 1; ++i)
         server->clients[i] = server->clients[i + 1];
 }
 
 static void update_poll_fds_after_removal(server_t *server)
 {
-    size_t i;
-
-    for (i = 1; i <= server->client_count; i++) {
+    for (size_t i = 1; i <= server->client_count; ++i) {
         server->poll_fds[i].fd = server->clients[i - 1].fd;
         server->poll_fds[i].events = POLLIN;
     }
@@ -126,11 +124,9 @@ void client_remove(server_t *server, size_t index)
 
 client_t *client_find_by_fd(server_t *server, int fd)
 {
-    size_t i;
-
     if (!server)
         return NULL;
-    for (i = 0; i < server->client_count; i++) {
+    for (size_t i = 0; i < server->client_count; ++i) {
         if (server->clients[i].fd == fd)
             return &server->clients[i];
     }
@@ -167,19 +163,19 @@ void client_authenticate(server_t *server, client_t *client, const char *message
 {
     if (!server || !client || !message)
         return;
-    if (strcmp(message, "GRAPHIC") == 0) {
-        client->type = CLIENT_TYPE_GRAPHIC; 
-        client->is_authenticated = true;
-        protocol_send_map_size(server, client);
-        send_all_tiles(server, client);
-        for (size_t i = 0; i < server->client_count; i++) {
-            if (server->clients[i].type == CLIENT_TYPE_AI && 
-                server->clients[i].player != NULL) {
-                protocol_send_player_info(client, server->clients[i].player);
-            }
-        }
-    } else {
+    if (strcmp(message, "GRAPHIC") != 0) {
         printf("AI client authenticated with team: %s\n", message);
         client_validate(server, client, message);
+        return;
+    }
+    client->type = CLIENT_TYPE_GRAPHIC;
+    client->is_authenticated = true;
+    protocol_send_map_size(server, client);
+    send_all_tiles(server, client);
+    for (size_t i = 0; i < server->client_count; ++i) {
+        if (server->clients[i].type == CLIENT_TYPE_AI &&
+            server->clients[i].player != NULL) {
+            protocol_send_player_info(client, server->clients[i].player);
+        }
     }
 }
