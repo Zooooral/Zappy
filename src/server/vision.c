@@ -34,38 +34,46 @@ static char *print_tile(tile_t *tile)
     return str;
 }
 
-static void vision_look_single_row_x()
+static void vision_loop_iteration(struct vision_loop_s *state)
 {
-}
-
-static void vision_look_single_row_y()
-{
+    if (state->orientation == 1) {
+        *state->x = (*state->x + state->offset) % state->map->width;
+        *state->y = (*state->y -
+            state->dist + state->map->height) % state->map->height;
+    } else if (state->orientation == 2) {
+        *state->x = (*state->x + state->dist +
+            state->map->width) % state->map->width;
+        *state->y = (*state->y + state->offset) % state->map->height;
+        return;
+    }
+    if (state->orientation == 3) {
+        *state->x = (*state->x - state->offset +
+            state->map->width) % state->map->width;
+        *state->y = (*state->y + state->dist +
+            state->map->height) % state->map->height;
+        return;
+    }
+    *state->x = (*state->x - state->dist +
+        state->map->width) % state->map->width;
+    *state->y = (*state->y - state->offset +
+        state->map->height) % state->map->height;
 }
 
 char *vision_look(client_t *client, map_t *map)
 {
-    char *res = da_create();
+    char *res = da_push(da_create(), "[", 1);
     int x;
     int y;
     char *tile = NULL;
     int first = 1;
 
-    res = da_push(res, "[", 1);
     for (int dist = 0; dist <= client->player->level; ++dist) {
         for (int offset = -dist; offset <= dist; ++offset) {
-            if (client->player->orientation == 1) {
-                x = (client->player->x + offset + map->width) % map->width;
-                y = (client->player->y - dist + map->height) % map->height;
-            } else if (client->player->orientation == 2) {
-                x = (client->player->x + dist + map->width) % map->width;
-                y = (client->player->y + offset + map->height) % map->height;
-            } else if (client->player->orientation == 3) {
-                x = (client->player->x - offset + map->width) % map->width;
-                y = (client->player->y + dist + map->height) % map->height;
-            } else {
-                x = (client->player->x - dist + map->width) % map->width;
-                y = (client->player->y - offset + map->height) % map->height;
-            }
+            vision_loop_iteration(&(struct vision_loop_s) { .x = &x, .y = &y,
+                .dist = dist, .offset = offset,
+                .orientation = client->player->orientation,
+                .player = client->player, .map = map
+            });
             if (!first)
                 res = da_push(res, ", ", 1);
             tile = print_tile(map_get_tile(map, x, y));
@@ -74,6 +82,5 @@ char *vision_look(client_t *client, map_t *map)
             first = 0;
         }
     }
-    DA_PUSH(res, " ]\n");
-    return res;
+    return da_push(res, " ]\n", 4);
 }

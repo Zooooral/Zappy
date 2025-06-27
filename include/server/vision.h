@@ -12,4 +12,14 @@
 
 char *vision_look(client_t *client, map_t *map);
 
+struct vision_loop_s {
+    int *x;
+    int *y;
+    int dist;
+    int offset;
+    int orientation;
+    player_t *player;
+    map_t *map;
+};
+
 #endif // VISION_H
