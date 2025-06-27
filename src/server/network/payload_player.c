@@ -12,7 +12,7 @@
 #include "server/server.h"
 #include "server/server_updates.h"
 
-const char *gui_payload_new_player(client_t *, const player_t *player)
+const char *gui_payload_pnw(client_t *, const player_t *player)
 {
     char response[128];
 

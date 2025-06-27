@@ -152,7 +152,7 @@ static void client_validate(server_t *server, client_t *client, const char *mess
         if (client->player) {
             player_set_position(server, client->player, pos[0], pos[1]);
             add_player_to_game(server->game, client->player);
-            broadcast_message_to_guis(server, client->player, gui_payload_new_player);
+            broadcast_message_to_guis(server, client->player, gui_payload_pnw);
         }
     }
     snprintf(response, sizeof(response), "%ld\n",
