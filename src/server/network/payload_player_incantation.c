@@ -16,10 +16,12 @@ char *gui_payload_pic(tile_t *tile, int level, player_t **players, int count)
 {
     char *buf = NULL;
     char *tmp2 = NULL;
+    char *tmp = NULL;
 
-    asprintf(&buf, "pic %d %d %d", tile->players[0]->x, tile->players[0]->y, level);
+    asprintf(&buf, "pic %d %d %d", tile->players[0]->x, tile->players[0]->y,
+        level);
     for (int i = 0; i < count; ++i) {
-        char *tmp = NULL;
+        tmp = NULL;
         asprintf(&tmp, "%s #%d", buf, players[i]->id);
         free(buf);
         buf = tmp;
