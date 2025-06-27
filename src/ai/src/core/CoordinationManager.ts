@@ -105,9 +105,6 @@ export class CoordinationManager {
             lastMovementTime: 0,
             lastBroadcastTime: 0
         };
-        const role = isInitiator ? "INITIATOR" : "RESPONDER";
-        const directionInfo = partnerDirection ? ` (partner from direction ${partnerDirection})` : "";
-        logger.info(`[COORDINATION] Started elevation meeting for level ${level} as ${role}${directionInfo}`);
     }
 
     public isInElevationMeeting(): boolean {
@@ -120,7 +117,6 @@ export class CoordinationManager {
 
     public endElevationMeeting(): void {
         if (this.currentMeeting) {
-            const duration = Date.now() - this.currentMeeting.waitingStartTime;
             this.currentMeeting = undefined;
         }
     }
