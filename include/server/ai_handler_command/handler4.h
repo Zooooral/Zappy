@@ -62,31 +62,35 @@ static inline int compute_direction(int dx, int dy,
     return direction;
 }
 
-static inline void send_broadcast_to_ai(server_t *server, client_t *sender_client, player_t *sender, const char *msg)
+static inline void send_broadcast_to_ai(server_t *server,
+    client_t *sender_client, player_t *sender, const char *msg)
 {
-    size_t i;
-    int width = server->game->map->width;
-    int height = server->game->map->height;
-    for (i = 0; i < server->client_count; ++i) {
-        client_t *other = &server->clients[i];
-        int dx, dy, direction, orient;
-        char *ai_msg = NULL;
-        if (other->type != CLIENT_TYPE_AI || other->fd == sender_client->fd || !other->player)
+    char *ai_msg = NULL;
+    int direction;
+    int orient;
+    client_t *other;
+
+    for (size_t i = 0; i < server->client_count; ++i) {
+        other = &server->clients[i];
+        if (other->type != CLIENT_TYPE_AI || other->fd == sender_client->fd
+            || !other->player)
             continue;
-        dx = sender->x - other->player->x;
-        dy = sender->y - other->player->y;
         orient = other->player->orientation;
-        direction = compute_direction(dx, dy, width, height, orient);
+        direction = compute_direction((sender->x - other->player->x),
+            (sender->y - other->player->y), server->game->map->width,
+            server->game->map->height, orient);
         asprintf(&ai_msg, "message %d,%s\n", direction, msg);
         send_response(other, ai_msg);
         free(ai_msg);
     }
 }
 
-static inline void ai_action_broadcast(server_t *server, client_t *client, char *msg)
+static inline void ai_action_broadcast(server_t *server, client_t *client,
+    char *msg)
 {
     player_t *sender;
     int width, height;
+
     if (!server || !client || !msg || !(sender = client->player)) {
         send_response(client, "ko\n");
         return;
@@ -96,4 +100,5 @@ static inline void ai_action_broadcast(server_t *server, client_t *client, char 
     send_broadcast_to_ai(server, client, sender, msg);
     helper_send_pbc(server, client, sender, msg);
 }
+
 #endif
