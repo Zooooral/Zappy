@@ -63,7 +63,6 @@ export class GameLogic {
         const level = context.gameState.playerLevel;
 
         if (this.elevationManager.shouldReproduceAtLevel2(level) && context.currentState !== AIState.REPRODUCTION) {
-            logger.info(`Level ${level} reached! Switching to REPRODUCTION mode`);
             this.stateManager.setState(AIState.REPRODUCTION);
         }
     }
@@ -72,7 +71,7 @@ export class GameLogic {
         const now = Date.now();
 
         try {
-            if (!this.lastInventory || (now - this.lastInventoryUpdate) > 2000 || (this.lastInventory.food < 50 && (now - this.lastInventoryUpdate) > 500)) {
+            if (!this.lastInventory || (now - this.lastInventoryUpdate) > 2000 || (now - this.lastInventoryUpdate) > 500) {
                 this.lastInventory = await this.client.getInventory();
                 this.lastInventoryUpdate = now;
             }
@@ -149,13 +148,11 @@ export class GameLogic {
         const level = context.gameState.playerLevel;
 
         if (!this.elevationManager.shouldReproduceAtLevel2(level)) {
-            logger.info("Reproduction already completed, switching to exploration");
             this.stateManager.setState(AIState.EXPLORATION);
             return;
         }
 
         if (context.inventory.food < 3) {
-            logger.info("Need more food before reproducing");
             this.stateManager.setState(AIState.SURVIVAL);
             return;
         }
@@ -167,7 +164,6 @@ export class GameLogic {
         );
 
         if (success) {
-            logger.info("Reproduction successful! New AI instance spawned. Returning to exploration");
             this.stateManager.setState(AIState.EXPLORATION);
         } else {
             logger.info("Reproduction failed, will retry. Collecting resources in the meantime...");
@@ -326,10 +322,6 @@ export class GameLogic {
             logger.info("Other player needs help with elevation");
             this.stateManager.setState(AIState.COORDINATION);
         }
-
-        if (message.message.includes("REPRODUCING")) {
-            logger.info("Other player is reproducing, good for team growth!");
-        }
     }
 
     public handleEjection(direction: number): void {
@@ -369,14 +361,6 @@ export class GameLogic {
 
     public getMeetingStatus(): string {
         return this.coordinationManager.getMeetingStatus();
-    }
-
-    public hasActiveCoordinationRequests(): boolean {
-        return this.coordinationManager.hasActiveRequests();
-    }
-
-    public getPendingCoordinationRequestsCount(): number {
-        return this.coordinationManager.getPendingRequestsCount();
     }
 
     public cleanupExpiredCoordinationRequests(): void {
