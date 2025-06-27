@@ -322,10 +322,6 @@ export class GameLogic {
             logger.info("Other player needs help with elevation");
             this.stateManager.setState(AIState.COORDINATION);
         }
-
-        if (message.message.includes("REPRODUCING")) {
-            logger.info("Other player is reproducing, good for team growth!");
-        }
     }
 
     public handleEjection(direction: number): void {
