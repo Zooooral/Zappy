@@ -12,6 +12,16 @@
 
     #include "server/server.h"
 
+
+struct reqplayer_ctx {
+    server_t *server;
+    tile_t *tile;
+    int level;
+    int required;
+    player_t **out;
+    int *count;
+};
+
 typedef struct {
     server_t *server;
     player_t *initiator;

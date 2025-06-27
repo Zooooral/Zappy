@@ -36,25 +36,27 @@ static int get_player_level(player_t *p)
     return p ? p->level : 1;
 }
 
-static void gather_players_on_tile(server_t *server, tile_t *tile,
-    int level, player_t **out, int *count)
+static void gather_players_on_tile(struct reqplayer_ctx *ctx)
 {
     int n = 0;
+    player_t *p;
 
-    for (size_t i = 0; i < server->game->player_count; ++i) {
-        player_t *p = server->game->players[i];
-        if (p && p->x == tile->players[0]->x && p->y == tile->players[0]->y
-            && p->level == level && p->is_alive)
-            out[n++] = p;
+    for (size_t i = 0; i < ctx->server->game->player_count; ++i) {
+        p = ctx->server->game->players[i];
+        if (p && p->x == ctx->tile->players[0]->x &&
+            p->y == ctx->tile->players[0]->y
+            && p->level == ctx->level && p->is_alive) {
+            ctx->out[n] = p;
+            ++n;
+        }
     }
-    *count = n;
+    *ctx->count = n;
 }
 
-static bool has_required_players(server_t *server, tile_t *tile, int level,
-    int required, player_t **out, int *count)
+static bool has_required_players(struct reqplayer_ctx *ctx)
 {
-    gather_players_on_tile(server, tile, level, out, count);
-    return *count >= required;
+    gather_players_on_tile(ctx);
+    return *ctx->count >= ctx->required;
 }
 
 static bool has_required_resources(tile_t *tile, const int *reqs)
@@ -78,6 +80,8 @@ bool incantation_requirements_met(server_t *server, player_t *player)
     tile_t *tile;
     int level;
     player_t *players[8] = {0};
+    int player_count = 0;
+    const int *reqs;
 
     if (!server || !player)
         return false;
@@ -85,9 +89,9 @@ bool incantation_requirements_met(server_t *server, player_t *player)
     level = get_player_level(player);
     if (level < 1 || level > 7 || !tile)
         return false;
-    const int *reqs = incantation_requirements[level];
-    int player_count = 0;
-    if (!has_required_players(server, tile, level, reqs[0], players, &player_count))
+    reqs = incantation_requirements[level];
+    if (!has_required_players(&(struct reqplayer_ctx){ server,
+            tile, level, reqs[0], players, &player_count }))
         return false;
     if (!has_required_resources(tile, reqs))
         return false;
@@ -96,11 +100,12 @@ bool incantation_requirements_met(server_t *server, player_t *player)
 
 static int do_incantation(incantation_ctx_t *ctx)
 {
-    remove_resources(ctx->server, ctx->reqs);
+    remove_resources(ctx, ctx->reqs);
     ctx->initiator->level++;
     broadcast_message_to_guis(ctx->server, ctx->initiator, gui_payload_plv);
     broadcast_message_to_guis(ctx->server, ctx->initiator, gui_payload_pin);
-    broadcast_message_to_guis(ctx->server, ctx->initiator, gui_payload_pie_success);
+    broadcast_message_to_guis(ctx->server,
+        ctx->initiator, gui_payload_pie_success);
     return 1;
 }
 
@@ -109,6 +114,8 @@ int try_incantation(server_t *server, client_t *client)
     player_t *p;
     tile_t *tile;
     int level;
+    incantation_ctx_t ctx;
+    const int *reqs;
 
     if (!server || !client || !client->player)
         return 0;
@@ -117,8 +124,8 @@ int try_incantation(server_t *server, client_t *client)
     level = get_player_level(p);
     if (level < 1 || level > 7 || !tile)
         return 0;
-    const int *reqs = incantation_requirements[level];
-    incantation_ctx_t ctx = { server, p, tile, level, reqs, {p}, reqs[0] };
+    reqs = incantation_requirements[level];
+    ctx = (incantation_ctx_t){ server, p, tile, level, reqs, {p}, reqs[0] };
     if (!incantation_requirements_met(server, p)) {
         broadcast_message_to_guis(server, p, gui_payload_pie_failed);
         return 0;
