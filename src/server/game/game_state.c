@@ -24,7 +24,7 @@ double get_current_time(void)
 static int initialize_players_array(game_state_t *game)
 {
     game->player_capacity = 50;
-    game->players = calloc(game->player_capacity, sizeof(player_t *));
+    game->players = calloc(game->player_capacity, sizeof *game->players);
     if (!game->players)
         return -1;
     game->player_count = 0;
@@ -43,9 +43,9 @@ static int setup_game_map(game_state_t *game, const server_config_t *config)
 game_state_t *game_state_create(server_t *server,
     const server_config_t *config)
 {
-    (void)server;
-    game_state_t *game = calloc(sizeof(game_state_t), 1);
+    game_state_t *game = calloc(1, sizeof(game_state_t));
 
+    (void)server;
     if (!game)
         return NULL;
     if (setup_game_map(game, config) == -1) {

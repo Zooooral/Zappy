@@ -24,6 +24,7 @@ typedef enum {
     RESSOURCE_COUNT,
 } ressource_t;
 
+__attribute__((unused))
 static const char *ressource_string_table[] = {
     [RESSOURCE_FOOD] = "food",
     [RESSOURCE_LINEMATE] = "linemate",

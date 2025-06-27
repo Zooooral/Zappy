@@ -11,6 +11,8 @@
     #include <stdint.h>
 
     #include "server/server.h"
+    #include "server/dynamic_array.h"
+    #include "server/vision.h"
 
 static inline void ai_action_forward(server_t *server, client_t *client,
     char *cmd)
