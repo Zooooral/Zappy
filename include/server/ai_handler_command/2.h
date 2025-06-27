@@ -61,6 +61,7 @@ static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
 static inline void ai_action_incantation(server_t *server, client_t *client, char *cmd)
 {
     int result;
+    char *buf = NULL;
 
     (void)cmd;
     if (!server || !client || !client->player) {
@@ -68,10 +69,13 @@ static inline void ai_action_incantation(server_t *server, client_t *client, cha
         return;
     }
     result = try_incantation(server, client);
-    if (result)
-        send_response(client, "ok\n");
-    else
+    if (result) {
+        asprintf(&buf, "Current level: %d\n", client->player->level);
+        send_response(client, buf);
+        free(buf);
+    } else {
         send_response(client, "ko\n");
+    }
 }
 
 static inline void ai_action_eject(server_t *server, client_t *client, char *cmd)
