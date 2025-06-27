@@ -128,11 +128,9 @@ bool incantation_requirements_met(server_t *server, player_t *player) {
 
 static int do_incantation(incantation_ctx_t *ctx) {
     remove_resources(ctx->tile, ctx->reqs);
-    for (int i = 0; i < ctx->player_count; ++i) {
-        ctx->players[i]->level++;
-        notify_gui_level_up(ctx->server, ctx->players[i]);
-        notify_gui_inventory(ctx->server, ctx->players[i]);
-    }
+    ctx->initiator->level++;
+    notify_gui_level_up(ctx->server, ctx->initiator);
+    notify_gui_inventory(ctx->server, ctx->initiator);
     notify_gui_pic(ctx->server, ctx->tile, ctx->level, ctx->players, ctx->player_count);
     notify_gui_pie(ctx->server, ctx->tile, 1);
     return 1;
@@ -147,7 +145,7 @@ int try_incantation(server_t *server, client_t *client) {
     if (level < 1 || level > 7 || !tile)
         return 0;
     const int *reqs = incantation_requirements[level];
-    incantation_ctx_t ctx = { server, p, tile, level, reqs, {0}, 0 };
+    incantation_ctx_t ctx = { server, p, tile, level, reqs, {p}, reqs[0] };
     if (!incantation_requirements_met(server, p)) {
         notify_gui_pic(server, tile, level, ctx.players, ctx.player_count);
         notify_gui_pie(server, tile, 0);
