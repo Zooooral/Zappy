@@ -11,6 +11,20 @@
 #include "server/server_updates.h"
 #include "server/payloads.h"
 
+void broadcast_string_message_to_guis(server_t *server, const char *message)
+{
+    client_t *client = NULL;
+
+    if (!server || !message)
+        return;
+    for (size_t i = 0; i < server->client_count; ++i) {
+        client = &server->clients[i];
+        if (client->type == CLIENT_TYPE_GRAPHIC) {
+            send_response(client, message);
+        }
+    }
+}
+
 void broadcast_message_to_guis(server_t *server, player_t *player,
     char *(*function)(client_t *, const player_t *))
 {
