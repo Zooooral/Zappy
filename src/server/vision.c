@@ -72,10 +72,8 @@ char *vision_look(client_t *client, map_t *map)
 
     for (int dist = 0; dist <= client->player->level; ++dist) {
         for (int offset = -dist; offset <= dist; ++offset) {
-            vision_loop_iteration(&(struct vision_loop_s) { .x = &x, .y = &y,
-                .dist = dist, .offset = offset,
-                .orientation = client->player->orientation,
-                .player = client->player, .map = map
+            vision_loop_iteration(&(struct vision_loop_s) { &x, &y,
+                dist, offset, client->player->orientation, client->player, map
             });
             tile = print_tile(map_get_tile(map, x, y));
             add_tile_to_response(&res, tile, &first);
