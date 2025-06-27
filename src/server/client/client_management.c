@@ -16,16 +16,7 @@
 #include "server/protocol_graphic.h"
 #include "server/payloads.h"
 #include "server/command_handler.h"
-
-static int initialize_client_buffer(client_t *client)
-{
-    client->buffer_size = BUFFER_SIZE;
-    client->buffer = malloc(client->buffer_size);
-    if (!client->buffer)
-        return -1;
-    client->buffer_pos = 0;
-    return 0;
-}
+#include "client_management_helper.h"
 
 static int setup_client_connection(client_t *client,
     int client_fd)
@@ -133,29 +124,29 @@ client_t *client_find_by_fd(server_t *server, int fd)
     return NULL;
 }
 
-static void client_validate(server_t *server, client_t *client, const char *message)
+static void client_validate(server_t *server, client_t *client,
+    const char *message)
 {
-    char response[128];
-    int pos[2] = {rand() % server->config.width, rand() % server->config.height};
+    char res[128];
+    int p[2] = {rand() % server->config.width, rand() % server->config.height};
 
     client->player = NULL;
     client->type = CLIENT_TYPE_AI;
     client->team_name = strdup(message);
     client->is_authenticated = true;
     if (server->game->player_count < server->game->player_capacity) {
-        client->player = player_create(client, pos[0], pos[1], message);
+        client->player = player_create(client, p[0], p[1], message);
         if (client->player) {
-            player_set_position(server, client->player, pos[0], pos[1]);
+            player_set_position(server, client->player, p[0], p[1]);
             add_player_to_game(server->game, client->player);
             broadcast_message_to_guis(server, client->player, gui_payload_pnw);
         }
     }
-    snprintf(response, sizeof(response), "%ld\n",
-        server->config.max_clients_per_team);
-    send_response(client, response);
-    snprintf(response, sizeof(response), "%ld %ld\n", server->config.width,
+    snprintf(res, sizeof res, "%ld\n", server->config.max_clients_per_team);
+    send_response(client, res);
+    snprintf(res, sizeof(res), "%ld %ld\n", server->config.width,
         server->config.height);
-    send_response(client, response);
+    send_response(client, res);
 }
 
 void client_authenticate(server_t *server, client_t *client,
