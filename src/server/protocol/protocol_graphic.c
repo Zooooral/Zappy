@@ -5,30 +5,19 @@
 ** Protocol handling for graphic clients
 */
 
-#include "server/server.h"
-#include "server/protocol_graphic.h"
-#include "server/server_updates.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
 
-static void format_tile_response(char *response, int x, int y,
-    const tile_t *tile)
-{
-    snprintf(response, 128, "bct %d %d %d %d %d %d %d %d %d\n",
-        x, y, tile->resources[RESOURCE_FOOD],
-        tile->resources[RESOURCE_LINEMATE],
-        tile->resources[RESOURCE_DERAUMERE],
-        tile->resources[RESOURCE_SIBUR],
-        tile->resources[RESOURCE_MENDIANE],
-        tile->resources[RESOURCE_PHIRAS],
-        tile->resources[RESOURCE_THYSTAME]);
-}
+#include "server/server.h"
+#include "server/protocol_graphic.h"
+#include "server/server_updates.h"
+#include "server/payloads.h"
 
 void protocol_send_tile_content(server_t *server, client_t *client,
     int x, int y)
 {
-    char response[128];
+    char *response;
     tile_t *tile;
 
     if (!server || !client || !server->game || !server->game->map)
@@ -38,7 +27,11 @@ void protocol_send_tile_content(server_t *server, client_t *client,
         send_response(client, "sbp\n");
         return;
     }
-    format_tile_response(response, x, y, tile);
+    response = gui_payload_tile(server, x, y);
+    if (!response) {
+        send_response(client, "sbp\n");
+        return;
+    }
     send_response(client, response);
 }
 
@@ -59,11 +52,11 @@ void protocol_send_player_info(client_t *client, const player_t *player)
 static void send_existing_players_after_map(server_t *server, client_t *client)
 {
     static bool players_sent[1024] = {false};
-    
+
     if (client->fd >= 1024 || players_sent[client->fd])
         return;
     for (size_t i = 0; i < server->client_count; i++) {
-        if (server->clients[i].type == CLIENT_TYPE_AI && 
+        if (server->clients[i].type == CLIENT_TYPE_AI &&
             server->clients[i].player != NULL) {
             protocol_send_player_info(client, server->clients[i].player);
         }
@@ -142,7 +135,7 @@ static void handle_player_inventory(server_t *server, client_t *client, const ch
 {
     int player_id;
     player_t *player;
-    char response[128];
+    char *response;
 
     if (sscanf(cmd, "pin #%d", &player_id) != 1) {
         send_response(client, "sbp\n");
@@ -153,16 +146,11 @@ static void handle_player_inventory(server_t *server, client_t *client, const ch
         send_response(client, "sbp\n");
         return;
     }
-    snprintf(response, sizeof(response),
-        "pin #%d %d %d %d %d %d %d %d %d %d\n",
-        player->id, player->x, player->y,
-        player->resources[RESOURCE_FOOD],
-        player->resources[RESOURCE_LINEMATE],
-        player->resources[RESOURCE_DERAUMERE],
-        player->resources[RESOURCE_SIBUR],
-        player->resources[RESOURCE_MENDIANE],
-        player->resources[RESOURCE_PHIRAS],
-        player->resources[RESOURCE_THYSTAME]);
+    response = gui_payload_pin(client, player);
+    if (!response) {
+        send_response(client, "sbp\n");
+        return;
+    }
     send_response(client, response);
 }
 
