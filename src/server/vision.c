@@ -34,29 +34,32 @@ static char *print_tile(tile_t *tile)
     return str;
 }
 
-static void vision_loop_iteration(struct vision_loop_s *state)
+static void vision_loop_iteration(struct vision_loop_s *s)
 {
-    if (state->orientation == 1) {
-        *state->x = (*state->x + state->offset) % state->map->width;
-        *state->y = (*state->y -
-            state->dist + state->map->height) % state->map->height;
-    } else if (state->orientation == 2) {
-        *state->x = (*state->x + state->dist +
-            state->map->width) % state->map->width;
-        *state->y = (*state->y + state->offset) % state->map->height;
+    if (s->orientation == 1) {
+        *s->x = (*s->x + s->offset) % s->map->width;
+        *s->y = (*s->y - s->dist + s->map->height) % s->map->height;
+    } else if (s->orientation == 2) {
+        *s->x = (*s->x + s->dist + s->map->width) % s->map->width;
+        *s->y = (*s->y + s->offset) % s->map->height;
         return;
     }
-    if (state->orientation == 3) {
-        *state->x = (*state->x - state->offset +
-            state->map->width) % state->map->width;
-        *state->y = (*state->y + state->dist +
-            state->map->height) % state->map->height;
+    if (s->orientation == 3) {
+        *s->x = (*s->x - s->offset + s->map->width) % s->map->width;
+        *s->y = (*s->y + s->dist + s->map->height) % s->map->height;
         return;
     }
-    *state->x = (*state->x - state->dist +
-        state->map->width) % state->map->width;
-    *state->y = (*state->y - state->offset +
-        state->map->height) % state->map->height;
+    *s->x = (*s->x - s->dist + s->map->width) % s->map->width;
+    *s->y = (*s->y - s->offset + s->map->height) % s->map->height;
+}
+
+static void add_tile_to_response(char **res, char *tile, int *first)
+{
+    if (!*first)
+        *res = da_push(*res, ", ", 1);
+    *res = da_push(*res, tile, DA_LEN(tile));
+    da_destroy(tile);
+    *first = 0;
 }
 
 char *vision_look(client_t *client, map_t *map)
@@ -74,11 +77,8 @@ char *vision_look(client_t *client, map_t *map)
                 .orientation = client->player->orientation,
                 .player = client->player, .map = map
             });
-            if (!first)
-                res = da_push(res, ", ", 1);
             tile = print_tile(map_get_tile(map, x, y));
-            res = da_push(res, tile, DA_LEN(tile));
-            da_destroy(tile);
+            add_tile_to_response(&res, tile, &first);
             first = 0;
         }
     }
