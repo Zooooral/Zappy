@@ -11,6 +11,9 @@
 static inline void ai_action_fork(server_t *server, client_t *client,
     char *cmd)
 {
+    (void)server;
+    (void)client;
+    (void)cmd;
 }
 
 #endif // AI_ACTION_FORK_H

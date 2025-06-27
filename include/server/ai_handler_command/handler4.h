@@ -20,6 +20,7 @@
 static inline void helper_send_pbc(server_t *server, client_t *client,
     player_t *sender, const char *msg)
 {
+    (void)client;
     char *buf = NULL;
     client_t *other;
     int ret;
