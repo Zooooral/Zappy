@@ -30,7 +30,7 @@ static inline void ai_action_connect_nbr(server_t *server,
     size_t available = server->config.max_clients_per_team;
     char *buf = NULL;
     int ret;
-    int current;
+    size_t current;
 
     if (!server || !client || !client->team_name) {
         send_response(client, "ko\n");
