@@ -20,7 +20,8 @@ const char *gui_payload_pgt(const player_t *player, int resource_id)
     if (!player || resource_id < 0 || resource_id >= RESOURCE_COUNT) {
         return NULL;
     }
-    snprintf(response, sizeof(response), "pgt #%d %d\n", player->id, resource_id);
+    snprintf(response, sizeof(response), "pgt #%d %d\n",
+        player->id, resource_id);
     return strdup(response);
 }
 
@@ -31,7 +32,8 @@ const char *gui_payload_pdr(const player_t *player, int resource_id)
     if (!player || resource_id < 0 || resource_id >= RESOURCE_COUNT) {
         return NULL;
     }
-    snprintf(response, sizeof(response), "pdr #%d %d\n", player->id, resource_id);
+    snprintf(response, sizeof(response), "pdr #%d %d\n",
+        player->id, resource_id);
     return strdup(response);
 }
 
