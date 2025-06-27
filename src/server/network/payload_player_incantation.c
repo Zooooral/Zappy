@@ -12,21 +12,40 @@
 #include "server/server.h"
 #include "server/server_updates.h"
 
+static int append_players_to_buf(char **buf, player_t **players, int count)
+{
+    char *tmp = NULL;
+    int ret;
+
+    for (int i = 0; i < count; ++i) {
+        tmp = NULL;
+        ret = asprintf(&tmp, "%s #%d", *buf, players[i]->id);
+        if (ret == -1) {
+            free(*buf);
+            return -1;
+        }
+        free(*buf);
+        *buf = tmp;
+    }
+    return 0;
+}
+
 char *gui_payload_pic(tile_t *tile, int level, player_t **players, int count)
 {
     char *buf = NULL;
     char *tmp2 = NULL;
-    char *tmp = NULL;
+    int ret;
 
-    asprintf(&buf, "pic %d %d %d", tile->players[0]->x, tile->players[0]->y,
-        level);
-    for (int i = 0; i < count; ++i) {
-        tmp = NULL;
-        asprintf(&tmp, "%s #%d", buf, players[i]->id);
+    ret = asprintf(&buf, "pic %d %d %d", tile->players[0]->x, tile->players[0]->y, level);
+    if (ret == -1)
+        return NULL;
+    if (append_players_to_buf(&buf, players, count) == -1)
+        return NULL;
+    ret = asprintf(&tmp2, "%s\n", buf);
+    if (ret == -1) {
         free(buf);
-        buf = tmp;
+        return NULL;
     }
-    asprintf(&tmp2, "%s\n", buf);
     free(buf);
     buf = tmp2;
     return buf;
