@@ -27,4 +27,6 @@ bool incantation_requirements_met(server_t *server, player_t *player);
 // Returns 1 if incantation succeeded, 0 if failed
 int try_incantation(server_t *server, client_t *client);
 
+tile_t *get_player_tile(server_t *server, player_t *p);
+
 #endif // INCANTATION_H
