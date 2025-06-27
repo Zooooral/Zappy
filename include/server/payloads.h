@@ -15,8 +15,9 @@ char *gui_payload_ppo(client_t *, const player_t *player);
 char *gui_payload_plv(client_t *, const player_t *player);
 char *gui_payload_pdi(client_t *, const player_t *player);
 
-char *gui_payload_pic(client_t *, const player_t *player);
-char *gui_payload_pie(client_t *, const player_t *player);
+char *gui_payload_pic(tile_t *tile, int level, player_t **players, int count);
+char *gui_payload_pie_success(client_t *, const player_t *player);
+char *gui_payload_pie_failed(client_t *, const player_t *player);
 
 char *gui_payload_tile(server_t *server, int x, int y);
 
