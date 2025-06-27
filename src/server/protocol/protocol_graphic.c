@@ -13,6 +13,7 @@
 #include "server/protocol_graphic.h"
 #include "server/server_updates.h"
 #include "server/payloads.h"
+#include "protocol_graphic_garbage.h"
 
 void protocol_send_tile_content(server_t *server, client_t *client,
     int x, int y)
@@ -41,7 +42,7 @@ void protocol_send_player_info(client_t *client, const player_t *player)
 
     if (!client || !player) {
         printf("[DEBUG] protocol_send_player_info: client=%p player=%p\n",
-            (void*)client, (void*)player);
+            (void *)client, (void *)player);
         return;
     }
     snprintf(response, sizeof(response), "pnw #%d %d %d %d %d %s\n",
@@ -113,76 +114,6 @@ static void handle_player_info_command(server_t *server, client_t *client,
     const char *cmd)
 {
     (void)cmd;
-}
-
-static void handle_position_update(server_t *server, client_t *client,
-    const char *cmd)
-{
-    int player_id;
-    player_t *player;
-
-    sscanf(cmd, "ppo #%d", &player_id);
-    player = player_find_by_id(server, player_id);
-    if (player) {
-        send_position_update(client, player);
-    }
-}
-
-static void handle_player_inventory(server_t *server, client_t *client,
-    const char *cmd)
-{
-    int player_id;
-    player_t *player;
-    char *response;
-
-    if (sscanf(cmd, "pin #%d", &player_id) != 1) {
-        send_response(client, "sbp\n");
-        return;
-    }
-    player = player_find_by_id(server, player_id);
-    if (!player) {
-        send_response(client, "sbp\n");
-        return;
-    }
-    response = gui_payload_pin(client, player);
-    if (!response) {
-        send_response(client, "sbp\n");
-        return;
-    }
-    send_response(client, response);
-}
-
-// sgt
-static void handle_time_unit_command(server_t *server, client_t *client,
-    const char *cmd)
-{
-    char *response;
-
-    (void)cmd;
-    if (server && server->config.freq > 0) {
-        asprintf(&response, "sgt %zu\n", server->config.freq);
-        send_response(client, response);
-        free(response);
-    } else {
-        send_response(client, "sbp\n");
-    }
-}
-
-// sst
-static void handle_time_unit_modification(server_t *server, client_t *client,
-    const char *cmd)
-{
-    int new_freq;
-    char *response;
-
-    if (sscanf(cmd, "sst %d", &new_freq) == 1 && new_freq > 0) {
-        server->config.freq = new_freq;
-        asprintf(&response, "sgt %zu\n", server->config.freq);
-        send_response(client, response);
-        free(response);
-    } else {
-        send_response(client, "sbp\n");
-    }
 }
 
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
