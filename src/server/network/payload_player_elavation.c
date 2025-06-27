@@ -21,7 +21,7 @@ const char *gui_payload_pic(client_t *, const player_t *player)
     return strdup(response);
 }
 
-const char *gui_payload_elevation_end(client_t *, const player_t *player)
+const char *gui_payload_pie(client_t *, const player_t *player)
 {
     char response[131];
 
