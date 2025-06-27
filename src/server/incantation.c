@@ -109,7 +109,33 @@ static void notify_gui_inventory(server_t *server, player_t *p) {
     free(buf);
 }
 
-// Returns 1 if incantation succeeded, 0 if failed
+bool incantation_requirements_met(server_t *server, player_t *player) {
+    if (!server || !player)
+        return false;
+    tile_t *tile = get_player_tile(server, player);
+    int level = get_player_level(player);
+    if (level < 1 || level > 7 || !tile)
+        return false;
+    const int *reqs = incantation_requirements[level];
+    player_t *players[8] = {0};
+    int player_count = 0;
+    if (!has_required_players(server, tile, level, reqs[0], players, &player_count))
+        return false;
+    if (!has_required_resources(tile, reqs))
+        return false;
+    return true;
+}
+
+static int do_incantation(incantation_ctx_t *ctx) {
+    remove_resources(ctx->tile, ctx->reqs);
+    ctx->initiator->level++;
+    notify_gui_level_up(ctx->server, ctx->initiator);
+    notify_gui_inventory(ctx->server, ctx->initiator);
+    notify_gui_pic(ctx->server, ctx->tile, ctx->level, ctx->players, ctx->player_count);
+    notify_gui_pie(ctx->server, ctx->tile, 1);
+    return 1;
+}
+
 int try_incantation(server_t *server, client_t *client) {
     if (!server || !client || !client->player)
         return 0;
@@ -119,25 +145,11 @@ int try_incantation(server_t *server, client_t *client) {
     if (level < 1 || level > 7 || !tile)
         return 0;
     const int *reqs = incantation_requirements[level];
-    player_t *players[8] = {0};
-    int player_count = 0;
-    if (!has_required_players(server, tile, level, reqs[0], players, &player_count)) {
-        notify_gui_pic(server, tile, level, players, player_count);
+    incantation_ctx_t ctx = { server, p, tile, level, reqs, {p}, reqs[0] };
+    if (!incantation_requirements_met(server, p)) {
+        notify_gui_pic(server, tile, level, ctx.players, ctx.player_count);
         notify_gui_pie(server, tile, 0);
         return 0;
     }
-    if (!has_required_resources(tile, reqs)) {
-        notify_gui_pic(server, tile, level, players, player_count);
-        notify_gui_pie(server, tile, 0);
-        return 0;
-    }
-    remove_resources(tile, reqs);
-    for (int i = 0; i < player_count; ++i) {
-        players[i]->level++;
-        notify_gui_level_up(server, players[i]);
-        notify_gui_inventory(server, players[i]);
-    }
-    notify_gui_pic(server, tile, level, players, player_count);
-    notify_gui_pie(server, tile, 1);
-    return 1;
+    return do_incantation(&ctx);
 }

@@ -21,7 +21,7 @@ const char *gui_payload_elevation_end(client_t *, const player_t *player);
 char *gui_payload_tile(server_t *server, int x, int y);
 
 char *gui_payload_resource_collected(const player_t *player, int resource_id);
-const char *gui_payload_resource_dropped(const player_t *player, int resource_id);
+char *gui_payload_resource_dropped(const player_t *player, int resource_id);
 const char *gui_payload_inventory(client_t *, const player_t *player);
 
 #endif /* !NETWORK_PAYLOADS_H_ */

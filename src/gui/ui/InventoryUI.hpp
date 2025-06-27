@@ -22,8 +22,10 @@ public:
     void draw() const override;
     
     void setCharacter(Character* character);
+    void closeInventory();
     void setVisible(bool visible) { _visible = visible; }
     bool isVisible() const { return _visible; }
+    Character* getCurrentCharacter() const { return _character; }
     
 private:
     Character* _character = nullptr;
@@ -39,6 +41,7 @@ private:
     void drawInventoryGrid() const;
     void drawCharacterInfo() const;
     Color getResourceColor(const std::string& resourceName) const;
+    bool isCharacterValid() const;
 };
 
 #endif

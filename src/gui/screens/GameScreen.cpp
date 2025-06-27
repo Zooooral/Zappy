@@ -399,6 +399,13 @@ void GameScreen::update(float dt) {
     }
 
     CharacterManager::getInstance().update(dt);
+    
+    Character* currentInventoryCharacter = _inventoryUI->getCurrentCharacter();
+    if (currentInventoryCharacter && 
+        CharacterManager::getInstance().getCharacter(currentInventoryCharacter->getId()) != currentInventoryCharacter) {
+        _inventoryUI->closeInventory();
+    }
+    
     _backButton->update(dt);
     _inventoryUI->update(dt);
     _dashboard->update(dt);
@@ -413,7 +420,7 @@ void GameScreen::update(float dt) {
         if (_dashboard->isVisible()) {
             _dashboard->toggle();
         } else if (_inventoryUI->isVisible()) {
-            _inventoryUI->setVisible(false);
+            _inventoryUI->closeInventory();
         }
     }
 

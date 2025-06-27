@@ -5,12 +5,14 @@
 ** Protocol handling for graphic clients
 */
 
-#include "server/server.h"
-#include "server/protocol_graphic.h"
-#include "server/server_updates.h"
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "server/server.h"
+#include "server/protocol_graphic.h"
+#include "server/server_updates.h"
+#include "server/payloads.h"
 
 static void format_tile_response(char *response, int x, int y,
     const tile_t *tile)
@@ -199,6 +201,31 @@ static void handle_time_unit_modification(server_t *server, client_t *client,
     }
 }
 
+static void handle_player_level_command(server_t *server, client_t *client,
+    const char *cmd)
+{
+    int player_id;
+    player_t *player;
+    char *response;
+
+    if (sscanf(cmd, "plv #%d", &player_id) != 1) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    player = player_find_by_id(server, player_id);
+    if (!player) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    response = gui_payload_level_update(client, player);
+    if (!response) {
+        send_response(client, "sbp\n");
+        return;
+    }
+    send_response(client, response);
+    free(response);
+}
+
 static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
 {
     size_t i;
@@ -212,6 +239,7 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {"pin", handle_player_inventory},
         {"sgt", handle_time_unit_command},
         {"sst", handle_time_unit_modification},
+        {"plv", handle_player_level_command},
         {NULL, NULL}
     };
 
