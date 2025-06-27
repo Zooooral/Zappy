@@ -1,6 +1,6 @@
 /*
 ** EPITECH PROJECT, 2025
-** /home/vj/coding/B-YEP-400-PAR-4-1-zappy-maxence.bunel/src/server/protocol/ai_callback
+** /home/vj/coding/PAR-4-1-zappy-maxence.bunel/src/server/protocol/ai_callback
 ** File description:
 ** ai callbacks (after the ticks passed)
 */
@@ -35,8 +35,8 @@ void ai_callback_handler(client_t *client, void *data)
     if (!action_data || !client)
         return;
     server = action_data->server;
-    if (action_data->type >= 0 && action_data->type <= sizeof action_handlers &&
-        action_handlers[action_data->type]) {
+    if (action_data->type >= 0 && action_data->type <= sizeof action_handlers
+        && action_handlers[action_data->type]) {
         action_handlers[action_data->type](server, client, action_data->cmd);
     }
     free(action_data);
