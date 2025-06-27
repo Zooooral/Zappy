@@ -76,7 +76,10 @@ static inline void ai_action_incantation(server_t *server,
     }
     result = try_incantation(server, client);
     if (result) {
-        asprintf(&buf, "Current level: %d\n", client->player->level);
+        if (asprintf(&buf, "Current level: %d\n", client->player->level) < 0) {
+            send_response(client, "ko\n");
+            return;
+        }
         send_response(client, buf);
         free(buf);
     } else {

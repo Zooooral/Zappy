@@ -22,8 +22,11 @@ static inline void helper_send_pbc(server_t *server, client_t *client,
 {
     char *buf = NULL;
     client_t *other;
+    int ret;
 
-    asprintf(&buf, "pbc #%d %s\n", sender->id, msg);
+    ret = asprintf(&buf, "pbc #%d %s\n", sender->id, msg);
+    if (ret < 0 || !buf)
+        return;
     for (size_t i = 0; i < server->client_count; ++i) {
         other = &server->clients[i];
         if (other->type == CLIENT_TYPE_GRAPHIC) {
@@ -88,6 +91,7 @@ static inline void send_broadcast_to_ai(server_t *server,
     int direction;
     int orient;
     client_t *other;
+    int ret;
 
     for (size_t i = 0; i < server->client_count; ++i) {
         other = &server->clients[i];
@@ -99,7 +103,9 @@ static inline void send_broadcast_to_ai(server_t *server,
             (sender->x - other->player->x), (sender->y - other->player->y)
             }, server->game->map->width,
             server->game->map->height, orient);
-        asprintf(&ai_msg, "message %d, %s\n", direction, msg);
+        ret = asprintf(&ai_msg, "message %d, %s\n", direction, msg);
+        if (ret < 0 || !ai_msg)
+            continue;
         send_response(other, ai_msg);
         free(ai_msg);
     }
@@ -109,15 +115,11 @@ static inline void ai_action_broadcast(server_t *server, client_t *client,
     char *msg)
 {
     player_t *sender = client ? client->player : NULL;
-    int width;
-    int height;
 
     if (!server || !client || !msg || !sender) {
         send_response(client, "ko\n");
         return;
     }
-    width = server->game->map->width;
-    height = server->game->map->height;
     send_broadcast_to_ai(server, client, sender, msg);
     helper_send_pbc(server, client, sender, msg);
 }

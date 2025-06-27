@@ -103,6 +103,7 @@ static inline void ai_action_inventory(server_t *server, client_t *client,
     size_t i;
     player_t *p = NULL;
     char *buf;
+    int ret;
 
     if (!server || !client)
         return (void)cmd;
@@ -113,13 +114,16 @@ static inline void ai_action_inventory(server_t *server, client_t *client,
         }
     if (!p)
         return send_response(client, "ko\n");
-    asprintf(&buf, "[food %d, linemate %d, "
+    ret = asprintf(&buf, "[food %d, linemate %d, "
         "deraumere %d, sibur %d, mendiane %d, phiras %d, thystame %d]\n",
         p->resources[RESOURCE_FOOD], p->resources[RESOURCE_LINEMATE],
         p->resources[RESOURCE_DERAUMERE], p->resources[RESOURCE_SIBUR],
         p->resources[RESOURCE_MENDIANE], p->resources[RESOURCE_PHIRAS],
         p->resources[RESOURCE_THYSTAME]);
+    if (ret < 0 || !buf)
+        return send_response(client, "ko\n");
     send_response(client, buf);
+    free(buf);
 }
 
 #endif
