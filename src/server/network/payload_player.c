@@ -31,7 +31,7 @@ const char *gui_payload_position_update(client_t *, const player_t *player)
     return strdup(response);
 }
 
-const char *gui_payload_level_update(client_t *, const player_t *player)
+const char *gui_payload_plv(client_t *, const player_t *player)
 {
     char response[131];
 
