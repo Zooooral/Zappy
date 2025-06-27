@@ -26,7 +26,7 @@ static inline void ai_action_take(server_t *server,
 
     if (!server || !client)
         return;
-    for (int i = 0; i < server->game->player_count; ++i) {
+    for (size_t i = 0; i < server->game->player_count; ++i) {
         if (server->game->players[i]->id == client->fd) {
             p = server->game->players[i];
             break;
@@ -117,6 +117,7 @@ static inline size_t eject_other_players(server_t *server,
 static inline void ai_action_eject(server_t *server,
     client_t *client, char *cmd)
 {
+    (void)cmd;
     player_t *self = client ? client->player : NULL;
     int dx = self ? (self->orientation == 2) : 0;
     int dy = self ? (self->orientation == 3) : 0;
