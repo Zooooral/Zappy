@@ -8,8 +8,19 @@
 #ifndef INCANTATION_H
     #define INCANTATION_H
 
-    #include "server/server.h"
     #include <stdbool.h>
+
+    #include "server/server.h"
+
+
+struct reqplayer_ctx {
+    server_t *server;
+    tile_t *tile;
+    int level;
+    int required;
+    player_t **out;
+    int *count;
+};
 
 typedef struct {
     server_t *server;
@@ -25,5 +36,7 @@ bool incantation_requirements_met(server_t *server, player_t *player);
 
 // Returns 1 if incantation succeeded, 0 if failed
 int try_incantation(server_t *server, client_t *client);
+
+tile_t *get_player_tile(server_t *server, player_t *p);
 
 #endif // INCANTATION_H

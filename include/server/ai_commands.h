@@ -11,7 +11,7 @@
     #include "server/server.h"
     #include "server/protocol_ai.h"
 
-typedef void (*ai_cmd_fn_t)(server_t*, client_t*, const char*);
+typedef void (*ai_cmd_fn_t)(server_t *, client_t *, const char *);
 
 typedef struct {
     const char *name;

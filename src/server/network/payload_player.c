@@ -12,7 +12,7 @@
 #include "server/server.h"
 #include "server/server_updates.h"
 
-const char *gui_payload_new_player(client_t *, const player_t *player)
+const char *gui_payload_pnw(client_t *, const player_t *player)
 {
     char response[128];
 
@@ -22,7 +22,7 @@ const char *gui_payload_new_player(client_t *, const player_t *player)
     return strdup(response);
 }
 
-const char *gui_payload_position_update(client_t *, const player_t *player)
+const char *gui_payload_ppo(client_t *, const player_t *player)
 {
     char response[131];
 
@@ -31,7 +31,7 @@ const char *gui_payload_position_update(client_t *, const player_t *player)
     return strdup(response);
 }
 
-const char *gui_payload_level_update(client_t *, const player_t *player)
+const char *gui_payload_plv(client_t *, const player_t *player)
 {
     char response[131];
 
@@ -40,7 +40,7 @@ const char *gui_payload_level_update(client_t *, const player_t *player)
     return strdup(response);
 }
 
-const char *gui_payload_player_death(client_t *, const player_t *player)
+const char *gui_payload_pdi(client_t *, const player_t *player)
 {
     char response[128];
 
