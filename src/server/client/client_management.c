@@ -116,7 +116,7 @@ void client_remove(server_t *server, size_t index)
         return;
     player = server->clients[index].player;
     if (player) {
-        broadcast_message_to_guis(server, player, gui_payload_player_death);
+        broadcast_message_to_guis(server, player, gui_payload_pdi);
     }
     cleanup_client_resources(&server->clients[index]);
     shift_clients_array(server, index);
