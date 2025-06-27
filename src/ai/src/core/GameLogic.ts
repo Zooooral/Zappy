@@ -63,7 +63,6 @@ export class GameLogic {
         const level = context.gameState.playerLevel;
 
         if (this.elevationManager.shouldReproduceAtLevel2(level) && context.currentState !== AIState.REPRODUCTION) {
-            logger.info(`Level ${level} reached! Switching to REPRODUCTION mode`);
             this.stateManager.setState(AIState.REPRODUCTION);
         }
     }
@@ -149,13 +148,11 @@ export class GameLogic {
         const level = context.gameState.playerLevel;
 
         if (!this.elevationManager.shouldReproduceAtLevel2(level)) {
-            logger.info("Reproduction already completed, switching to exploration");
             this.stateManager.setState(AIState.EXPLORATION);
             return;
         }
 
         if (context.inventory.food < 3) {
-            logger.info("Need more food before reproducing");
             this.stateManager.setState(AIState.SURVIVAL);
             return;
         }
@@ -167,7 +164,6 @@ export class GameLogic {
         );
 
         if (success) {
-            logger.info("Reproduction successful! New AI instance spawned. Returning to exploration");
             this.stateManager.setState(AIState.EXPLORATION);
         } else {
             logger.info("Reproduction failed, will retry. Collecting resources in the meantime...");
