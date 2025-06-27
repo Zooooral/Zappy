@@ -15,20 +15,17 @@
 static char *print_tile(tile_t *tile)
 {
     char *str = da_create();
-    int first = 1;
 
     if (!tile)
         return da_create();
     if (tile->player_count) {
         str = da_push(str, "player", 6);
-        first = 0;
     }
     for (int i = 0; i < 7; ++i) {
         for (int j = 0; j < tile->resources[i]; ++j) {
             str = da_push(str, " ", 1);
             str = da_push(str, ressource_string_table[i],
                 strlen(ressource_string_table[i]));
-            first = 0;
         }
     }
     return str;
@@ -65,8 +62,8 @@ static void add_tile_to_response(char **res, char *tile, int *first)
 char *vision_look(client_t *client, map_t *map)
 {
     char *res = da_push(da_create(), "[", 1);
-    int x;
-    int y;
+    int x = client->player->x;
+    int y = client->player->y;
     char *tile = NULL;
     int first = 1;
 
@@ -80,5 +77,6 @@ char *vision_look(client_t *client, map_t *map)
             first = 0;
         }
     }
-    return da_push(res, " ]\n", 4);
+    res = da_push(res, "]", 1);
+    return res;
 }

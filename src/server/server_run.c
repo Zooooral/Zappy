@@ -113,7 +113,6 @@ static void wait_for_next_tick(server_t *server, double delta_time)
 void server_run(server_t *server)
 {
     double last_time = get_current_time();
-    double broadcast_timer = 0.0;
     double delta_time;
 
     print_server_info(server);
