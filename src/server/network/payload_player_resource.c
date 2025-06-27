@@ -24,7 +24,7 @@ const char *gui_payload_pgt(const player_t *player, int resource_id)
     return strdup(response);
 }
 
-const char *gui_payload_resource_dropped(const player_t *player, int resource_id)
+const char *gui_payload_pdr(const player_t *player, int resource_id)
 {
     char response[128];
 

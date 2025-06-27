@@ -59,7 +59,7 @@ static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
     tile->resources[resource_id]++;
     send_response(client, "ok\n");
     broadcast_player_resource_update(server, p, resource_id,
-        gui_payload_resource_dropped);
+        gui_payload_pdr);
     broadcast_message_to_guis(server, p, gui_payload_inventory);
 }
 
