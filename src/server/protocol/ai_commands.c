@@ -8,19 +8,6 @@
 #include "server/ai_commands.h"
 #include "server/protocol_ai.h"
 
-extern void handle_forward(server_t*, client_t*, const char*);
-extern void handle_right(server_t*, client_t*, const char*);
-extern void handle_left(server_t*, client_t*, const char*);
-extern void handle_look(server_t*, client_t*, const char*);
-extern void handle_inventory(server_t*, client_t*, const char*);
-extern void handle_broadcast(server_t*, client_t*, const char*);
-extern void handle_connect_nbr(server_t*, client_t*, const char*);
-extern void handle_fork(server_t*, client_t*, const char*);
-extern void handle_eject(server_t*, client_t*, const char*);
-extern void handle_take(server_t*, client_t*, const char*);
-extern void handle_set(server_t*, client_t*, const char*);
-extern void handle_incantation(server_t*, client_t*, const char*);
-
 const ai_cmd_t ai_commands[] = {
     {"Forward", 7, handle_forward},
     {"Right", 5, handle_right},

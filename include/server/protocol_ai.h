@@ -49,6 +49,19 @@ typedef struct ai_action_data_s {
     char *cmd;
 } ai_action_data_t;
 
+extern void handle_forward(server_t *, client_t *, const char *);
+extern void handle_right(server_t *, client_t *, const char *);
+extern void handle_left(server_t *, client_t *, const char *);
+extern void handle_look(server_t *, client_t *, const char *);
+extern void handle_inventory(server_t *, client_t *, const char *);
+extern void handle_broadcast(server_t *, client_t *, const char *);
+extern void handle_connect_nbr(server_t *, client_t *, const char *);
+extern void handle_fork(server_t *, client_t *, const char *);
+extern void handle_eject(server_t *, client_t *, const char *);
+extern void handle_take(server_t *, client_t *, const char *);
+extern void handle_set(server_t *, client_t *, const char *);
+extern void handle_incantation(server_t *, client_t *, const char *);
+
 void protocol_handle_ai_command(server_t *server, client_t *client,
     const char *cmd);
 void create_and_queue_action(server_t *server, client_t *client,
