@@ -72,7 +72,7 @@ export class GameLogic {
         const now = Date.now();
 
         try {
-            if (!this.lastInventory || (now - this.lastInventoryUpdate) > 2000 || (this.lastInventory.food < 50 && (now - this.lastInventoryUpdate) > 500)) {
+            if (!this.lastInventory || (now - this.lastInventoryUpdate) > 2000 || (now - this.lastInventoryUpdate) > 500) {
                 this.lastInventory = await this.client.getInventory();
                 this.lastInventoryUpdate = now;
             }
