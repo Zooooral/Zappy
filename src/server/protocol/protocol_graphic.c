@@ -110,12 +110,6 @@ static void handle_team_names_command(server_t *server, client_t *client,
     }
 }
 
-static void handle_player_info_command(server_t *server, client_t *client,
-    const char *cmd)
-{
-    (void)cmd;
-}
-
 static void handle_player_level_command(server_t *server, client_t *client,
     const char *cmd)
 {
@@ -148,7 +142,6 @@ static graphic_cmd_handler_t find_graphic_handler(const char *cmd)
         {"mct", handle_map_content_command},
         {"tna", handle_team_names_command},
         {"bct ", handle_tile_content_command},
-        {"pnw", handle_player_info_command},
         {"ppo", handle_position_update},
         {"pin", handle_player_inventory},
         {"sgt", handle_time_unit_command},
