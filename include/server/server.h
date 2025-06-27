@@ -63,6 +63,8 @@ typedef struct tile_s {
     struct player_s **players;
     size_t player_count;
     size_t player_capacity;
+    int x;
+    int y;
 } tile_t;
 
 typedef struct player_s {
