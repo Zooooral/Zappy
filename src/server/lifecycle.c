@@ -6,17 +6,28 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "server/lifecycle.h"
+#include "server/broadcast.h"
+#include "server/payloads.h"
 
 void consume_food(client_t *client)
 {
     (void)client;
 }
 
-void player_die(client_t *client)
+void player_die(client_t *client, server_t *server)
 {
-    (void)client;
+    player_t *player = client ? client->player : NULL;
+    tile_t *tile = NULL;
+    
+    if (!client || !player)
+        return;
+    player->is_alive = false;
+    if (server && server->game) {
+        broadcast_player_death(server, player);
+    send_response(client, "dead\n");
 }
 
 void fork_player(client_t *client, map_t *map)
@@ -25,7 +36,3 @@ void fork_player(client_t *client, map_t *map)
     (void)map;
 }
 
-void hatch_egg(void *egg_data)
-{
-    (void)egg_data;
-}

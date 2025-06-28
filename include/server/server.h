@@ -115,6 +115,7 @@ typedef struct server_s {
     client_t *clients;
     size_t client_count;
     size_t client_capacity;
+    size_t *eggs;
     struct pollfd *poll_fds;
     size_t poll_count;
     bool is_running;
