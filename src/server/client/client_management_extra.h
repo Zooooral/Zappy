@@ -61,7 +61,7 @@ static inline bool try_regular_connect(server_t *server, client_t *client,
         add_player_to_game(server->game, client->player);
         broadcast_message_to_guis(server, client->player, gui_payload_pnw);
     }
-    return false;
+    return true;
 }
 
 static inline bool hatch_from_egg(server_t *server, client_t *client,
