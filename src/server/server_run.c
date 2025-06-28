@@ -9,6 +9,7 @@
 #include "server/server.h"
 #include "server/server_broadcast.h"
 #include "server/time.h"
+#include "server/lifecycle.h"
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
@@ -76,11 +77,13 @@ static void check_for_death(server_t *server)
 {
     player_t *player;
 
+    if (!server || !server->game)
+        return;
     for (size_t i = 0; i < server->game->player_count; ++i) {
         player = server->game->players[i];
-        if (!player->is_alive) {
-            send_response(player->client, "dead\n");
+        if (player && !player->is_alive && player->client) {
             client_remove(server, i);
+            i--;
         }
     }
 }
