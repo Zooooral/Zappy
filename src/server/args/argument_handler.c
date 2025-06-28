@@ -72,6 +72,21 @@ static int process_teams_arg(const char **argv, int *i, int argc,
     return parse_team_names(argv, i, argc, config);
 }
 
+static int process_refill_arg(const char **argv, int *i,
+    server_config_t *config)
+{
+    if (!argv[*i + 1])
+        return -1;
+    if (strcmp(argv[*i + 1], "true") == 0)
+        config->refill_tiles = true;
+    else if (strcmp(argv[*i + 1], "false") == 0)
+        config->refill_tiles = false;
+    else
+        return -1;
+    (*i)++;
+    return 0;
+}
+
 int process_argument(const char **argv, int *i, int argc,
     server_config_t *config)
 {
@@ -87,5 +102,7 @@ int process_argument(const char **argv, int *i, int argc,
         return process_freq_arg(argv, i, config);
     if (strcmp(argv[*i], "-n") == 0)
         return process_teams_arg(argv, i, argc, config);
+    if (strcmp(argv[*i], "-r") == 0)
+        return process_refill_arg(argv, i, config);
     return -1;
 }
