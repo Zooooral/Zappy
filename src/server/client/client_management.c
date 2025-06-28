@@ -124,16 +124,52 @@ client_t *client_find_by_fd(server_t *server, int fd)
     return NULL;
 }
 
+// add some egg stuff here
+static int count_players_in_team(server_t *server, const char *team_name)
+{
+    int count = 0;
+
+    for (size_t i = 0; i < server->game->player_count; ++i) {
+        player_t *p = server->game->players[i];
+        if (p && p->team_name && strcmp(p->team_name, team_name) == 0)
+            count++;
+    }
+    return count;
+}
+
+static bool can_client_connect(server_t *server, client_t *client)
+{
+    int available;
+    int current;
+
+    if (!server || !client || !client->team_name ||
+        server->game->player_count >= server->game->player_capacity)
+        return false;
+    for (size_t i = 0; i < server->config.team_count; ++i) {
+        if (strcmp(client->team_name, server->config.team_names[i]) == 0) {
+            current = count_players_in_team(server, client->team_name);
+            available = (int)server->config.max_clients_per_team - current;
+            if (available <= 0) {
+                printf("Team %s is full.\n", client->team_name);
+                return false;
+            }
+            break;
+        }
+    }
+    client->is_authenticated = true;
+    return true;
+}
+
 static void client_validate(server_t *server, client_t *client,
     const char *message)
 {
-    char res[128];
+    char res[1024];
     int p[2] = {rand() % server->config.width, rand() % server->config.height};
 
-    client->player = NULL;
-    client->type = CLIENT_TYPE_AI;
     client->team_name = strdup(message);
-    client->is_authenticated = true;
+    client->type = CLIENT_TYPE_AI;
+    if (!can_client_connect(server, client))
+        return send_response(client, "ko\n");
     if (server->game->player_count < server->game->player_capacity) {
         client->player = player_create(client, p[0], p[1], message);
         if (client->player) {
