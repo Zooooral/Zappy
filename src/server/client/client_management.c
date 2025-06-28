@@ -128,9 +128,10 @@ client_t *client_find_by_fd(server_t *server, int fd)
 static int count_players_in_team(server_t *server, const char *team_name)
 {
     int count = 0;
+    player_t *p;
 
     for (size_t i = 0; i < server->game->player_count; ++i) {
-        player_t *p = server->game->players[i];
+        p = server->game->players[i];
         if (p && p->team_name && strcmp(p->team_name, team_name) == 0)
             count++;
     }

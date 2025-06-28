@@ -26,9 +26,6 @@ char *gui_payload_time_unit_get(int time_unit)
 
     asprintf(&response, "sgt %d\n", time_unit);
     return response;
-
-    snprintf(response, sizeof(response), "sgt %d\n", time_unit);
-    return strdup(response);
 }
 
 char *gui_payload_time_unit_set(int time_unit)
