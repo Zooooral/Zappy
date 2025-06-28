@@ -10,6 +10,7 @@
 #include "server/server_broadcast.h"
 #include "server/time.h"
 #include "server/lifecycle.h"
+#include "server/win_condition.h"
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
@@ -90,12 +91,18 @@ static void check_for_death(server_t *server)
 
 static void update_game_and_broadcast(server_t *server, double delta_time)
 {
+    int winning_team;
+
     if (server->tick_count % 20 == 0)
         respawn_resources(server);
     if (server->game)
         game_state_update(server, delta_time);
     process_actions(server);
     check_for_death(server);
+    winning_team = check_win_condition(server);
+    if (winning_team >= 0) {
+        handle_game_win(server, winning_team);
+    }
 }
 
 static void wait_for_next_tick(server_t *server, double delta_time)
