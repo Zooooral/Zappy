@@ -141,12 +141,14 @@ static bool can_client_connect(server_t *server, client_t *client)
 {
     int available;
     int current;
+    bool team_found = false;
 
     if (!server || !client || !client->team_name ||
         server->game->player_count >= server->game->player_capacity)
         return false;
     for (size_t i = 0; i < server->config.team_count; ++i) {
         if (strcmp(client->team_name, server->config.team_names[i]) == 0) {
+            team_found = true;
             current = count_players_in_team(server, client->team_name);
             available = (int)server->config.max_clients_per_team - current;
             if (available <= 0) {
@@ -157,7 +159,7 @@ static bool can_client_connect(server_t *server, client_t *client)
         }
     }
     client->is_authenticated = true;
-    return true;
+    return team_found;
 }
 
 static void client_validate(server_t *server, client_t *client,
