@@ -9,6 +9,7 @@
 #ifndef PROTOCOL_GRAPHIC_GARBAGE_H
     #define PROTOCOL_GRAPHIC_GARBAGE_H
 
+#include "server/time.h"
 static inline void handle_position_update(server_t *server, client_t *client,
     const char *cmd)
 {
@@ -55,7 +56,7 @@ static inline void handle_time_unit_command(server_t *server, client_t *client,
 
     (void)cmd;
     if (server && server->config.freq > 0) {
-        ret = asprintf(&response, "sgt %zu\n", server->config.freq);
+        ret = asprintf(&response, "sgt %f\n", get_time_unit(server));
         if (ret < 0 || !response) {
             send_response(client, "sbp\n");
             return;
