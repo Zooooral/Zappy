@@ -21,7 +21,8 @@
 #include "server/protocol_ai_handlers2.h"
 #include "server/protocol_ai_handlers3.h"
 
-void protocol_handle_ai_command(server_t *server, client_t *client, const char *cmd)
+void protocol_handle_ai_command(server_t *server,
+    client_t *client, const char *cmd)
 {
     printf("AI command: %s\n", cmd);
     if (!server || !client || !cmd) {

@@ -11,20 +11,21 @@
 
 void consume_food(client_t *client)
 {
-    // TODO: Consommer de la nourriture, mort si 0
+    (void)client;
 }
 
 void player_die(client_t *client)
 {
-    // TODO: Gérer la mort du joueur
+    (void)client;
 }
 
 void fork_player(client_t *client, map_t *map)
 {
-    // TODO: Créer un œuf
+    (void)client;
+    (void)map;
 }
 
 void hatch_egg(void *egg_data)
 {
-    // TODO: Faire éclore un œuf
+    (void)egg_data;
 }

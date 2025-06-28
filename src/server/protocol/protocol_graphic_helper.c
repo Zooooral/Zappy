@@ -17,6 +17,7 @@ void send_response(client_t *client, const char *response)
     if (!client || !response)
         return;
     sent = send(client->fd, response, strlen(response), 0);
+    printf("[SERVER] Sent response to client %d: %s", client->fd, response);
     (void)sent;
 }
 

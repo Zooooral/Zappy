@@ -13,36 +13,39 @@
 #include "server/server_updates.h"
 
 
-const char *gui_payload_resource_collected(const player_t *player, int resource_id)
+const char *gui_payload_pgt(const player_t *player, int resource_id)
 {
     char response[128];
 
     if (!player || resource_id < 0 || resource_id >= RESOURCE_COUNT) {
         return NULL;
     }
-    snprintf(response, sizeof(response), "pgt #%d %d\n", player->id, resource_id);
+    snprintf(response, sizeof(response), "pgt #%d %d\n",
+        player->id, resource_id);
     return strdup(response);
 }
 
-const char *gui_payload_resource_dropped(const player_t *player, int resource_id)
+const char *gui_payload_pdr(const player_t *player, int resource_id)
 {
     char response[128];
 
     if (!player || resource_id < 0 || resource_id >= RESOURCE_COUNT) {
         return NULL;
     }
-    snprintf(response, sizeof(response), "pdr #%d %d\n", player->id, resource_id);
+    snprintf(response, sizeof(response), "pdr #%d %d\n",
+        player->id, resource_id);
     return strdup(response);
 }
 
-const char *gui_payload_inventory(client_t *, const player_t *player)
+char *gui_payload_pin(client_t *, const player_t *player)
 {
-    char response[256];
+    char *res;
+    int ret;
 
     if (!player) {
         return NULL;
     }
-    snprintf(response, sizeof(response),
+    ret = asprintf(&res,
         "pin #%d %d %d %d %d %d %d %d %d %d\n",
         player->id, player->x, player->y,
         player->resources[RESOURCE_FOOD],
@@ -52,5 +55,7 @@ const char *gui_payload_inventory(client_t *, const player_t *player)
         player->resources[RESOURCE_MENDIANE],
         player->resources[RESOURCE_PHIRAS],
         player->resources[RESOURCE_THYSTAME]);
-    return strdup(response);
+    if (ret == -1)
+        return NULL;
+    return res;
 }

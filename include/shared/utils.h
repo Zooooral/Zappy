@@ -6,6 +6,8 @@
 */
 #ifndef UTILS_H_
     #define UTILS_H_
+
     #define SUCCESS 0
     #define FAILURE 84
+
 #endif /* !UTILS_H_ */

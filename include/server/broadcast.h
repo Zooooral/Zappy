@@ -10,9 +10,9 @@
 
     #include "server/server.h"
 
-void broadcast_message(client_t *sender, const char *msg);
+void broadcast_string_message_to_guis(server_t *server, const char *message);
 void broadcast_message_to_guis(server_t *server, player_t *player,
-    const char *(*function)(client_t *, const player_t *));
+    char *(*function)(client_t *, const player_t *));
 void broadcast_tile_to_guis(server_t *server, int x, int y);
 void broadcast_player_resource_update(server_t *server, player_t *player,
     int resource_id, char *(*function)(const player_t *, int));

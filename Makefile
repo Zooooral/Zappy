@@ -85,12 +85,14 @@ assets:
 			cp "$file" "${file%.obj_tmp}.obj"; \
 		fi; \
 	done
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Assets copied successfully$(RESET)\n"
+	@printf \
+	"$(GREEN)[OK]$(RESET) $(BLUE)Assets copied successfully$(RESET)\n"
 
 server: $(SERVER_OBJS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Linking server...$(RESET)\n"
 	@$(CC) -o $(SERVER_NAME) $(SERVER_OBJS) $(LDFLAGS)
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Server built successfully$(RESET)\n"
+	@printf \
+	"$(GREEN)[OK]$(RESET) $(BLUE)Server built successfully$(RESET)\n"
 
 gui: $(GUI_OBJS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Linking GUI...$(RESET)\n"
@@ -98,12 +100,15 @@ gui: $(GUI_OBJS)
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)GUI built successfully$(RESET)\n"
 
 ai:
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Creating AI executable...$(RESET)\n"
+	@printf \
+	"$(GREEN)[OK]$(RESET) $(BLUE)Creating AI executable...$(RESET)\n"
 	@cd $(AI_SRC_DIR) && $(NPM) install
 	@echo '#!/bin/bash' > $(AI_NAME)
-	@echo 'cd $(shell pwd)/$(AI_SRC_DIR) && node ai-zappy "$@"' >> $(AI_NAME)
+	@echo 'cd $(shell pwd)/$(AI_SRC_DIR) && node ai-zappy "$$@"'\
+	>> $(AI_NAME)
 	@chmod +x $(AI_NAME)
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)AI executable created successfully$(RESET)\n"
+	@printf "$(GREEN)[OK]$(RESET) \
+	$(BLUE)AI executable created successfully$(RESET)\n"
 
 docs-install: $(NODE_MODULES)
 
@@ -128,15 +133,19 @@ docs-clean:
 	@$(RM) -r $(NODE_MODULES) $(DOCS_BUILD)
 
 clean:
-	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing obj files...$(RESET)\n"
+	@printf \
+	"$(RED)[CLEANING]$(RESET) $(BLUE)Removing obj files...$(RESET)\n"
 	@$(RM) -r $(BUILD_DIR)
-	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing AI build files...$(RESET)\n"
+	@printf \
+	"$(RED)[CLEANING]$(RESET) $(BLUE)Removing AI build files...$(RESET)\n"
 	@$(RM) -r $(AI_SRC_DIR)/dist $(AI_SRC_DIR)/node_modules
 
 fclean: clean docs-clean
-	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing executables...$(RESET)\n"
+	@printf \
+	"$(RED)[CLEANING]$(RESET) $(BLUE)Removing executables...$(RESET)\n"
 	@$(RM) $(SERVER_NAME) $(GUI_NAME) $(AI_NAME)
-	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Removing copied assets...$(RESET)\n"
+	@printf \
+	"$(RED)[CLEANING]$(RESET) $(BLUE)Removing copied assets...$(RESET)\n"
 	@$(RM) assets/environment/*.obj
 	@$(RM) -r $(AI_SRC_DIR)/dist $(AI_SRC_DIR)/log
 
@@ -145,6 +154,6 @@ re: fclean
 
 debug: CFLAGS += -g3 -DDEBUG
 debug: CPPFLAGS += -g3 -DDEBUG
-debug: re
+debug: all
 
 .PHONY: all server gui ai assets docs-install docs-dev docs-build docs-serve docs-clean clean fclean re debug

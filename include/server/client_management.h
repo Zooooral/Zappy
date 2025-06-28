@@ -8,10 +8,10 @@
 #ifndef CLIENT_MANAGEMENT_H_
     #define CLIENT_MANAGEMENT_H_
 
-    #include "server.h"
     #include <netinet/in.h>
 
-int client_add(server_t *server, int client_fd, struct sockaddr_in *addr);
+    #include "server.h"
+
 void client_remove(server_t *server, size_t index);
 client_t *client_find_by_fd(server_t *server, int fd);
 
