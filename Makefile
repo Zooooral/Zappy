@@ -28,7 +28,7 @@ AI_NAME      =  zappy_ai
 CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include -iquote ./src
 GUI_LIBS     =  -lraylib
 CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar -D_GNU_SOURCE -O2
-LDFLAGS	     =  -lm
+LDFLAGS      =  -lm
 MAKEFLAGS    += -j$(shell expr $(shell nproc) - 2)
 
 BUILD_DIR    =  ./build
@@ -76,13 +76,14 @@ $(GUI_BUILD_DIR)/%.o: $(GUI_SRC_DIR)/%.cpp
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Building GUI: $<...$(RESET)\n"
 	@$(CPP) $(CPPFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 
-all: server gui ai assets docs-build
+all: server gui ai assets
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)All components built$(RESET)\n"
 
 assets:
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Copying assets...$(RESET)\n"
 	@for file in assets/environment/*.obj_tmp; do \
-		if [ -f "$file" ]; then \
-			cp "$file" "${file%.obj_tmp}.obj"; \
+		if [ -f "$$file" ]; then \
+			cp "$$file" "$${file%.obj_tmp}.obj"; \
 		fi; \
 	done
 	@printf \
