@@ -12,7 +12,7 @@ The Zappy project uses a unified Makefile that handles compilation of all three 
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone git@github.com:EpitechPromo2028/B-YEP-400-PAR-4-1-zappy-maxence.bunel.git
 cd zappy
 
 # Build all components

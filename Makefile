@@ -47,7 +47,36 @@ AI_SRC_DIR = $(SRC_DIR)/ai
 NODE_MODULES = $(DOCS_DIR)/node_modules
 DOCS_BUILD   = $(DOCS_DIR)/build
 
-all: server gui ai docs-build
+#############
+## SOURCES ##
+#############
+
+SERVER_SRCS = 	$(wildcard $(SERVER_SRC_DIR)/*.c) \
+				$(wildcard $(SERVER_SRC_DIR)/*/*.c)
+
+GUI_SRCS = 		$(wildcard $(GUI_SRC_DIR)/*.cpp) \
+				$(wildcard $(GUI_SRC_DIR)/*/*.cpp)
+
+SERVER_OBJS = 	$(patsubst $(SERVER_SRC_DIR)/%.c, \
+				$(SERVER_BUILD_DIR)/%.o,$(SERVER_SRCS))
+GUI_OBJS = 		$(patsubst $(GUI_SRC_DIR)/%.cpp, \
+				$(GUI_BUILD_DIR)/%.o,$(GUI_SRCS))
+
+###########
+## RULES ##
+###########
+
+$(SERVER_BUILD_DIR)/%.o: $(SERVER_SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Building server: $<...$(RESET)\n"
+	@$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
+
+$(GUI_BUILD_DIR)/%.o: $(GUI_SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Building GUI: $<...$(RESET)\n"
+	@$(CPP) $(CPPFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
+
+all: server gui ai assets docs-build
 
 assets:
 	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Copying assets...$(RESET)\n"

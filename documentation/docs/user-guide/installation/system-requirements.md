@@ -4,62 +4,86 @@ sidebar_position: 1
 
 # System Requirements
 
-## Prerequisites
+## Hardware Requirements
 
-### Core Dependencies
-- **GCC**: Version 9.0 or higher (C11 support required)
-- **G++**: Version 9.0 or higher (C++17 support required)
-- **Node.js**: Version 16.0 or higher
-- **NPM**: Version 8.0 or higher
-- **Make**: GNU Make 4.0 or higher
+### Minimum Requirements
+- **CPU**: Dual-core processor 2.0 GHz or equivalent
+- **Memory**: 2 GB RAM
+- **Graphics**: OpenGL 3.3 compatible graphics card
+- **Network**: Stable internet connection for multiplayer functionality
+- **Storage**: 100 MB available space
 
-### GUI Dependencies
-- **Raylib**: Graphics library for 3D rendering
-- **OpenGL**: Version 3.3 or higher
-- **X11 development libraries** (Linux only)
+### Recommended Requirements
+- **CPU**: Quad-core processor 3.0 GHz or equivalent
+- **Memory**: 4 GB RAM
+- **Graphics**: Dedicated graphics card with OpenGL 4.0 support
+- **Network**: Broadband internet connection
+- **Storage**: 200 MB available space
 
-### Development Tools (Optional)
-- **GDB**: For debugging C/C++ components
-- **Valgrind**: Memory leak detection
-- **Node.js debugging tools**: For AI development
+## Software Dependencies
+
+### All Platforms
+- **Build System**: CMake 3.10+ or Make
+- **Network**: TCP/IP stack support
+
+### Server Component (C)
+- **Compiler**: GCC 9.0+ or Clang 10.0+
+- **Standard**: C11 compliance required
+- **Libraries**: POSIX.1-2017 compatible system
+- **Threading**: pthread support
+
+### GUI Component (C++)
+- **Compiler**: GCC 9.0+ or Clang 10.0+ with C++17 support
+- **Graphics Library**: Raylib 4.0+
+- **Dependencies**: OpenGL 3.3+ drivers
+
+### AI Component (Node.js)
+- **Runtime**: Node.js 20.0+ or 22.0+ (LTS recommended)
+- **Package Manager**: npm 10.0+ or yarn 1.22+
 
 ## Platform Support
 
-| Platform | Support Level | Notes |
-|----------|---------------|-------|
-| Linux (Ubuntu 20.04+) | Full | Primary development platform |
-| Linux (Other distros) | Partial | Manual dependency installation required |
-| macOS | Partial | Requires Homebrew for dependencies |
-| Windows | Unsupported | Use WSL2 or Docker |
+### Linux
+- **Distributions**: Ubuntu 20.04+, Debian 11+, CentOS 8+, Arch Linux
+- **Package Managers**: apt, yum, pacman support available
+- **Development Tools**: build-essential package recommended
 
-## Hardware Requirements
-
-### Minimum
-- **CPU**: Dual-core 2.0 GHz
-- **RAM**: 4 GB
-- **Storage**: 1 GB free space
-- **Graphics**: OpenGL 3.3 compatible
-
-### Recommended
-- **CPU**: Quad-core 3.0 GHz
-- **RAM**: 8 GB
-- **Storage**: 2 GB free space
-- **Graphics**: Dedicated GPU with OpenGL 4.0+
-
-## Installation Commands
-
-### Ubuntu/Debian
-```bash
-sudo apt update
-sudo apt install build-essential libraylib-dev nodejs npm
-```
-
-### Arch Linux
-```bash
-sudo pacman -S base-devel raylib nodejs npm
-```
+### Windows
+- **Versions**: Windows 10 1909+ or Windows 11
+- **Development Environment**: MinGW-w64 or Visual Studio 2019+
+- **Build Tools**: Windows SDK for networking components
 
 ### macOS
+- **Versions**: macOS 10.15+ (Catalina and later)
+- **Development Tools**: Xcode Command Line Tools
+- **Package Manager**: Homebrew recommended for dependencies
+
+## Network Configuration
+
+### Firewall Requirements
+The following ports must be accessible:
+- **Default Server Port**: 4242 (configurable)
+- **Protocol**: TCP for all communications
+- **Direction**: Inbound for server, outbound for clients
+
+### Network Performance
+- **Latency**: Less than 100ms recommended for optimal gameplay
+- **Bandwidth**: Minimal requirements (approximately 1 KB/s per client)
+- **Concurrent Connections**: Server supports up to 100 simultaneous clients
+
+## Verification
+
+After installation, verify your system meets requirements:
+
 ```bash
-brew install raylib node npm
+# Check compiler versions
+gcc --version
+g++ --version
+node --version
+
+# Verify OpenGL support (Linux)
+glxinfo | grep "OpenGL version"
+
+# Test network connectivity
+telnet localhost 4242
 ```
