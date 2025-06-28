@@ -9,7 +9,7 @@
 #ifndef PROTOCOL_GRAPHIC_GARBAGE_H
     #define PROTOCOL_GRAPHIC_GARBAGE_H
 
-#include "server/time.h"
+    #include "server/time.h"
 static inline void handle_position_update(server_t *server, client_t *client,
     const char *cmd)
 {

@@ -37,5 +37,5 @@ char *gui_payload_tile(server_t *server, int x, int y)
         return NULL;
     }
     format_tile_response(&response, x, y, tile);
-    return  response;
+    return response;
 }
