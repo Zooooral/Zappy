@@ -9,7 +9,8 @@
     #define CLIENT_MANAGEMENT_EXTRA_H
 
 // add some egg stuff here
-static int count_players_in_team(server_t *server, const char *team_name)
+static inline int count_players_in_team(server_t *server,
+    const char *team_name)
 {
     int count = 0;
     player_t *p;
@@ -23,7 +24,7 @@ static int count_players_in_team(server_t *server, const char *team_name)
 }
 
 //note tODO handle unlimited guis and all that shit
-static bool can_client_connect(server_t *server, client_t *client)
+static inline bool can_client_connect(server_t *server, client_t *client)
 {
     int available;
     int current;
@@ -44,7 +45,7 @@ static bool can_client_connect(server_t *server, client_t *client)
     return team_found;
 }
 
-static bool try_regular_connect(server_t *server, client_t *client,
+static inline bool try_regular_connect(server_t *server, client_t *client,
     const char *message)
 {
     int p[2] = {rand() % server->config.width, rand() % server->config.height};
@@ -63,7 +64,7 @@ static bool try_regular_connect(server_t *server, client_t *client,
     return false;
 }
 
-static bool hatch_from_egg(server_t *server, client_t *client,
+static inline bool hatch_from_egg(server_t *server, client_t *client,
     egg_t *egg)
 {
     if (!server || !client || !egg || egg->hatched || egg->connected)
@@ -80,7 +81,8 @@ static bool hatch_from_egg(server_t *server, client_t *client,
     egg_die(server, egg);
     return true;
 }
-static void client_validate(server_t *server, client_t *client,
+
+static inline void client_validate(server_t *server, client_t *client,
     const char *message)
 {
     char res[1024];
