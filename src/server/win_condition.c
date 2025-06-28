@@ -12,14 +12,17 @@
 #include "server/server.h"
 #include "server/broadcast.h"
 
-static int count_players_at_level(server_t *server, const char *team_name, int level)
+static int count_players_at_level(server_t *server,
+    const char *team_name, int level)
 {
     int count = 0;
+    player_t *player;
+
     for (size_t i = 0; i < server->game->player_count; i++) {
-        player_t *player = server->game->players[i];
-        if (player && player->team_name && 
+        player = server->game->players[i];
+        if (player && player->team_name &&
             player->is_alive &&
-            player->level >= level && 
+            player->level >= level &&
             strcmp(player->team_name, team_name) == 0) {
             count++;
         }
@@ -47,11 +50,11 @@ int check_win_condition(server_t *server)
 
 void handle_game_win(server_t *server, int winning_team_id)
 {
-    if (!server || winning_team_id < 0 || 
+    if (!server || winning_team_id < 0 ||
         winning_team_id >= (int)server->config.team_count)
         return;
-    printf("Game won by team %s (ID: %d)\n", 
-           server->config.team_names[winning_team_id], winning_team_id);
+    printf("Game won by team %s (ID: %d)\n",
+        server->config.team_names[winning_team_id], winning_team_id);
     broadcast_game_end(server, winning_team_id);
     printf("Game has ended. Server will stop\n");
     server->is_running = false;
