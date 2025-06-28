@@ -16,7 +16,10 @@
 #include "server/protocol_graphic.h"
 #include "server/payloads.h"
 #include "server/command_handler.h"
+#include "server/egg.h"
+#include "server/dynamic_array.h"
 #include "client_management_helper.h"
+#include "client_management_extra.h"
 
 static int setup_client_connection(client_t *client,
     int client_fd)
@@ -122,70 +125,6 @@ client_t *client_find_by_fd(server_t *server, int fd)
             return &server->clients[i];
     }
     return NULL;
-}
-
-// add some egg stuff here
-static int count_players_in_team(server_t *server, const char *team_name)
-{
-    int count = 0;
-    player_t *p;
-
-    for (size_t i = 0; i < server->game->player_count; ++i) {
-        p = server->game->players[i];
-        if (p && p->team_name && strcmp(p->team_name, team_name) == 0)
-            count++;
-    }
-    return count;
-}
-
-static bool can_client_connect(server_t *server, client_t *client)
-{
-    int available;
-    int current;
-    bool team_found = false;
-
-    if (!server || !client || !client->team_name ||
-        server->game->player_count >= server->game->player_capacity)
-        return false;
-    for (size_t i = 0; i < server->config.team_count; ++i) {
-        if (strcmp(client->team_name, server->config.team_names[i]) == 0) {
-            team_found = true;
-            current = count_players_in_team(server, client->team_name);
-            available = (int)server->config.max_clients_per_team - current;
-            if (available <= 0) {
-                printf("Team %s is full.\n", client->team_name);
-                return false;
-            }
-            break;
-        }
-    }
-    client->is_authenticated = true;
-    return team_found;
-}
-
-static void client_validate(server_t *server, client_t *client,
-    const char *message)
-{
-    char res[1024];
-    int p[2] = {rand() % server->config.width, rand() % server->config.height};
-
-    client->team_name = strdup(message);
-    client->type = CLIENT_TYPE_AI;
-    if (!can_client_connect(server, client))
-        return send_response(client, "ko\n");
-    if (server->game->player_count < server->game->player_capacity) {
-        client->player = player_create(client, p[0], p[1], message);
-        if (client->player) {
-            player_set_position(server, client->player, p[0], p[1]);
-            add_player_to_game(server->game, client->player);
-            broadcast_message_to_guis(server, client->player, gui_payload_pnw);
-        }
-    }
-    snprintf(res, sizeof res, "%ld\n", server->config.max_clients_per_team);
-    send_response(client, res);
-    snprintf(res, sizeof(res), "%ld %ld\n", server->config.width,
-        server->config.height);
-    send_response(client, res);
 }
 
 void client_authenticate(server_t *server, client_t *client,
