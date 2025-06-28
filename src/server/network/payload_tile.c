@@ -12,10 +12,10 @@
 #include "server/server.h"
 #include "server/server_updates.h"
 
-static void format_tile_response(char *response, int x, int y,
+static void format_tile_response(char **response, int x, int y,
     const tile_t *tile)
 {
-    snprintf(response, 128, "bct %d %d %d %d %d %d %d %d %d\n",
+    (void)asprintf(response, "bct %d %d %d %d %d %d %d %d %d\n",
         x, y, tile->resources[RESOURCE_FOOD],
         tile->resources[RESOURCE_LINEMATE],
         tile->resources[RESOURCE_DERAUMERE],
@@ -27,7 +27,7 @@ static void format_tile_response(char *response, int x, int y,
 
 char *gui_payload_tile(server_t *server, int x, int y)
 {
-    char response[128];
+    char *response;
     tile_t *tile;
 
     if (!server || !server->game || !server->game->map)
@@ -36,6 +36,6 @@ char *gui_payload_tile(server_t *server, int x, int y)
     if (!tile) {
         return NULL;
     }
-    format_tile_response(response, x, y, tile);
-    return strdup(response);
+    format_tile_response(&response, x, y, tile);
+    return  response;
 }
