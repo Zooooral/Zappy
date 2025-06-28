@@ -276,11 +276,13 @@ void GameScreen::handleServerCommand(const std::string& command) {
             ChatSystem::getInstance().addMessage("Incantation", "Ended at (" + std::to_string(x) + "," + std::to_string(y) + ") " + result, color);
             
             for (auto character : CharacterManager::getInstance().getAllCharacters()) {
-                if (character->isElevating() && 
-                    (int)character->getTilePosition().x == x && 
-                    (int)character->getTilePosition().y == y) {
-                    character->setElevating(false);
-                    std::cout << "[DEBUG] Player #" << character->getId() << " stopped elevating" << std::endl;
+                if (character->isElevating()) {
+                    Vector2 charTilePos = character->getTilePosition();
+                    if (static_cast<int>(charTilePos.x - 1) == x && static_cast<int>(charTilePos.y - 1) == y) {
+                        character->setElevating(false);
+                        std::cout << "[DEBUG] Player #" << character->getId() << " stopped elevating at (" 
+                                  << static_cast<int>(charTilePos.x) << "," << static_cast<int>(charTilePos.y) << ")" << std::endl;
+                    }
                 }
             }
         }
