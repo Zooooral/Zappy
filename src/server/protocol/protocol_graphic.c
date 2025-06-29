@@ -13,7 +13,9 @@
 #include "server/protocol_graphic.h"
 #include "server/server_updates.h"
 #include "server/payloads.h"
+#include "server/broadcast.h"
 #include "protocol_graphic_garbage.h"
+#include "server/time.h"
 
 void protocol_send_tile_content(server_t *server, client_t *client,
     int x, int y)
@@ -38,17 +40,15 @@ void protocol_send_tile_content(server_t *server, client_t *client,
 
 void protocol_send_player_info(client_t *client, const player_t *player)
 {
-    char response[128];
+    char *response;
 
-    if (!client || !player) {
-        printf("[DEBUG] protocol_send_player_info: client=%p player=%p\n",
-            (void *)client, (void *)player);
+    if (!client || !player)
         return;
-    }
-    snprintf(response, sizeof(response), "pnw #%d %d %d %d %d %s\n",
+    asprintf(&response, "pnw #%d %d %d %d %d %s\n",
         player->id, player->x, player->y, player->orientation,
         player->level, player->team_name);
     send_response(client, response);
+    free(response);
 }
 
 static void send_existing_players_after_map(server_t *server, client_t *client)

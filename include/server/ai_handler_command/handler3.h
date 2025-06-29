@@ -9,6 +9,8 @@
     #define AI_ACTIONS3_H
 
     #include <string.h>
+    #include "server/egg_manager.h"
+
 
 static inline int get_team_player_count(server_t *server,
     const char *team_name)
@@ -31,17 +33,19 @@ static inline void ai_action_connect_nbr(server_t *server,
     char *buf = NULL;
     int ret;
     size_t current;
+    size_t egg_slots;
 
     if (!server || !client || !client->team_name) {
         send_response(client, "ko\n");
         return (void)cmd;
     }
     current = get_team_player_count(server, client->team_name);
+    egg_slots = egg_manager_get_available_count(server, client->team_name);
     available = (current > available) ? 0 : available - current;
+    available += egg_slots;
     ret = asprintf(&buf, "%ld\n", available);
     if (ret < 0 || !buf) {
-        send_response(client, "ko\n");
-        return;
+        return send_response(client, "ko\n");
     }
     send_response(client, buf);
     free(buf);

@@ -12,6 +12,7 @@
 
 #include "server/resource.h"
 #include "server/server.h"
+#include "server/lifecycle.h"
 
 double get_current_time(void)
 {
@@ -83,7 +84,7 @@ void game_state_destroy(game_state_t *game)
 }
 
 // unsure if this should be one more tick before death
-static void player_update(player_t *player)
+static void player_update(player_t *player, server_t *server)
 {
     if (!player || !player->is_alive)
         return;
@@ -92,7 +93,7 @@ static void player_update(player_t *player)
         player->resources[RESOURCE_FOOD]--;
         player->last_food_inhalation = 0;
         if (player->resources[RESOURCE_FOOD] <= 0)
-            player->is_alive = false;
+            player_die(player->client, server);
     }
 }
 
@@ -105,10 +106,10 @@ void game_state_update(server_t *server, double delta_time)
     server->game->current_time += delta_time;
     for (size_t i = 0; i < server->game->player_count; ++i) {
         player = server->game->players[i];
-        if (player != NULL && player->is_alive) {
+        if (player == NULL || !player->is_alive) {
             continue;
         }
-        player_update(player);
+        player_update(player, server);
     }
 }
 
