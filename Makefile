@@ -114,11 +114,13 @@ ai:
 docs-install: $(NODE_MODULES)
 
 $(NODE_MODULES):
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Installing documentation dependencies...$(RESET)\n"
+	@printf "$(GREEN)[OK]$(RESET) \
+	$(BLUE)Installing documentation dependencies...$(RESET)\n"
 	@cd $(DOCS_DIR) && $(NPM) install
 
 docs-dev: docs-install
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Starting documentation development server...$(RESET)\n"
+	@printf "$(GREEN)[OK]$(RESET)
+	$(BLUE)Starting documentation development server...$(RESET)\n"
 	@cd $(DOCS_DIR) && $(NPM) start
 
 docs-build: docs-install
@@ -126,11 +128,13 @@ docs-build: docs-install
 	@cd $(DOCS_DIR) && $(NPM) run build
 
 docs-serve: docs-build
-	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Serving built documentation...$(RESET)\n"
+	@printf "$(GREEN)[OK]$(RESET) \
+	$(BLUE)Serving built documentation...$(RESET)\n"
 	@cd $(DOCS_DIR) && $(NPM) run serve
 
 docs-clean:
-	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Cleaning documentation...$(RESET)\n"
+	@printf "$(RED)[CLEANING]$(RESET) \
+		$(BLUE)Cleaning documentation...$(RESET)\n"
 	@$(RM) -r $(NODE_MODULES) $(DOCS_BUILD)
 
 clean:
@@ -157,4 +161,5 @@ debug: CFLAGS += -g3 -DDEBUG
 debug: CPPFLAGS += -g3 -DDEBUG
 debug: all
 
-.PHONY: all server gui ai assets docs-install docs-dev docs-build docs-serve docs-clean clean fclean re debug
+.PHONY: all server gui ai assets docs-install \
+    docs-dev docs-build docs-serve docs-clean clean fclean re debug
