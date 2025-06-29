@@ -100,6 +100,22 @@ static void update_poll_fds_after_removal(server_t *server)
     server->poll_count = server->client_count + 1;
 }
 
+static void remove_player_from_game(server_t *server, player_t *player)
+{
+    if (!server || !server->game || !player)
+        return;
+    for (size_t j = 0; j < server->game->player_count; ++j) {
+        if (server->game->players[j] != player) {
+            continue;
+        }
+        for (size_t k = j; k < server->game->player_count - 1; ++k) {
+            server->game->players[k] = server->game->players[k + 1];
+        }
+        server->game->player_count--;
+        break;
+    }
+}
+
 void client_remove(server_t *server, size_t index)
 {
     player_t *player;
@@ -110,6 +126,7 @@ void client_remove(server_t *server, size_t index)
     if (player) {
         broadcast_message_to_guis(server, player, gui_payload_pdi);
     }
+        remove_player_from_game(server, player);
     cleanup_client_resources(&server->clients[index]);
     shift_clients_array(server, index);
     server->client_count--;
