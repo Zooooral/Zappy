@@ -9,6 +9,7 @@
     #define RESOURCE_H
 
     #include <string.h>
+
     #include "server/server.h"
     #include "server/game.h"
 

@@ -9,8 +9,8 @@
     #define AI_ACTIONS3_H
 
     #include <string.h>
-    #include "server/egg_manager.h"
 
+    #include "server/egg_manager.h"
 
 static inline int get_team_player_count(server_t *server,
     const char *team_name)
