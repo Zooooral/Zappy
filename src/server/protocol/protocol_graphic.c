@@ -44,9 +44,10 @@ void protocol_send_player_info(client_t *client, const player_t *player)
 
     if (!client || !player)
         return;
-    asprintf(&response, "pnw #%d %d %d %d %d %s\n",
+    if (asprintf(&response, "pnw #%d %d %d %d %d %s\n",
         player->id, player->x, player->y, player->orientation,
-        player->level, player->team_name);
+        player->level, player->team_name) == -1)
+        return;
     send_response(client, response);
     free(response);
 }
