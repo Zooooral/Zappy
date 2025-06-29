@@ -15,14 +15,15 @@
 static void format_tile_response(char **response, int x, int y,
     const tile_t *tile)
 {
-    (void)asprintf(response, "bct %d %d %d %d %d %d %d %d %d\n",
+    if (asprintf(response, "bct %d %d %d %d %d %d %d %d %d\n",
         x, y, tile->resources[RESOURCE_FOOD],
         tile->resources[RESOURCE_LINEMATE],
         tile->resources[RESOURCE_DERAUMERE],
         tile->resources[RESOURCE_SIBUR],
         tile->resources[RESOURCE_MENDIANE],
         tile->resources[RESOURCE_PHIRAS],
-        tile->resources[RESOURCE_THYSTAME]);
+        tile->resources[RESOURCE_THYSTAME]) == -1)
+        *response = NULL;
 }
 
 char *gui_payload_tile(server_t *server, int x, int y)

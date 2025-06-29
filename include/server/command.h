@@ -118,7 +118,6 @@ void chandler_teamnames(void *, char const *cmd);
 void chandler_player_position(void *, char const *cmd);
 void chandler_player_level(void *, char const *cmd);
 void chandler_player_inventory(void *, char const *cmd);
-void chandler_player_expelled(void *, char const *cmd);
 void chandler_time_unit(void *, char const *cmd);
 void chandler_time_unit_modification(void *, char const *cmd);
 

@@ -13,6 +13,5 @@
 void consume_food(client_t *client);
 void player_die(client_t *client, server_t *server);
 void fork_player(client_t *client, map_t *map);
-void hatch_egg(void *egg_data);
 
 #endif // LIFECYCLE_H

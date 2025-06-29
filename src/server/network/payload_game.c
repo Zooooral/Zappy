@@ -16,7 +16,8 @@ char *gui_payload_game_end(int winning_team_id)
 {
     char *response;
 
-    asprintf(&response, "seg %d\n", winning_team_id);
+    if (asprintf(&response, "seg %d\n", winning_team_id) == -1)
+        return NULL;
     return response;
 }
 
@@ -24,7 +25,8 @@ char *gui_payload_time_unit_get(int time_unit)
 {
     char *response;
 
-    asprintf(&response, "sgt %d\n", time_unit);
+    if (asprintf(&response, "sgt %d\n", time_unit) == -1)
+        return NULL;
     return response;
 }
 
@@ -32,6 +34,7 @@ char *gui_payload_time_unit_set(int time_unit)
 {
     char *response;
 
-    asprintf(&response, "sst %d\n", time_unit);
+    if (asprintf(&response, "sst %d\n", time_unit) == -1)
+        return NULL;
     return response;
 }

@@ -99,11 +99,10 @@ static inline void send_broadcast_to_ai(server_t *server,
             other->fd == sender_client->fd)
             continue;
         orient = other->player->orientation;
-        (void)asprintf(&ai_msg, "message %d, %s\n", compute_direction((int[2])
+        if (asprintf(&ai_msg, "message %d, %s\n", compute_direction((int[2])
             {(sender->x - other->player->x),
             (sender->y - other->player->y)}, server->game->map->width,
-            server->game->map->height, orient), msg);
-        if (!ai_msg)
+            server->game->map->height, orient), msg) < 0 || !ai_msg)
             continue;
         send_response(other, ai_msg);
         free(ai_msg);

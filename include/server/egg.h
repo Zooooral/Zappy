@@ -9,6 +9,7 @@
     #define EGG_H
 
     #include <stdbool.h>
+
     #include "server/server.h"
     #include "dynamic_array.h"
     #include "string.h"
@@ -28,9 +29,6 @@ egg_t *create_egg(server_t *server, player_t *parent);
 // Handle egg hatching (when the timer expires)
 void hatch_egg(server_t *server, egg_t *egg);
 
-// Connect player to egg when they join a team
-bool connect_to_egg(server_t *server, egg_t *egg, client_t *client);
-
 // Free and clean up an egg when it dies
 void egg_die(server_t *server, egg_t *egg);
 
@@ -41,8 +39,6 @@ size_t egg_manager_get_available_count(server_t *server,
     const char *team_name);
 egg_t *egg_manager_add_egg(server_t *server, player_t *parent);
 void egg_die(server_t *server, egg_t *egg);
-void hatch_egg(server_t *server, egg_t *egg);
-void add_egg_timer(int egg_id, double current_time);
 egg_t *create_egg(server_t *server, player_t *parent);
 
 static inline int egg_manager_count_eggs(const server_t *server,

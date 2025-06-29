@@ -18,8 +18,9 @@ char *gui_payload_egg_laid(int egg_id, const player_t *player)
 
     if (!player)
         return NULL;
-    asprintf(&response, "enw #%d #%d %d %d\n",
-        egg_id, player->id, player->x, player->y);
+    if (asprintf(&response, "enw #%d #%d %d %d\n",
+        egg_id, player->id, player->x, player->y) == -1)
+        return NULL;
     return response;
 }
 
@@ -27,7 +28,8 @@ char *gui_payload_egg_hatched(int egg_id)
 {
     char *response;
 
-    asprintf(&response, "ebo #%d\n", egg_id);
+    if (asprintf(&response, "ebo #%d\n", egg_id) == -1)
+        return NULL;
     return response;
 }
 
@@ -35,6 +37,7 @@ char *gui_payload_egg_died(int egg_id)
 {
     char *response;
 
-    asprintf(&response, "edi #%d\n", egg_id);
+    if (asprintf(&response, "edi #%d\n", egg_id) == -1)
+        return NULL;
     return response;
 }
