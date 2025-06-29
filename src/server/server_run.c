@@ -37,6 +37,8 @@ static void print_server_info(const server_t *server)
         server->config.height);
     print_server_teams(server);
     printf("[SERVER] Time frequency: %zu\n", server->config.freq);
+    printf("[SERVER] Resource refill: %s\n",
+        server->config.refill_tiles ? "enabled" : "disabled");
     printf("[SERVER] Listening for connections...\n\n");
 }
 
@@ -93,7 +95,7 @@ static void update_game_and_broadcast(server_t *server, double delta_time)
 {
     int winning_team;
 
-    if (server->tick_count % 20 == 0)
+    if (server->config.refill_tiles && server->tick_count % 20 == 0)
         respawn_resources(server);
     if (server->game)
         game_state_update(server, delta_time);

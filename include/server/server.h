@@ -99,6 +99,7 @@ typedef struct server_config_s {
     size_t freq;
     char **team_names;
     size_t team_count;
+    bool refill_tiles;
 } server_config_t;
 
 typedef struct game_state_s {

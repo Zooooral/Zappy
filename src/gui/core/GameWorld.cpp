@@ -44,10 +44,23 @@ void GameWorld::initialize(int playableWidth, int playableHeight) {
     CameraController& cam = CameraController::getInstance();
     cam.initialize();
     cam.setConstraints(0.2f, 5.0f, _totalWidth, _totalHeight);
-    cam.resetCamera();
+    
     DebugSystem::getInstance().initialize();
     TileInteraction::getInstance().initialize();
     Environment::getInstance().initialize();
+
+    bool isLargeMap = (playableHeight >= 80 || playableWidth >= 80);
+    if (isLargeMap) {
+        if (cam.is3DMode()) {
+            cam.toggleViewMode();
+        }
+        DebugSystem& debug = DebugSystem::getInstance();
+        if (debug.showObstacles()) {
+            debug.toggleObstacles();
+        }
+    }
+    
+    cam.resetCamera();
 }
 
 void GameWorld::updateTileResources(int x, int y, const TileResources& resources) {

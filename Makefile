@@ -28,12 +28,13 @@ AI_NAME      =  zappy_ai
 CPPFLAGS     =  -Wall -Wextra -std=c++17 -iquote ./include -iquote ./src
 GUI_LIBS     =  -lraylib
 CFLAGS       =  -Wall -Wextra -std=c11 -Wno-multichar -D_GNU_SOURCE -O2
-LDFLAGS	  =  -lm
+LDFLAGS      =  -lm
 MAKEFLAGS    += -j$(shell expr $(shell nproc) - 2)
 
 BUILD_DIR    =  ./build
 SRC_DIR      =  ./src
 INCLUDE_DIR  =  ./include
+DOCS_DIR     =  ./documentation
 
 SERVER_SRC_DIR = $(SRC_DIR)/server
 SERVER_BUILD_DIR = $(BUILD_DIR)/server
@@ -42,6 +43,9 @@ GUI_SRC_DIR = $(SRC_DIR)/gui
 GUI_BUILD_DIR = $(BUILD_DIR)/gui
 
 AI_SRC_DIR = $(SRC_DIR)/ai
+
+NODE_MODULES = $(DOCS_DIR)/node_modules
+DOCS_BUILD   = $(DOCS_DIR)/build
 
 #############
 ## SOURCES ##
@@ -107,6 +111,28 @@ ai:
 	@printf "$(GREEN)[OK]$(RESET) \
 	$(BLUE)AI executable created successfully$(RESET)\n"
 
+docs-install: $(NODE_MODULES)
+
+$(NODE_MODULES):
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Installing documentation dependencies...$(RESET)\n"
+	@cd $(DOCS_DIR) && $(NPM) install
+
+docs-dev: docs-install
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Starting documentation development server...$(RESET)\n"
+	@cd $(DOCS_DIR) && $(NPM) start
+
+docs-build: docs-install
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Building documentation...$(RESET)\n"
+	@cd $(DOCS_DIR) && $(NPM) run build
+
+docs-serve: docs-build
+	@printf "$(GREEN)[OK]$(RESET) $(BLUE)Serving built documentation...$(RESET)\n"
+	@cd $(DOCS_DIR) && $(NPM) run serve
+
+docs-clean:
+	@printf "$(RED)[CLEANING]$(RESET) $(BLUE)Cleaning documentation...$(RESET)\n"
+	@$(RM) -r $(NODE_MODULES) $(DOCS_BUILD)
+
 clean:
 	@printf \
 	"$(RED)[CLEANING]$(RESET) $(BLUE)Removing obj files...$(RESET)\n"
@@ -115,7 +141,7 @@ clean:
 	"$(RED)[CLEANING]$(RESET) $(BLUE)Removing AI build files...$(RESET)\n"
 	@$(RM) -r $(AI_SRC_DIR)/dist $(AI_SRC_DIR)/node_modules
 
-fclean: clean
+fclean: clean docs-clean
 	@printf \
 	"$(RED)[CLEANING]$(RESET) $(BLUE)Removing executables...$(RESET)\n"
 	@$(RM) $(SERVER_NAME) $(GUI_NAME) $(AI_NAME)
@@ -131,4 +157,4 @@ debug: CFLAGS += -g3 -DDEBUG
 debug: CPPFLAGS += -g3 -DDEBUG
 debug: all
 
-.PHONY: all server gui ai assets clean fclean re debug
+.PHONY: all server gui ai assets docs-install docs-dev docs-build docs-serve docs-clean clean fclean re debug

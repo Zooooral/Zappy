@@ -1,0 +1,130 @@
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.features {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.features {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.features .col {
+  margin-bottom: 2rem;
+}
+
+.projectInfo {
+  padding: 3rem 0;
+  background-color: var(--ifm-color-emphasis-100);
+}
+
+.projectInfo h2 {
+  margin-bottom: 1.5rem;
+  color: var(--ifm-color-primary);
+}
+
+.projectInfo .text--lg {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.projectInfo h4 {
+  color: var(--ifm-color-primary);
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.contributors {
+  padding: 2rem 0;
+  background-color: var(--ifm-color-emphasis-50);
+}
+
+.contributors h3 {
+  margin-bottom: 1.5rem;
+  color: var(--ifm-color-primary);
+}
+
+.contributorsList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.contributor {
+  padding: 0.5rem;
+  background-color: var(--ifm-background-color);
+  border-radius: 6px;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-700);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+@media screen and (max-width: 768px) {
+  .contributorsList {
+    grid-template-columns: 1fr;
+  }
+  
+  .buttons {
+    flex-direction: column;
+  }
+  
+  .features .row {
+    flex-direction: column;
+  }
+}
+
+.features .button {
+  margin-top: 1rem;
+}
+
+.features h3 {
+  color: var(--ifm-color-primary);
+  margin-bottom: 1rem;
+}
+
+.features h4 {
+  color: var(--ifm-color-primary-dark);
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}

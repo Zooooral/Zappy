@@ -33,6 +33,7 @@ static int validate_config(const server_config_t *config)
 int parse_arguments(int argc, const char **argv, server_config_t *config)
 {
     memset(config, 0, sizeof(server_config_t));
+    config->refill_tiles = true;
     for (int i = 1; i < argc; i++) {
         if (process_argument(argv, &i, argc, config) == -1)
             return -1;

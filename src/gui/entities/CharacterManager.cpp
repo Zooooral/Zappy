@@ -42,10 +42,12 @@ void CharacterManager::cleanup() {
     _characters.clear();
     _tileCharacters.clear();
     _elevationParticles.clear();
+    _particleTimers.clear();
+    _teamColorMap.clear();
+    _nextColorIndex = 0;
 }
 
 void CharacterManager::update(float dt) {
-    _particleTimer += dt;
     _animationTimer += dt;
 
     if (_modelLoaded && _animCount > 0) {
@@ -59,9 +61,10 @@ void CharacterManager::update(float dt) {
     for (auto& character : _characters) {
         character->updateMovement(dt, _timeUnit);
         if (character->isElevating()) {
-            if (_particleTimer > 0.05f) {
+            _particleTimers[character.get()] += dt;
+            if (_particleTimers[character.get()] > 0.05f) {
                 createElevationParticles(character.get());
-                _particleTimer = 0.0f;
+                _particleTimers[character.get()] = 0.0f;
             }
         }
     }
@@ -256,6 +259,9 @@ void CharacterManager::addCharacter(int id, const Vector3& position, const std::
         existing->setTargetPosition(position);
         return;
     }
+    
+    assignTeamColor(team);
+    
     auto character = std::make_unique<Character>(id, position, team, level);
     _characters.push_back(std::move(character));
 }
@@ -272,6 +278,7 @@ void CharacterManager::removeCharacter(int id) {
         }
         
         _elevationParticles.erase(characterToRemove);
+        _particleTimers.erase(characterToRemove);
         _characters.erase(it);
         
         std::cout << "[CharacterManager] Character #" << id << " removed successfully" << std::endl;
@@ -377,11 +384,12 @@ void CharacterManager::drawCharacterOutline(Character* character, Color color) c
     DrawBoundingBox(bbox, color);
 }
 
-Color CharacterManager::getTeamColor(const std::string& teamName) const {
-    std::hash<std::string> hasher;
-    size_t hash = hasher(teamName);
+void CharacterManager::assignTeamColor(const std::string& teamName) {
+    if (_teamColorMap.find(teamName) != _teamColorMap.end()) {
+        return;
+    }
     
-    Color teamColors[] = {
+    static const Color teamColors[] = {
         {255, 100, 100, 255},
         {100, 255, 100, 255},
         {100, 100, 255, 255},
@@ -389,10 +397,30 @@ Color CharacterManager::getTeamColor(const std::string& teamName) const {
         {255, 100, 255, 255},
         {100, 255, 255, 255},
         {255, 150, 100, 255},
-        {150, 255, 100, 255}
+        {150, 100, 255, 255},
+        {255, 200, 100, 255},
+        {200, 255, 100, 255},
+        {100, 200, 255, 255},
+        {255, 100, 200, 255},
+        {200, 100, 255, 255},
+        {100, 255, 200, 255},
+        {255, 255, 200, 255},
+        {200, 200, 255, 255}
     };
     
-    return teamColors[hash % 8];
+    const int colorCount = sizeof(teamColors) / sizeof(teamColors[0]);
+    Color assignedColor = teamColors[_nextColorIndex % colorCount];
+    
+    _teamColorMap[teamName] = assignedColor;
+    _nextColorIndex++;
+}
+
+Color CharacterManager::getTeamColor(const std::string& teamName) const {
+    auto it = _teamColorMap.find(teamName);
+    if (it != _teamColorMap.end()) {
+        return it->second;
+    }
+    return {128, 128, 128, 255};
 }
 
 std::string CharacterManager::getTileKey(const Vector2& pos) const {
@@ -406,6 +434,9 @@ void CharacterManager::clearAllCharacters() {
     _characters.clear();
     _tileCharacters.clear();
     _elevationParticles.clear();
+    _particleTimers.clear();
+    _teamColorMap.clear();
+    _nextColorIndex = 0;
     _selectedCharacter = nullptr;
     _timeUnit = 1.0f;
     std::cout << "[CharacterManager] Time unit reset to default: " << _timeUnit << std::endl;
