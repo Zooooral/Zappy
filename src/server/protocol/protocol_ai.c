@@ -55,10 +55,6 @@ void create_and_queue_action(server_t *server, client_t *client,
         return;
     action = calloc(1, sizeof *action);
     data = calloc(1, sizeof *data);
-    if (!action || !data) {
-        free(action);
-        return free(data);
-    }
     data->type = type;
     data->server = server;
     action->command = cmd ? strdup(cmd) : NULL;
