@@ -23,7 +23,6 @@ static inline int count_players_in_team(server_t *server,
     return count;
 }
 
-//note tODO handle unlimited guis and all that shit
 static inline bool can_client_connect(server_t *server, client_t *client)
 {
     int available;
@@ -93,7 +92,9 @@ static inline void client_validate(server_t *server, client_t *client,
         !hatch_from_egg(server, client,
             egg_manager_find_available_egg(server, message)))
         return send_response(client, "ko\n");
-    snprintf(res, sizeof res, "%ld\n", server->config.max_clients_per_team);
+    snprintf(res, sizeof res, "%ld\n", (server->config.max_clients_per_team -
+        count_players_in_team(server, client->team_name)) +
+        egg_manager_count_eggs(server, client->team_name));
     send_response(client, res);
     snprintf(res, sizeof(res), "%ld %ld\n", server->config.width,
         server->config.height);
