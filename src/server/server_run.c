@@ -82,9 +82,10 @@ static void check_for_death(server_t *server)
 
     if (!server || !server->game)
         return;
-    for (size_t i = 0; i < server->game->player_count; ++i) {
-        player = server->game->players[i];
-        if (player && !player->is_alive && player->client) {
+    for (size_t i = 0; i < server->client_count; ++i) {
+        player = server->clients[i].player;
+        if (server->clients[i].type == CLIENT_TYPE_AI &&
+            player && !player->is_alive) {
             client_remove(server, i);
             i--;
         }
