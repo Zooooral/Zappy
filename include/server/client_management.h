@@ -12,7 +12,6 @@
 
     #include "server.h"
 
-void client_remove(server_t *server, size_t index);
 client_t *client_find_by_fd(server_t *server, int fd);
 
 #endif /* !CLIENT_MANAGEMENT_H_ */

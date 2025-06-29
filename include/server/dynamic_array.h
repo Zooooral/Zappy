@@ -7,6 +7,7 @@
 
 #ifndef DYNAMIC_ARRAY_LIB_H_
     #define DYNAMIC_ARRAY_LIB_H_
+
     #include <stddef.h>
 
     #define ARRAY_SCALING_FACTOR 1.5

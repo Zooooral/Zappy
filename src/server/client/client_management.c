@@ -125,8 +125,8 @@ void client_remove(server_t *server, size_t index)
     player = server->clients[index].player;
     if (player) {
         broadcast_message_to_guis(server, player, gui_payload_pdi);
-    }
         remove_player_from_game(server, player);
+    }
     cleanup_client_resources(&server->clients[index]);
     shift_clients_array(server, index);
     server->client_count--;

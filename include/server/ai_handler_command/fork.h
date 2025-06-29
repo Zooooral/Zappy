@@ -8,7 +8,6 @@
 #ifndef AI_ACTION_FORK_H
     #define AI_ACTION_FORK_H
 
-
     #include "server/broadcast.h"
     #include "server/egg_manager.h"
 

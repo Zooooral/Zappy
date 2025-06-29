@@ -22,7 +22,7 @@ static inline void ai_action_take(server_t *server,
     client_t *client, char *cmd)
 {
     player_t *p = NULL;
-    int resource_id = atoi(cmd);
+    int resource_id = ressource_string_to_id(cmd);
 
     if (!server || !client)
         return;
@@ -44,7 +44,7 @@ static inline void ai_action_take(server_t *server,
 
 static inline void ai_action_set(server_t *server, client_t *client, char *cmd)
 {
-    int resource_id = cmd ? atoi(cmd) : -1;
+    int resource_id = ressource_string_to_id(cmd);
     player_t *p;
     tile_t *tile;
 

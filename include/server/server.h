@@ -17,6 +17,7 @@
     #include <stdbool.h>
 
     #include "shared/utils.h"
+
 //circular dependency bs
 typedef struct egg_s egg_t;
 

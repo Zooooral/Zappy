@@ -48,16 +48,13 @@ void create_and_queue_action(server_t *server, client_t *client,
 {
     action_t *action;
     ai_action_data_t *data;
-    double now = get_current_time();
+    double now = client && client->action_queue_tail ?
+        client->action_queue_tail->exec_time : get_current_time();
 
-    if (!server || !client)
+    if (!server || !client || client->action_queue_count >= 10)
         return;
     action = calloc(1, sizeof *action);
     data = calloc(1, sizeof *data);
-    if (!action || !data) {
-        free(action);
-        return free(data);
-    }
     data->type = type;
     data->server = server;
     action->command = cmd ? strdup(cmd) : NULL;
