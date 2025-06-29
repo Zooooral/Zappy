@@ -16,7 +16,7 @@ static void tile_init(tile_t *tile)
     if (!tile)
         return;
     memset(tile, 0, sizeof(tile_t));
-    tile->player_capacity = 10;
+    tile->player_capacity = 100;
     tile->players = calloc(tile->player_capacity, sizeof(player_t *));
 }
 

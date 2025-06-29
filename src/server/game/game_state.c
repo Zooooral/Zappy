@@ -24,7 +24,7 @@ double get_current_time(void)
 
 static int initialize_players_array(game_state_t *game)
 {
-    game->player_capacity = 50;
+    game->player_capacity = 500;
     game->players = calloc(game->player_capacity, sizeof *game->players);
     if (!game->players)
         return -1;

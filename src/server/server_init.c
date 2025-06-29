@@ -56,11 +56,12 @@ static int create_server_socket(size_t port)
     return fd;
 }
 
+// 1 is fo the gui team
 static int allocate_clients_array(server_t *server)
 {
     server->eggs = da_create();
     server->client_capacity = server->config.max_clients_per_team *
-        server->config.team_count;
+        (server->config.team_count + 1);
     server->clients = calloc(server->client_capacity, sizeof(client_t));
     if (!server->clients)
         return -1;
