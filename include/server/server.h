@@ -17,6 +17,8 @@
     #include <stdbool.h>
 
     #include "shared/utils.h"
+//circular dependency bs
+typedef struct egg_s egg_t;
 
     #define MAX_CLIENTS 100
     #define BUFFER_SIZE 4096
@@ -97,6 +99,7 @@ typedef struct server_config_s {
     size_t freq;
     char **team_names;
     size_t team_count;
+    bool refill_tiles;
 } server_config_t;
 
 typedef struct game_state_s {
@@ -115,6 +118,7 @@ typedef struct server_s {
     client_t *clients;
     size_t client_count;
     size_t client_capacity;
+    egg_t **eggs;
     struct pollfd *poll_fds;
     size_t poll_count;
     bool is_running;

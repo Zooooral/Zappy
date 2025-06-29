@@ -16,7 +16,10 @@
 #include "server/protocol_graphic.h"
 #include "server/payloads.h"
 #include "server/command_handler.h"
+#include "server/egg.h"
+#include "server/dynamic_array.h"
 #include "client_management_helper.h"
+#include "client_management_extra.h"
 
 static int setup_client_connection(client_t *client,
     int client_fd)
@@ -97,6 +100,22 @@ static void update_poll_fds_after_removal(server_t *server)
     server->poll_count = server->client_count + 1;
 }
 
+static void remove_player_from_game(server_t *server, player_t *player)
+{
+    if (!server || !server->game || !player)
+        return;
+    for (size_t j = 0; j < server->game->player_count; ++j) {
+        if (server->game->players[j] != player) {
+            continue;
+        }
+        for (size_t k = j; k < server->game->player_count - 1; ++k) {
+            server->game->players[k] = server->game->players[k + 1];
+        }
+        server->game->player_count--;
+        break;
+    }
+}
+
 void client_remove(server_t *server, size_t index)
 {
     player_t *player;
@@ -107,6 +126,7 @@ void client_remove(server_t *server, size_t index)
     if (player) {
         broadcast_message_to_guis(server, player, gui_payload_pdi);
     }
+        remove_player_from_game(server, player);
     cleanup_client_resources(&server->clients[index]);
     shift_clients_array(server, index);
     server->client_count--;
@@ -122,31 +142,6 @@ client_t *client_find_by_fd(server_t *server, int fd)
             return &server->clients[i];
     }
     return NULL;
-}
-
-static void client_validate(server_t *server, client_t *client,
-    const char *message)
-{
-    char res[128];
-    int p[2] = {rand() % server->config.width, rand() % server->config.height};
-
-    client->player = NULL;
-    client->type = CLIENT_TYPE_AI;
-    client->team_name = strdup(message);
-    client->is_authenticated = true;
-    if (server->game->player_count < server->game->player_capacity) {
-        client->player = player_create(client, p[0], p[1], message);
-        if (client->player) {
-            player_set_position(server, client->player, p[0], p[1]);
-            add_player_to_game(server->game, client->player);
-            broadcast_message_to_guis(server, client->player, gui_payload_pnw);
-        }
-    }
-    snprintf(res, sizeof res, "%ld\n", server->config.max_clients_per_team);
-    send_response(client, res);
-    snprintf(res, sizeof(res), "%ld %ld\n", server->config.width,
-        server->config.height);
-    send_response(client, res);
 }
 
 void client_authenticate(server_t *server, client_t *client,

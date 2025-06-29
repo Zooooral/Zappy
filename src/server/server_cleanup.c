@@ -7,6 +7,7 @@
 
 #include "server/server.h"
 #include "server/time.h"
+#include "server/dynamic_array.h"
 #include <unistd.h>
 
 static void clean_action_queue(client_t *client)
@@ -90,6 +91,10 @@ void server_destroy(server_t *server)
     signal_handler_cleanup(server->signal_fd);
     cleanup_game_state(server);
     cleanup_poll_fds(server);
+    if (server->eggs) {
+        da_destroy(server->eggs);
+        server->eggs = NULL;
+    }
     server->is_running = false;
     printf("[SERVER] Cleanup completed\n");
 }

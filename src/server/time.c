@@ -9,12 +9,27 @@
 #include <stdio.h>
 
 #include "server/time.h"
+#include "server/server.h"
 
 double get_time_unit(server_t *server)
 {
     if (!server || server->config.freq == 0)
         return 1.0;
     return 1.0 / (double)server->config.freq;
+}
+
+bool set_time_unit(server_t *server, double time_unit)
+{
+    if (!server || time_unit <= 0.0) {
+        fprintf(stderr, "Invalid time unit value: %f\n", time_unit);
+        return false;
+    }
+    server->config.freq = (size_t)(1.0 / time_unit);
+    if (server->config.freq == 0) {
+        fprintf(stderr, "Frequency cannot be zero.\n");
+        return false;
+    }
+    return true;
 }
 
 void queue_action(client_t *client, action_t *action)

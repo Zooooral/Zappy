@@ -21,6 +21,7 @@ static void print_help(const char *program_name)
     printf("  -c clientsNb   : number of authorized clients per team\n");
     printf("  -f freq        : reciprocal "
         "of time unit for execution of actions\n");
+    printf("  -r <bool>      : refill tiles with resources\n");
 }
 
 static int handle_arguments(int argc, const char **argv,

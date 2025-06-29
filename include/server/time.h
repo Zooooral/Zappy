@@ -21,6 +21,7 @@ typedef struct action_s {
 } action_t;
 
 double get_time_unit(server_t *server);
+bool set_time_unit(server_t *server, double time_unit);
 void queue_action(client_t *client, action_t *action);
 void process_actions(server_t *server);
 

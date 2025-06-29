@@ -38,6 +38,7 @@ public:
     void initialize();
     void cleanup();
     void update(float dt);
+    void assignTeamColor(const std::string& teamName);
     void draw2D(Camera2D camera) const;
     void draw3D(Camera camera);
 
@@ -74,7 +75,9 @@ private:
     int _animCount = 0;
     bool _modelLoaded = false;
     float _animationTimer = 0.0f;
-    float _particleTimer = 0.0f;
+    std::unordered_map<Character*, float> _particleTimers;
+    std::unordered_map<std::string, Color> _teamColorMap;
+    int _nextColorIndex = 0;
     int _frameCounter = 0;
     float _timeUnit = 1.0f;
     
