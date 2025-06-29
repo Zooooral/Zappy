@@ -87,7 +87,7 @@ static inline void client_validate(server_t *server, client_t *client,
 {
     char res[1024];
 
-    client->team_name = strndup(message, strlen(message) - 1);
+    client->team_name = strndup(message, strlen(message));
     client->type = CLIENT_TYPE_AI;
     if (!try_regular_connect(server, client, message) &&
         !hatch_from_egg(server, client,
